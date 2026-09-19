@@ -1024,4 +1024,143 @@ setTimeout(patchDom,300);
 try{if(location.hash==='#/design'&&window.route)window.route()}catch(e){}
 });
 })();
+/* ---------- 追加补丁 v10：色散图字号↑ / 统计求真 / 筛选组标题 / 视频页系列置顶+合并网格 ---------- */
+(function(){
+function ready(fn){document.readyState!=='loading'?fn():document.addEventListener('DOMContentLoaded',fn)}
+ready(function(){
+var E=window.esc||function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})};
+var pad=function(n){n=String(n);while(n.length<2)n='0'+n;return n};
+
+/* A) 样式 */
+if(!document.getElementById('kwPatch10')){
+var st=document.createElement('style');st.id='kwPatch10';
+st.textContent=[
+'.prism .lab{font-size:15px!important;font-weight:600;fill:#3B3730}',
+'.prism .lab.fig{font-size:14px!important;font-weight:400;letter-spacing:.03em}',
+'.kw-flab{display:inline-flex;align-items:center;font:600 12.5px/1 var(--sans);color:#8A5A2B;background:none!important;border:none!important;box-shadow:none!important;padding:0 .8em 0 .15em!important;margin:0!important;cursor:default!important;letter-spacing:.14em}',
+'.vindex{display:grid;grid-template-columns:1fr 1fr;gap:.9rem;margin:1.4rem 0 .4rem}',
+'.vidx{display:flex;gap:.9rem;align-items:center;border:1px solid var(--line);background:var(--paper);padding:.8rem;cursor:pointer;transition:.2s}',
+'.vidx:hover{border-color:var(--accent);transform:translateY(-2px)}',
+'.vidx img{width:150px;aspect-ratio:16/9;object-fit:cover;border:1px solid var(--line);flex-shrink:0}',
+'.vidx b{font:700 15px var(--serif);display:block;margin-bottom:.3rem;color:var(--ink)}',
+'.vidx span{font:400 11.5px/1.8 var(--sans);color:var(--ink2);display:block}',
+'.vidx .go{font:500 10px var(--mono);color:var(--accent);letter-spacing:.15em;margin-top:.35em}',
+'.vsep{grid-column:1/-1;font:500 11px var(--mono);letter-spacing:.2em;color:var(--accent);border-top:1px solid var(--line);padding:.9rem 0 .2rem}',
+'@media(max-width:700px){.vindex{grid-template-columns:1fr}.vidx img{width:110px}}'
+].join('');
+document.head.appendChild(st);
+}
+
+/* B) 色散图：AI 字样再放大一档 */
+var pr=document.querySelector('.prism');
+if(pr)pr.querySelectorAll('text').forEach(function(t){
+if(t.textContent.replace(/\s/g,'')==='AI')t.setAttribute('font-size','17.5');
+});
+
+/* C) 筛选行加"年级/类型/学科核心概念"说明标签（纯提示，不可点击） */
+function norm(s){return String(s).replace(/\s+/g,'')}
+function findLeaf(txt){
+var els=document.querySelectorAll('button,span,a,div,li,em,b');
+for(var i=0;i<els.length;i++){var el=els[i];
+if(el.children.length===0&&el.offsetParent&&norm(el.textContent)===norm(txt))return el}
+return null}
+var FLAB=[['三年级上','年级'],['仪器','类型'],['10.地球系统','学科核心概念']];
+function addFlab(){
+if(!findLeaf('10.地球系统'))return;
+FLAB.forEach(function(it){
+var el=findLeaf(it[0]);if(!el)return;
+var prev=el.previousElementSibling;
+if(prev&&prev.classList&&prev.classList.contains('kw-flab'))return;
+var lab=document.createElement('span');lab.className='kw-flab';lab.textContent=it[1];
+lab.setAttribute('aria-hidden','true');
+el.parentNode.insertBefore(lab,el);
+});
+}
+setInterval(addFlab,1200);setTimeout(addFlab,400);
+
+/* D) 统计求真：资源总数=七类真实合计；累计下载=真实点击数（本浏览器） */
+function TOTAL(){var n=0;
+try{n+=PROMPTS.length}catch(e){}try{n+=WEB_ITEMS.length}catch(e){}
+try{n+=TOOLS.length}catch(e){}try{n+=DESIGNS.length}catch(e){}
+try{n+=ARTICLES.length}catch(e){}try{n+=CASES.length}catch(e){}
+try{n+=VIDEOS.length}catch(e){}return n}
+function dw(){try{return parseInt(localStorage.getItem('kwDl')||'0',10)||0}catch(e){return 0}}
+document.addEventListener('click',function(e){
+var b=e.target.closest&&e.target.closest('button[data-dl],a[data-dl]');
+if(!b)return;try{localStorage.setItem('kwDl',dw()+1)}catch(err){}
+},true);
+function labLeaf(label){
+var best=null;
+document.querySelectorAll('span,div,b,p,i,em,dt,dd,h3,h4').forEach(function(el){
+var tx=el.textContent||'';
+if(tx.indexOf(label)===-1||tx.length>30)return;
+for(var c=el.firstElementChild;c;c=c.nextElementSibling){if((c.textContent||'').indexOf(label)>-1)return}
+if(!best||(best.compareDocumentPosition(el)&Node.DOCUMENT_POSITION_FOLLOWING))best=el;
+});
+return best}
+function setStat(label,val){
+var leaf=labLeaf(label);if(!leaf)return false;
+var cell=leaf.parentElement;
+for(var k=0;k<3&&cell;k++){
+var tx=cell.textContent||'';
+if(tx.indexOf(label)>-1&&/[\d,]/.test(tx)&&tx.length<70)break;
+cell=cell.parentElement}
+if(!cell)return false;
+var ns=cell.querySelectorAll('*');
+for(var j=0;j<ns.length;j++){var n=ns[j];
+if(n===leaf||n.children.length>0)continue;
+var t=(n.textContent||'').trim(),m=t.match(/^([\d,]{1,9})(\s*[^\d,].*)?$/);
+if(m){n.textContent=String(val)+(m[2]||'');return true}}
+return false}
+function assertStats(){setStat('资源总数',TOTAL());setStat('累计下载',dw())}
+setTimeout(assertStats,400);setInterval(assertStats,1500);
+
+/* E) 视频页：双系列卡置顶(点击平滑滚动) + 每系列一张连续网格(主题=通栏分隔条) */
+var twOrder=["月球探索","载人航天","火星探测","木星探测","土星探测","航天创想","对地观测"];
+var shOrder=["植物与农业","动物与生命","气象与节气","大气与天象","传统科技"];
+function epcard(o){
+var m=String(o.d||'').match(/第\s*(\d+)\s*集/);
+return '<div class="vcard"><span class="vno">EP.'+pad(m?m[1]:'--')+'</span><b>'+E(o.t)+'</b><p>'+E(o.d)+'</p><a class="kbtn" target="_blank" rel="noopener" href="'+E(o.lk)+'">▶ 去观看</a></div>';
+}
+function vidx(img,name,desc,n,target){
+return '<div class="vidx" data-target="'+target+'"><img src="'+img+'" alt="'+name+'" onerror="this.remove()"><div><b>'+E(name)+' · '+n+' 集</b><span>'+E(desc)+'</span><span class="go">点击直达该系列 ↓</span></div></div>';
+}
+function seriesGrid(name,arr,order){
+var h='<p class="kw-sub" style="margin-top:1.8rem">'+E(name)+' · '+arr.length+' 集</p><div class="vgrid">';
+order.forEach(function(ty){
+var g=arr.filter(function(o){return o.ty===ty});if(!g.length)return;
+h+='<div class="vsep">'+E(ty)+' · '+g.length+'</div>';
+g.forEach(function(o){h+=epcard(o)});
+});
+return h+'</div>';
+}
+function renderVideos2(){
+var cont=document.getElementById('kwPage');
+if(!cont||cont.hidden)return;
+if((location.hash||'').indexOf('#/videos')!==0)return;
+var sec=cont.querySelector('section');if(!sec)return;
+var head=sec.querySelector('.sec-head');
+var tw=VIDEOS.filter(function(o){return o.src==='AI天文科普'});
+var sh=VIDEOS.filter(function(o){return o.src==='AI生活科普'});
+var html='<div class="vindex">'
++vidx('assets/kpsp-tw.png','AI 天文科普','从月球、空间站到火星、木星、土星的太空探索故事。',tw.length,'kw-tw')
++vidx('assets/kpsp-sh.png','AI 生活科普','节气、动植物、传统科技与大气天象。',sh.length,'kw-sh')
++'</div>'
++'<div id="kw-tw">'+seriesGrid('AI 天文科普',tw,twOrder)+'</div>'
++'<div id="kw-sh" style="margin-top:2.2rem">'+seriesGrid('AI 生活科普',sh,shOrder)+'</div>';
+sec.innerHTML='';if(head){
+var p=head.querySelector('p');if(p)p.textContent='两大 AI 科普系列 · 59 集短视频；点顶部系列卡可直达对应展区。';
+sec.appendChild(head)}
+sec.insertAdjacentHTML('beforeend',html);
+sec.querySelectorAll('.vidx').forEach(function(c){
+c.addEventListener('click',function(){
+var t=document.getElementById(c.getAttribute('data-target'));
+if(t)t.scrollIntoView({behavior:'smooth',block:'start'});
+});
+});
+}
+window.addEventListener('hashchange',function(){setTimeout(renderVideos2,45)});
+setTimeout(renderVideos2,500);setTimeout(renderVideos2,750);
+});
+})();
 
