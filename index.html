@@ -485,7 +485,7 @@ document.querySelectorAll('svg.qr').forEach(function(el){
     var img=document.createElement('img');
     img.src=CONFIG.QR;img.alt='公众号二维码';
     img.className=el.className;
-    img.style.width='100%';img.style.height='100%';img.style.objectFit='contain';
+    img.style.objectFit='contain';img.style.display='block';
     el.replaceWith(img);return;
   }
   var N=21,Q=8,rnd=mulberry32(+seed||1),rects='';
