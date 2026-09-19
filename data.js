@@ -519,4 +519,131 @@ if(a.textContent.replace(/\s/g,'')==='公众号')a.remove();
 });
 });
 })();
+/* ---------- 追加补丁 v3：色散图几何修正 / 二维码强制限宽 / 关于页重写 / 编号与文案 ---------- */
+(function(){
+function ready(fn){document.readyState!=='loading'?fn():document.addEventListener('DOMContentLoaded',fn)}
+ready(function(){
+/* 0) 样式：关于页三版块 */
+var st=document.createElement('style');st.id='kwPatch3';
+st.textContent=[
+'.ab-grid{display:grid;grid-template-columns:1.55fr .85fr;gap:2.4rem;margin-top:1.8rem}',
+'.ab-intro{font:400 14.5px/2 var(--sans);color:var(--ink-soft);max-width:640px;margin:.9rem 0 0}',
+'.ablock{border-top:2px solid var(--ink);padding:1.1rem 0 1.5rem;margin-top:1.4rem}',
+'.ab-no{font:500 10px var(--mono);letter-spacing:.24em;color:var(--accent);display:block;margin-bottom:.45rem}',
+'.ablock h4{font:700 17px var(--serif);margin:0 0 .6rem;color:var(--ink)}',
+'.ablock p{font:400 14px/2.05 var(--sans);color:var(--ink-soft);margin:0}',
+'.ab-side{padding-top:1.8rem}',
+'.ab-qrcard{border:1px solid var(--line);background:var(--paper);padding:1.2rem;display:flex;flex-direction:column;gap:.7rem;align-items:flex-start;position:sticky;top:90px}',
+'.ab-qrcard b{font:700 14px var(--serif);color:var(--ink)}',
+'.ab-qrcard span{font:400 12px/1.9 var(--sans);color:var(--ink2)}',
+'@media(max-width:860px){.ab-grid{grid-template-columns:1fr}.ab-side{padding-top:0}}'
+].join('');
+document.head.appendChild(st);
+
+/* 1) 色散图：白光斜入射 → 棱镜内散开(红上紫下) → 出射面向下展开 */
+var pr=document.querySelector('.prism');
+if(pr){
+pr.setAttribute('aria-label','三棱镜色散示意图：白光斜入射，棱镜内色散，出射展开');
+pr.innerHTML=
+'<path class="pz" pathLength="1" d="M340 80 L430 380 L250 380 Z"/>'+
+'<line class="beam" x1="20" y1="272" x2="294" y2="233"/>'+
+'<line class="ray ir1" pathLength="1" x1="294" y1="233" x2="388" y2="244"/>'+
+'<line class="ray ir2" pathLength="1" x1="294" y1="233" x2="389" y2="249"/>'+
+'<line class="ray ir3" pathLength="1" x1="294" y1="233" x2="390" y2="254"/>'+
+'<line class="ray ir4" pathLength="1" x1="294" y1="233" x2="392" y2="259"/>'+
+'<line class="ray ir5" pathLength="1" x1="294" y1="233" x2="393" y2="264"/>'+
+'<line class="ray ir6" pathLength="1" x1="294" y1="233" x2="395" y2="271"/>'+
+'<line class="ray r1" pathLength="1" x1="388" y1="244" x2="620" y2="288"/>'+
+'<line class="ray r2" pathLength="1" x1="389" y1="249" x2="620" y2="302"/>'+
+'<line class="ray r3" pathLength="1" x1="390" y1="254" x2="620" y2="316"/>'+
+'<line class="ray r4" pathLength="1" x1="392" y1="259" x2="620" y2="331"/>'+
+'<line class="ray r5" pathLength="1" x1="393" y1="264" x2="620" y2="347"/>'+
+'<line class="ray r6" pathLength="1" x1="395" y1="271" x2="620" y2="365"/>'+
+'<text class="lab" x="20" y="252">AI · 输入</text>'+
+'<text class="lab" x="470" y="392">科学课 · 输出</text>'+
+'<text class="lab fig" x="20" y="442">FIG.01 — 光的色散：棱镜内色散，出射展开 / DISPERSION</text>';
+}
+
+/* 2) 二维码：不再依赖CSS类，直接内联锁死150px（弹窗/关于/公众号全适用） */
+function fixQr(){
+document.querySelectorAll('img').forEach(function(im){
+var s=im.getAttribute('src')||'';
+if(/qr/i.test(s)){
+im.style.width='150px';im.style.height='150px';
+im.style.maxWidth='150px';im.style.maxHeight='150px';
+im.style.objectFit='contain';im.style.display='block';
+}
+});
+}
+fixQr();
+
+/* 3) 文案替换（含动态渲染页面的兜底） */
+function repAll(root,re,val){
+root.querySelectorAll('p,span,strong,em,b,i,h1,h2,h3,h4,h5,button,a,div').forEach(function(el){
+if(re.test(el.textContent)&&!el.querySelector('p,div,h1,h2,h3,h4,section,article,ul,li')){
+el.textContent=el.textContent.replace(re,val);
+}
+});
+}
+function repDyn(){
+repAll(document,/三类家当，随取随用。[\s\S]*?下载码。/g,'我的 AI 教学家当！');
+var ft=document.querySelector('footer');
+if(ft)repAll(ft,/开物AI赋能教育教学全流程/g,'致力于将AI融入教育教学全流程、全要素');
+fixQr();
+}
+repDyn();
+new MutationObserver(function(){repDyn()}).observe(document.body,{childList:true,subtree:true});
+
+/* 4) 板块改名 + 编号理顺：实践04 / 案例05 / 视频06 / 关于07(最后) */
+var navA=document.querySelector('header nav a[href="#/practice"]');
+if(navA)navA.textContent='实践经验';
+document.querySelectorAll('.row').forEach(function(r){
+var h=r.querySelector('h3');
+if(h&&h.textContent.indexOf('AI实践经验')>-1){
+h.childNodes[0].textContent='实践经验';
+var em=h.querySelector('em');if(em)em.textContent='EXPERIENCE';
+}
+});
+
+var cont=document.getElementById('kwPage');
+if(cont){
+function renderAbout(){
+cont.innerHTML='<section>'
++'<div class="sec-head" style="margin-top:2.6rem"><span class="sec-no">07 — ABOUT</span><h2>关于开物AI科学</h2><p>好工具，不该锁在抽屉里。</p></div>'
++'<p class="ab-intro">开物AI科学是一个免费开放的中小学科学教学资源库。</p>'
++'<div class="ab-grid"><div class="ab-main">'
++'<div class="ablock"><span class="ab-no">01 — 初心</span><h4>AI，不应该制造教育焦虑</h4><p>AI，并不是为教育制造焦虑和烦恼而生。它应该用来，让每一位老师更加公平地拥有教学能力和资源。无论身处哪所学校、面对什么样的教学条件，我都希望老师们能够平等地学到真正有用的 AI 能力，拿到真正能帮助备课、教学的资源。这，就是我做「开物AI科学」的初心。</p></div>'
++'<div class="ablock"><span class="ab-no">02 — 缘起</span><h4>我为什么做这个网站</h4><p>我是一名小学科学老师。在自己的备课和课堂实践中，我开始越来越多地使用 AI：用 AI 打磨教学设计，用 AI 制作互动教学网页，用 AI 解决一些课堂上“不容易看见、不容易操作、不容易理解”的科学问题，也把自己反复使用、不断修改后真正有效的提示词整理下来。过程中，我发现：AI 真正有价值的地方，并不是让我们追赶一个又一个新工具，而是让一个普通老师，也能够拥有过去需要专业团队才能完成的一些能力。所以，我把这些真实使用过的东西整理出来，放在这里。</p></div>'
++'<div class="ablock"><span class="ab-no">03 — 分享</span><h4>关于分享</h4><p>「开物AI科学」的内容，也会同步分享到公众号、小红书和微信群。我会继续无偿分享 AI 应用指南、教学资源和实践经验。希望 AI 带来的，不只是更快的工作效率，而是让更多普通教师，也能够拥有创造好课堂、做好教学的能力。把 AI 变成科学课的实验器材。这也是「开物AI科学」想做的事情。</p></div>'
++'</div><aside class="ab-side"><div class="ab-qrcard">'
++'<img src="assets/qr.png.jpg" alt="开物AI科学公众号二维码" style="width:150px;height:150px;object-fit:contain;display:block;background:#fff">'
++'<b>公众号 · 开物AI科学</b><span>资源上新与下载码，都在这里发放。微信扫一扫，即刻关注。</span></div></aside></div></section>';
+}
+function fixNo(){
+var m=location.hash.match(/^#\/(practice|cases|videos)/);
+if(m){
+var map={practice:['04 — EXPERIENCE','实践经验'],cases:['05 — CASES','AI 教学案例'],videos:['06 — VIDEOS','AI 科普视频']}[m[1]];
+var no=cont.querySelector('.sec-no'),h2=cont.querySelector('.sec-head h2');
+if(no)no.textContent=map[0];
+if(h2)h2.textContent=map[1];
+}
+}
+window.addEventListener('hashchange',function(){
+if(location.hash==='#/about'){
+var hr=document.getElementById('homeRoot'),pg=document.getElementById('pageRoot');
+if(hr)hr.style.display='none';if(pg)pg.hidden=true;
+document.querySelectorAll('nav a[data-route],nav a[data-kwroute]').forEach(function(a){a.classList.remove('active')});
+var ab=document.querySelector('nav a[href="#/about"]');if(ab)ab.classList.add('active');
+renderAbout();cont.hidden=false;window.scrollTo(0,0);
+}else{fixNo()}
+});
+fixNo();
+if(location.hash==='#/about'){
+var hr2=document.getElementById('homeRoot'),pg2=document.getElementById('pageRoot');
+if(hr2)hr2.style.display='none';if(pg2)pg2.hidden=true;
+renderAbout();cont.hidden=false;
+}
+}
+});
+})();
 
