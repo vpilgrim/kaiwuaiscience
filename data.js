@@ -8,7 +8,7 @@ const CONFIG = {
   SECRET:     "kaiwuai-2026",
   ADMIN_USER: "vpilgrim",
   ADMIN_PASS: "kaiwuai2026",     // ← 上线前务必改掉
-  QR:         "assets/qr.png",   // 没放二维码图片时页面会自动隐藏，不影响
+  QR:         "assets/qr.png.jpg",   // 没放二维码图片时页面会自动隐藏，不影响
 };
 
 const ABOUT = `开物AI科学是一个免费开放的中小学科学教学资源库。
