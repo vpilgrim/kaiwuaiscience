@@ -255,4 +255,245 @@ const DESIGNS = [
 {id:"d08",t:"大象版二年级下册教学设计",g:"二年级下册",lk:"https://wwdj.lanzoul.com/b00g4hqpaf",cd:"f2mq",d:"大象版科学二年级下册 AI 生成教学设计（教案）合集。"},
 {id:"d09",t:"大象版三年级下册教学设计",g:"三年级下册",lk:"https://wwdj.lanzoul.com/b00g4hqpch",cd:"5p2j",d:"大象版科学三年级下册 AI 生成教学设计（教案）合集。"},
 ];
+/* ============================================================
+   追加模块：AI实践经验 / AI教学案例 / AI科普视频 + 全站自动增强
+   用法：粘贴到 data.js 最末尾，Commit 即生效，无需改 index.html
+   填内容：把 lk:"TODO" 换成真实链接；img/cover 换成 assets/ 里的图片文件名
+   ============================================================ */
+
+/* ---------- AI实践经验（公众号文章 / 小红书图文） ---------- */
+const ARTICLES = [
+{id:"a01",t:"（示例）我是怎么用AI备出一节课的",src:"公众号文章",d:"从备课到课堂实施的完整AI备课流程记录。",lk:"TODO",img:""},
+{id:"a02",t:"（示例）AI出题工作流",src:"小红书图文",d:"用AI按考点细目表命制期末卷的步骤拆解。",lk:"TODO",img:""},
+];
+
+/* ---------- AI教学案例（公开课课件 / 录课视频） ----------
+   lk = 课件下载链接（走下载码验证）；lk2 = 录课视频在线观看链接 */
+const CASES = [
+{id:"c01",t:"（示例）《给水加热》公开课",ty:"公开课课件",g:"四年级上",d:"课件+教学设计+课堂实录，AI互动实验网页融入课堂的完整案例。",lk:"TODO",lk2:""},
+{id:"c02",t:"（示例）《磁铁有两极》录课",ty:"录课视频",g:"三年级下",d:"课堂实录，含AR听话的小车互动环节。",lk:"TODO",lk2:""},
+];
+
+/* ---------- AI科普视频（B站 / 公众号） ---------- */
+const VIDEOS = [
+{id:"v01",t:"（示例）AI三分钟讲透光的色散",src:"B站",d:"AI生成的动画演示牛顿三棱镜实验。",lk:"TODO",cover:""},
+{id:"v02",t:"（示例）太阳系有多大？",src:"公众号",d:"AI辅助制作的科普短视频。",lk:"TODO",cover:""},
+];
+
+/* ---------- 以下为自动增强程序，勿动 ---------- */
+(function(){
+function ready(fn){if(document.readyState!=='loading'){fn()}else{document.addEventListener('DOMContentLoaded',fn)}}
+ready(function(){
+var E=window.esc||function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})};
+var IT=window.isTodo||function(v){return !v||String(v).indexOf('TODO')>-1};
+
+if(!document.getElementById('kwExtraStyle')){
+var st=document.createElement('style');st.id='kwExtraStyle';
+st.textContent=['.qr img{width:auto!important;height:auto!important;max-width:100%!important;max-height:100%!important;object-fit:contain}',
+'.ir1{animation-delay:.95s}.ir2{animation-delay:1.02s}.ir3{animation-delay:1.09s}.ir4{animation-delay:1.16s}.ir5{animation-delay:1.23s}.ir6{animation-delay:1.3s}',
+'.hero-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem;margin-top:1.4rem}',
+'.hcard{display:flex;flex-direction:column;gap:.45rem;border:1px solid var(--line);background:var(--paper);padding:.7rem .8rem;text-decoration:none;color:var(--ink);transition:.25s}',
+'.hcard:hover{border-color:var(--accent);box-shadow:7px 7px 0 rgba(200,69,27,.14);transform:translateY(-3px)}',
+'.hcard b{font:700 13px var(--serif)}.hcard i{font:400 10px var(--mono);font-style:normal;letter-spacing:.06em;color:var(--ink2)}',
+'.hc-img{display:block;height:64px;border:1px solid var(--line);overflow:hidden;background:var(--paper2)}',
+'.hc-img img{width:100%;height:100%;object-fit:cover;display:block}',
+'.hc-txt{display:grid;place-items:center;height:64px;padding:.4em;font:400 10.5px/1.7 var(--mono);color:var(--ink-soft);background:var(--paper2);border:1px solid var(--line);overflow:hidden;text-align:center}',
+'.hc-doc{display:grid;place-items:center;height:64px;font:500 11px var(--mono);letter-spacing:.08em;color:var(--ink-soft);background:var(--paper2);border:1px solid var(--line)}',
+'.kcover{width:100%;aspect-ratio:16/9;object-fit:cover;border:1px solid var(--line);background:var(--paper2);display:block;margin-bottom:.55rem}',
+'.ksoon{font:400 10.5px var(--mono);color:var(--ink2);letter-spacing:.06em}',
+'.kw-sub{font:500 11px var(--mono);letter-spacing:.24em;color:var(--accent);margin:1.6rem 0 .7rem}',
+'.s-tab{position:fixed;right:0;top:50%;transform:translateY(-50%);z-index:55;writing-mode:vertical-rl;background:var(--ink);color:var(--paper);border:none;padding:1.35rem .78rem;font:500 12.5px var(--sans);letter-spacing:.4em;cursor:pointer;border-radius:4px 0 0 4px;transition:.25s}',
+'.s-tab:hover{background:var(--accent)}',
+'.s-fab{display:none;position:fixed;right:1.1rem;bottom:5.8rem;width:52px;height:52px;background:var(--accent);color:var(--paper);border:none;border-radius:50%;z-index:60;place-items:center;box-shadow:0 8px 24px rgba(25,23,20,.28);cursor:pointer;font-size:19px}',
+'.s-mask{position:fixed;inset:0;background:rgba(25,23,20,.44);z-index:74;opacity:0;visibility:hidden;transition:.28s}',
+'.s-mask.open{opacity:1;visibility:visible}',
+'.s-panel{position:fixed;top:0;right:0;height:100vh;width:min(360px,92vw);z-index:75;background:var(--paper);border-left:1px solid var(--ink);box-shadow:-10px 0 0 rgba(25,23,20,.08);transform:translateX(103%);transition:.3s cubic-bezier(.2,.7,.2,1);display:flex;flex-direction:column}',
+'.s-panel.open{transform:none}',
+'.s-head{display:flex;gap:.6rem;align-items:center;padding:1rem;border-bottom:1px solid var(--line)}',
+'.s-input{flex:1;min-width:0;border:1px solid var(--ink);background:transparent;padding:.7em .9em;font:500 14px var(--sans);outline:none;color:var(--ink)}',
+'.s-input:focus{border-color:var(--accent)}',
+'.s-close{width:34px;height:34px;background:none;border:none;font-size:24px;line-height:1;color:var(--ink2);cursor:pointer}',
+'.s-close:hover{color:var(--accent)}',
+'.s-body{flex:1;overflow:auto;padding:.8rem 1rem 2rem}',
+'.s-empty{font:400 12px var(--mono);color:var(--ink2);line-height:2;padding:.6rem 0}',
+'.s-grp{font:500 10.5px var(--mono);letter-spacing:.24em;color:var(--accent);margin:1.1rem 0 .45rem;display:flex;align-items:center;gap:.6em}',
+'.s-grp i{font-style:normal;color:var(--ink2)}',
+'.s-item{display:block;width:100%;text-align:left;background:var(--paper);border:1px solid var(--line);border-left:2px solid var(--line);padding:.6rem .8rem;margin-bottom:.45rem;cursor:pointer;transition:.2s;font-family:var(--sans)}',
+'.s-item:hover{border-color:var(--accent);border-left-color:var(--accent);background:var(--paper2)}',
+'.s-item b{display:block;font:700 13.5px var(--serif);color:var(--ink)}',
+'.s-item span{display:block;margin-top:.15em;font-size:11.5px;color:var(--ink2)}',
+'@media (max-width:860px){.s-tab{display:none}.s-fab{display:grid}}'].join('');
+document.head.appendChild(st);
+}
+
+document.title='开物AI科学 · AI赋能教育教学全流程';
+var eb=document.querySelector('.eyebrow');
+if(eb&&/EST\. 2026/.test(eb.textContent))eb.textContent='KAIWU AI SCIENCE · AI FOR BASIC EDUCATION';
+var lead=document.querySelector('.hero p.lead');
+if(lead&&/全部家当/.test(lead.textContent))lead.textContent='我把真实备课、课堂实践和 AI 工具应用过程中产生的资源整理在这里。提示词、互动网页、教学设计，以及 AI 实践方法，免费分享给一线教师。';
+
+function patchKw(){
+document.querySelectorAll('.m-steps li b').forEach(function(b){if(b.textContent==='开物')b.textContent='下载码'});
+document.querySelectorAll('.knote').forEach(function(el){if(el.innerHTML.indexOf('「开物」')>-1)el.innerHTML=el.innerHTML.replace(/「开物」/g,'「下载码」')});
+}
+patchKw();
+
+var pr=document.querySelector('.prism');
+if(pr&&!pr.dataset.kwFixed){
+pr.dataset.kwFixed='1';
+pr.setAttribute('aria-label','三棱镜色散示意图：白光经两次折射，棱镜内色散成光谱');
+pr.innerHTML='<path class="pz" pathLength="1" d="M340 80 L430 380 L250 380 Z"/>'
++'<line class="beam" x1="20" y1="233" x2="294" y2="233"/>'
++'<line class="ray ir1" pathLength="1" x1="294" y1="233" x2="387" y2="237"/>'
++'<line class="ray ir2" pathLength="1" x1="294" y1="233" x2="389" y2="243"/>'
++'<line class="ray ir3" pathLength="1" x1="294" y1="233" x2="390" y2="247"/>'
++'<line class="ray ir4" pathLength="1" x1="294" y1="233" x2="392" y2="253"/>'
++'<line class="ray ir5" pathLength="1" x1="294" y1="233" x2="393" y2="257"/>'
++'<line class="ray ir6" pathLength="1" x1="294" y1="233" x2="395" y2="263"/>'
++'<line class="ray r1" pathLength="1" x1="387" y1="237" x2="620" y2="252"/>'
++'<line class="ray r2" pathLength="1" x1="389" y1="243" x2="620" y2="266"/>'
++'<line class="ray r3" pathLength="1" x1="390" y1="247" x2="620" y2="278"/>'
++'<line class="ray r4" pathLength="1" x1="392" y1="253" x2="620" y2="290"/>'
++'<line class="ray r5" pathLength="1" x1="393" y1="257" x2="620" y2="301"/>'
++'<line class="ray r6" pathLength="1" x1="395" y1="263" x2="620" y2="313"/>'
++'<text class="lab" x="20" y="214">AI · 输入</text>'
++'<text class="lab" x="478" y="352">科学课 · 输出</text>'
++'<text class="lab fig" x="20" y="442">FIG.01 — 光的色散：棱镜内色散，出射再折射 / DISPERSION</text>';
+}
+
+var pb=document.querySelector('.prism-box');
+if(pb&&!pb.querySelector('.hero-cards')){
+var hc=document.createElement('div');hc.className='hero-cards';
+hc.innerHTML='<a class="hcard" href="#/labs"><span class="hc-img"><img src="assets/water-heating.png" alt="互动网页示例"></span><b>互动网页</b><i>在线使用 · 投屏即用</i></a>'
++'<a class="hcard" href="#/prompts"><span class="hc-txt">用deepseek生成<br>课堂互动网页…</span><b>提示词库</b><i>复制即用 · 覆盖全流程</i></a>'
++'<a class="hcard" href="#/design"><span class="hc-doc">教案.docx</span><b>教学设计</b><i>新课标 · 教学评一致</i></a>';
+pb.appendChild(hc);
+}
+
+var nav=document.querySelector('header nav');
+if(nav&&!nav.querySelector('a[href="#/practice"]')){
+var ab=nav.querySelector('a[href="#/about"]');
+['practice|AI实践','cases|教学案例','videos|科普视频'].forEach(function(pair){
+var pp=pair.split('|'),a=document.createElement('a');
+a.href='#/'+pp[0];a.textContent=pp[1];a.setAttribute('data-kwroute',pp[0]);
+nav.insertBefore(a,ab);
+});
+}
+
+var note=document.querySelector('.index-note');
+if(note&&!document.querySelector('.row[data-route="#/practice"]')){
+var EMS={practice:'AI PRACTICE',cases:'AI CASES',videos:'AI VIDEOS'};
+function mkRow(no,name,route,cid,unit,desc){
+var art=document.createElement('article');art.className='row reveal';
+art.setAttribute('data-name',name);art.setAttribute('data-route',route);
+art.innerHTML='<span class="row-no">'+no+'</span><div class="row-main"><h3>'+name+'<em>'+EMS[route.slice(2)]+'</em></h3><p>'+desc+'</p></div><div class="row-meta"><strong id="'+cid+'">0</strong><span>'+unit+'</span></div><a class="row-go" href="'+route+'">查看全部 <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h9M8 3.5L11.5 7 8 10.5" stroke="currentColor" stroke-width="1.5"/></svg></a>';
+note.parentNode.insertBefore(art,note);
+art.addEventListener('click',function(){location.hash=route});
+if(window.io)io.observe(art);
+}
+mkRow('04','AI实践经验','#/practice','cntPractice','篇','公众号文章与小红书图文：我的AI备课方法、工具用法与踩坑记录。');
+mkRow('05','AI教学案例','#/cases','cntCases','例','公开课课件与录课视频：AI融入真实课堂的完整案例。');
+mkRow('06','AI科普视频','#/videos','cntVideos','个','公众号与B站的AI科普视频，课堂导入或课后拓展都能用。');
+var cP=document.getElementById('cntPractice');if(cP)cP.textContent=ARTICLES.length;
+var cC=document.getElementById('cntCases');if(cC)cC.textContent=CASES.length;
+var cV=document.getElementById('cntVideos');if(cV)cV.textContent=VIDEOS.length;
+var sR=document.getElementById('stRes');if(sR)sR.textContent=(PROMPTS.length+WEB_ITEMS.length+TOOLS.length+DESIGNS.length+ARTICLES.length+CASES.length+VIDEOS.length).toLocaleString('zh-Hans-CN');
+if(/家当|在线预览|教材单元/.test(note.textContent))note.textContent='// 支持按「年级 × 类型 × 学科核心素养」交叉筛选，全站资源可在右侧搜索栏直达。';
+}
+
+var mainEl=document.querySelector('main.wrap')||document.querySelector('main');
+var cont=document.createElement('div');cont.id='kwPage';cont.hidden=true;
+if(mainEl)mainEl.appendChild(cont);else document.body.appendChild(cont);
+
+function kgrp(title,arr,kind){
+var h='<p class="kw-sub">'+title+' · '+arr.length+'</p><div class="kgrid">';
+if(!arr.length)h+='<p class="s-empty">内容整理中——我会陆续把这一类填进来。</p>';
+arr.forEach(function(o){
+var tags=[o.g,o.ty,o.src].filter(Boolean).map(function(v){return '<span class="ktag">'+E(v)+'</span>'}).join('');
+var cov=(o.img||o.cover)?'<img class="kcover" src="'+E(o.img||o.cover)+'" alt="'+E(o.t)+'">':'';
+var btns='';
+if(kind==='a'){btns=IT(o.lk)?'<span class="ksoon">链接整理中</span>':'<a class="kbtn" target="_blank" rel="noopener" href="'+E(o.lk)+'">↗ 阅读原文</a>';}
+else if(kind==='c'){btns=(IT(o.lk)?'<span class="ksoon">课件整理中</span>':'<button class="kbtn" data-kwdl="'+E(o.lk)+'" data-kwname="'+E(o.t)+'">⬇ 下载课件</button>')+((o.lk2&&!IT(o.lk2))?'<a class="kbtn ghost" target="_blank" rel="noopener" href="'+E(o.lk2)+'">▶ 观看录课</a>':'');}
+else{btns=IT(o.lk)?'<span class="ksoon">视频整理中</span>':'<a class="kbtn" target="_blank" rel="noopener" href="'+E(o.lk)+'">▶ 去观看</a>';}
+h+='<div class="kcard" style="cursor:default">'+cov+'<h3>'+E(o.t)+'</h3><div class="ktags">'+tags+'</div><p class="kdesc">'+E(o.d)+'</p><div style="margin-top:.4rem">'+btns+'</div></div>';
+});
+return h+'</div>';
+}
+function renderKW(key){
+var T={practice:['05 — AI PRACTICE','AI 实践经验','公众号文章与小红书图文：AI备课的方法、工具与踩坑记录。'],cases:['06 — AI CASES','AI 教学案例','公开课课件与录课视频，看AI如何真实融入一堂课。'],videos:['07 — AI VIDEOS','AI 科普视频','公众号与B站的AI科普视频，课堂导入或课后拓展都能用。']}[key];
+var B={practice:kgrp('公众号文章',ARTICLES.filter(function(o){return o.src==='公众号文章'}),'a')+kgrp('小红书图文',ARTICLES.filter(function(o){return o.src==='小红书图文'}),'a'),
+cases:kgrp('公开课课件',CASES.filter(function(o){return o.ty==='公开课课件'}),'c')+kgrp('录课视频',CASES.filter(function(o){return o.ty==='录课视频'}),'c'),
+videos:kgrp('B站',VIDEOS.filter(function(o){return o.src==='B站'}),'v')+kgrp('公众号',VIDEOS.filter(function(o){return o.src==='公众号'}),'v')}[key];
+cont.innerHTML='<section><div class="sec-head" style="margin-top:2.6rem"><span class="sec-no">'+T[0]+'</span><h2>'+T[1]+'</h2><p>'+T[2]+'</p></div>'+B+'</section>';
+cont.querySelectorAll('[data-kwdl]').forEach(function(b){
+b.addEventListener('click',function(){if(window.kwGate)kwGate(b.getAttribute('data-kwname'),b.getAttribute('data-kwdl'))});
+});
+patchKw();
+}
+function kwRoute(){
+var h=location.hash||'#/home';
+var m=h.match(/^#\/(practice|cases|videos)/);
+if(m){
+var hr=document.getElementById('homeRoot'),pg=document.getElementById('pageRoot');
+if(hr)hr.style.display='none';
+if(pg)pg.hidden=true;
+document.querySelectorAll('nav a[data-route]').forEach(function(a){a.classList.remove('active')});
+document.querySelectorAll('nav a[data-kwroute]').forEach(function(a){a.classList.toggle('active',a.getAttribute('data-kwroute')===m[1])});
+renderKW(m[1]);
+cont.hidden=false;
+window.scrollTo(0,0);
+}else{cont.hidden=true;}
+}
+window.addEventListener('hashchange',kwRoute);
+kwRoute();
+
+if(!document.getElementById('sTab')){
+function mk(id,cls,txt){var b=document.createElement('button');b.id=id;b.className=cls;b.type='button';b.textContent=txt;document.body.appendChild(b);return b}
+var sTab=mk('sTab','s-tab','搜索资源'),sFab=mk('sFab','s-fab','🔍');
+var sMask=document.createElement('div');sMask.id='sMask';sMask.className='s-mask';document.body.appendChild(sMask);
+var sPanel=document.createElement('aside');sPanel.id='sPanel';sPanel.className='s-panel';
+sPanel.innerHTML='<div class="s-head"><input class="s-input" id="sInput" placeholder="搜索：课题 / 单元 / 素养 / 提示词…" autocomplete="off"><button class="s-close" id="sClose" type="button" aria-label="关闭">×</button></div><div class="s-body" id="sBody"><p class="s-empty">输入关键词，一次搜索全部资源：<br>网页 · 工具 · 提示词 · 教学设计 · 文章 · 案例 · 视频</p></div>';
+document.body.appendChild(sPanel);
+var sInput=sPanel.querySelector('#sInput'),sBody=sPanel.querySelector('#sBody');
+var EMPTY=sBody.innerHTML;
+function openS(){sMask.classList.add('open');sPanel.classList.add('open');setTimeout(function(){sInput.focus()},250)}
+function closeS(){sMask.classList.remove('open');sPanel.classList.remove('open')}
+sTab.addEventListener('click',openS);sFab.addEventListener('click',openS);
+sPanel.querySelector('#sClose').addEventListener('click',closeS);
+sMask.addEventListener('click',closeS);
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeS()});
+function jump(kind,id){
+closeS();
+if(kind==='a'||kind==='c'||kind==='v'){location.hash='#/'+({a:'practice',c:'cases',v:'videos'})[kind];return}
+if(kind==='p'){window.pending=id;if(location.hash==='#/prompts'){if(window.route)route()}else{location.hash='#/prompts'}return}
+if(kind==='d'){location.hash='#/design';return}
+if(window.FL){FL.tab=(kind==='w')?'web':'tools';}
+window.pending=id;
+if(location.hash==='#/labs'){if(window.route)route()}else{location.hash='#/labs'}
+}
+sInput.addEventListener('input',function(){
+var q=sInput.value.trim().toLowerCase();
+if(!q){sBody.innerHTML=EMPTY;return}
+function hit(o){return (String(o.t)+' '+(o.d||'')+' '+(o.u||'')+' '+(o.c||'')+' '+(o.g||'')+' '+(o.ty||'')+' '+(o.src||'')).toLowerCase().indexOf(q)>-1}
+var out='';
+function grp(title,items,kind,meta){
+if(!items.length)return;
+out+='<p class="s-grp">'+title+'<i>'+items.length+'</i></p>'+items.map(function(o){
+return '<button class="s-item" data-k="'+kind+'" data-id="'+o.id+'"><b>'+E(o.t)+'</b><span>'+E(meta(o)||'')+'</span></button>';
+}).join('');
+}
+grp('教学网页',WEB_ITEMS.filter(hit),'w',function(o){return [o.g,o.ty].filter(Boolean).join(' · ')});
+grp('课堂工具',TOOLS.filter(hit),'t',function(o){return [o.g,o.ty].filter(Boolean).join(' · ')});
+grp('提示词',PROMPTS.filter(function(o){return (String(o.t)+' '+(o.txt||'')).toLowerCase().indexOf(q)>-1}),'p',function(o){return o.plat||''});
+grp('教学设计',DESIGNS.filter(hit),'d',function(o){return o.g||''});
+grp('AI实践',ARTICLES.filter(hit),'a',function(o){return o.src||''});
+grp('教学案例',CASES.filter(hit),'c',function(o){return [o.g,o.ty].filter(Boolean).join(' · ')});
+grp('科普视频',VIDEOS.filter(hit),'v',function(o){return o.src||''});
+sBody.innerHTML=out||'<p class="s-empty">没有找到与「'+E(sInput.value.trim())+'」相关的资源</p>';
+});
+sBody.addEventListener('click',function(e){var b=e.target.closest('.s-item');if(b)jump(b.getAttribute('data-k'),b.getAttribute('data-id'))});
+sInput.addEventListener('keydown',function(e){if(e.key==='Enter'){var f=sBody.querySelector('.s-item');if(f)jump(f.getAttribute('data-k'),f.getAttribute('data-id'))}});
+}
+});
+})();
 
