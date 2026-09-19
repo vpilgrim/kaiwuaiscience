@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>开物AI科学 · 把 AI 变成科学课的实验器材</title>
+<title>开物AI科学 · AI赋能教育教学全流程</title>
 <script src="data.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -317,9 +317,9 @@ footer{border-top:1px solid var(--ink)}
   <!-- ================= Hero ================= -->
   <section class="hero">
     <div class="hero-copy">
-      <div class="eyebrow">KAIWU AI SCIENCE · EST. 2026</div>
+      <div class="eyebrow">KAIWU AI SCIENCE · AI FOR BASIC EDUCATION</div>
       <h1>开物<span class="ai">AI</span>赋能<br>教育教学全流程</h1>
-      <p class="lead">提示词、互动网页、教学设计——我把用 AI 备课的全部家当放在这里。每一样都经过真实课堂的检验，扫码即得，免费取用。</p>
+      <p class="lead">我把真实备课、课堂实践和 AI 工具应用过程中产生的资源整理在这里。提示词、互动网页、教学设计，以及 AI 实践方法，免费分享给一线教师。</p>
       <div class="cta">
         <a class="btn btn-solid" href="#/labs">进入资源库</a>
         <button class="btn btn-ghost" id="ctaMini">小程序直接下载</button>
@@ -392,7 +392,7 @@ footer{border-top:1px solid var(--ink)}
       <a class="row-go" href="#/design">查看全部 <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h9M8 3.5L11.5 7 8 10.5" stroke="currentColor" stroke-width="1.5"/></svg></a>
     </article>
 
-    <p class="index-note reveal">// 已支持按「年级 × 类型 × 教材单元」交叉筛选与搜索，7 个精品支持在线预览。</p>
+    <p class="index-note reveal">// 支持按「年级 × 类型 × 学科核心素养」交叉筛选，右侧搜索栏全站直达。</p>
   </section>
 
   <!-- ================= 关于 / 公众号 ================= -->
@@ -458,7 +458,7 @@ footer{border-top:1px solid var(--ink)}
       <h3 id="mTitle">获取资源下载码</h3>
       <ol class="m-steps">
         <li><i>1</i><span>扫码关注公众号「开物AI科学」</span></li>
-        <li><i>2</i><span>在对话框回复关键词：<b>开物</b></span></li>
+        <li><i>2</i><span>在对话框回复关键词：<b>下载码</b></span></li>
         <li><i>3</i><span>输入收到的下载码，验证后立即下载</span></li>
       </ol>
       <div class="m-input">
@@ -656,7 +656,7 @@ function cardHTML(it){
   var rows=[['年级',it.g],['教材单元',it.u],['课时',it.ls],['科学领域',it.f],['学科核心素养',it.c],['类型',it.ty]]
     .filter(function(x){return x[1]})
     .map(function(x){return '<dt>'+esc(x[0])+'</dt><dd>'+esc(x[1])+'</dd>'}).join('');
-  var foot=it.lv?'<span class="ok">● 可在线体验</span> · ':(isTodo(it.lk)?'整理中 · ':'');
+  var foot=it.lv?'<span class="ok">● 可在线使用</span> · ':(isTodo(it.lk)?'整理中 · ':'');
   return '<div class="kcard" data-open id="it-'+it.id+'">'+
     '<h3>'+esc(it.t)+'</h3>'+
     '<div class="ktags">'+[it.g,it.ty,!isTodo(it.u)?it.u:''].filter(Boolean).map(function(v){return '<span class="ktag">'+esc(v)+'</span>'}).join('')+'</div>'+
@@ -715,7 +715,7 @@ var PAGES={
         '<div class="fmore">● 点击照片在线体验 →</div></div></a>';
     }).join('');
     return '<section class="reveal">'+
-      '<div class="sec-head" style="margin-top:2.6rem"><span class="sec-no">02 — WEB LABS</span><h2>互动教学网页</h2><p>常驻精品点击照片在线体验；其余按年级、单元筛选后下载离线运行。</p></div>'+
+      '<div class="sec-head" style="margin-top:2.6rem"><span class="sec-no">02 — WEB LABS</span><h2>互动教学网页</h2><p>常驻精品点击照片在线使用；其余在线版陆续开放，敬请期待。</p></div>'+
       '<div class="fgrid">'+feat+'</div>'+
       '<div class="ktabs"><button class="ktab'+(FL.tab==='web'?' on':'')+'" data-tab="web">教学网页（'+WEB_ITEMS.length+'）</button>'+
       '<button class="ktab'+(FL.tab==='tools'?' on':'')+'" data-tab="tools">课堂工具（'+TOOLS.length+'）</button></div>'+
@@ -735,7 +735,7 @@ var PAGES={
     '<div class="sec-head" style="margin-top:2.6rem"><span class="sec-no">04 — ABOUT</span><h2>关于站长</h2><p>好工具，不该锁在抽屉里。</p></div>'+
     '<div class="kgrid" style="grid-template-columns:1.4fr .9fr;align-items:start">'+
     '<div class="kcard" style="cursor:default">'+(typeof ABOUT!=='undefined'?ABOUT.split('\n').map(function(x){return '<p style="font-size:13.5px;color:var(--ink-soft);line-height:2;margin:.35em 0">'+esc(x)+'</p>'}).join(''):'')+
-    '<div class="knote">🔑 <b>每日下载码</b>：关注公众号「开物AI科学」，回复关键词「开物」获取当日 5 位下载码。每天 0 点更换，昨日码当晚 24 点前仍可用。</div></div>'+
+    '<div class="knote">🔑 <b>每日下载码</b>：关注公众号「开物AI科学」，回复关键词「下载码」获取当日 5 位下载码。每天 0 点更换，昨日码当晚 24 点前仍可用。</div></div>'+
     '<div class="kcard" style="cursor:default;text-align:center">'+(HAS_DATA&&CONFIG.QR?'<img src="'+esc(CONFIG.QR)+'" alt="公众号二维码" style="width:160px;height:160px;object-fit:contain;margin:0 auto;background:#fff;border:1px solid var(--line);padding:8px">':'')+
     '<b style="font:700 15px var(--serif);margin-top:.6em">公众号 · 开物AI科学</b>'+
     '<p style="font-size:12.5px;color:var(--ink2);margin-top:.5em;line-height:1.9">资源上新与下载码，都在这里发放。<br>微信扫一扫，即刻关注。</p></div>'+
