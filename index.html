@@ -2,537 +2,820 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>开物AI科学 · 把 AI 变成科学课的实验器材</title>
 <script src="data.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;700;900&family=Noto+Sans+SC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0b0d12;--panel:#12151d;--panel2:#171b25;--line:#242a3a;--ink:#ece7dc;--mut:#8b93a7;--gold:#d9a441;--gold2:#f0c674;--acc:rgba(217,164,65,.12);--ok:#4ade80;--serif:"Noto Serif SC","Songti SC",STSong,Georgia,serif}
-*{box-sizing:border-box;margin:0}
-body{font:15px/1.8 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif;color:var(--ink);background:var(--bg)}
-a{color:inherit;text-decoration:none}img{max-width:100%;display:block}
-.wrap{max-width:1120px;margin:0 auto;padding:0 20px}
-#nav{position:sticky;top:0;z-index:50;background:rgba(11,13,18,.93);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
-.navi{display:flex;align-items:center;gap:2px;height:62px;overflow-x:auto}
-.logo{font-family:var(--serif);font-weight:700;font-size:18px;margin-right:14px;white-space:nowrap}
-.logo small{display:block;font-family:Georgia,serif;font-size:9px;letter-spacing:3px;color:var(--gold);font-weight:400}
-.nl{padding:7px 11px;border-radius:8px;color:var(--mut);font-weight:600;white-space:nowrap;font-size:14px}
-.nl:hover{color:var(--ink);background:var(--panel2)}.nl.on{color:var(--gold);background:var(--acc)}
-.sp{flex:1}
-.est{font-family:Georgia,serif;font-size:11px;letter-spacing:4px;color:var(--gold)}
-.visit{font-family:Georgia,serif;font-size:12px;letter-spacing:2px;color:var(--mut);margin:14px 0 20px}
-.visit b{color:var(--gold2);font-size:15px}
-.hero{padding:72px 0 48px;text-align:center;background:radial-gradient(1100px 480px at 50% -10%,#1a2138 0%,var(--bg) 60%);border-bottom:1px solid var(--line)}
-.hero h1{font-family:var(--serif);font-size:clamp(30px,5.2vw,52px);line-height:1.35;font-weight:700}
-.hero p{margin:20px auto 28px;color:var(--mut);max-width:620px}
-.btn{display:inline-block;background:linear-gradient(135deg,var(--gold),#b9832e);color:#17120a;border:0;border-radius:10px;padding:12px 26px;font-size:15px;font-weight:800;cursor:pointer}
-.btn:hover{filter:brightness(1.1)}
-.btn.gh{background:transparent;color:var(--gold2);border:1.5px solid var(--gold)}
-.btn.big{padding:13px 30px;font-size:16px}
-.hb{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:26px;font-size:12.5px;color:var(--mut)}
-.hb span::before{content:"✦ ";color:var(--gold)}
-.fig{margin-top:36px;font-family:Georgia,serif;font-size:11px;letter-spacing:3px;color:#5d6579}.fig b{color:var(--gold)}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border-block:1px solid var(--line)}
-.stat{background:var(--bg);padding:22px 8px;text-align:center}
-.stat b{display:block;font-family:Georgia,serif;font-size:30px;color:var(--gold2)}
-.stat span{font-size:12.5px;color:var(--mut);letter-spacing:1px}
-.snum{font-family:Georgia,serif;font-size:11px;letter-spacing:4px;color:var(--gold);margin-top:56px}
-h2.sec{font-family:var(--serif);font-size:26px;margin:6px 0 4px;font-weight:700}
-p.sub{color:var(--mut);margin-bottom:20px;font-size:14px}
-.grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(255px,1fr))}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:9px;transition:.18s}
-.card.click{cursor:pointer}.card.click:hover{border-color:var(--gold);transform:translateY(-3px)}
-.card h3{font-family:var(--serif);font-size:16.5px;font-weight:700}
-.bdg{font-size:12px;background:var(--acc);color:var(--gold2);border:1px solid rgba(217,164,65,.3);border-radius:6px;padding:2px 9px;margin:0 4px 4px 0;display:inline-block;font-weight:600}
-.desc{color:var(--mut);font-size:13.5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.foot{margin-top:auto;display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--mut)}
-.live{color:var(--ok);font-weight:700}
-.cat{position:relative;padding-left:56px}
-.cat .no{position:absolute;left:18px;top:22px;font-family:Georgia,serif;font-size:26px;color:var(--gold)}
-.num{font-family:Georgia,serif;font-size:34px;color:var(--gold2)}.num small{font-size:14px;color:var(--mut)}
-.hint{font-size:12px;color:#5d6579;margin-top:26px;font-family:Georgia,serif;letter-spacing:1px}
-.fgrid{display:grid;gap:18px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
-.fcard{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;transition:.18s;display:block}
-.fcard:hover{transform:translateY(-4px);border-color:var(--gold);box-shadow:0 16px 36px rgba(0,0,0,.5)}
-.fimg{position:relative;aspect-ratio:16/9;background:linear-gradient(135deg,#1b2a55,#5b3a9e);display:flex;align-items:center;justify-content:center;font-size:44px}
-.fimg img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.ftag{position:absolute;left:10px;top:10px;background:rgba(0,0,0,.6);color:var(--gold2);font-size:12px;padding:3px 10px;border-radius:7px;z-index:2;border:1px solid rgba(217,164,65,.35)}
-.fbody{padding:13px 16px}.fbody b{font-family:var(--serif);font-size:15.5px}
-.tabs{display:flex;gap:10px;margin:22px 0 4px}
-.tab{padding:9px 22px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--mut);font-weight:700;cursor:pointer;font-family:var(--serif);font-size:15px}
-.tab.on{background:var(--gold);border-color:var(--gold);color:#17120a}
-.chips{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 4px}
-.chip{padding:5px 13px;border-radius:20px;border:1px solid var(--line);background:var(--panel);color:var(--mut);font-size:13px;font-weight:600;cursor:pointer}
-.chip:hover{border-color:var(--gold)}.chip.on{background:var(--gold);border-color:var(--gold);color:#17120a}
-.ksearch{width:100%;padding:11px 14px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);color:var(--ink);font-size:14px;margin:8px 0 14px;outline:none}
-.ksearch:focus{border-color:var(--gold)}
-.kx{display:none;border-top:1px dashed var(--line);margin-top:6px;padding-top:14px}
-.card.open .kx{display:block}
-dl.kdl{display:grid;grid-template-columns:92px 1fr;gap:5px 10px;font-size:13.5px;margin:4px 0 8px}
-dl.kdl dt{color:var(--mut)}dl.kdl dd{border-bottom:1px dashed var(--line)}
-.kbtn{display:inline-block;background:linear-gradient(135deg,var(--gold),#b9832e);color:#17120a;border:0;border-radius:10px;padding:9px 17px;font-weight:800;font-size:13.5px;cursor:pointer;margin:4px 6px 0 0}
-.kbtn.gh{background:transparent;color:var(--gold2);border:1.5px solid var(--gold)}
-pre.pbox{white-space:pre-wrap;word-break:break-word;font:13px/1.9 ui-monospace,Consolas,monospace;color:#cfd6e4;background:#0d1017;border:1px solid var(--line);border-radius:10px;padding:14px;max-height:340px;overflow:auto;margin:8px 0}
-.note{background:rgba(217,164,65,.08);border:1px solid rgba(217,164,65,.35);border-radius:10px;padding:12px 16px;color:var(--gold2);font-size:13.5px;margin-top:14px}
-.oacard{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:26px;text-align:center}
-.qrx{width:190px;height:190px;margin:14px auto;border:1px dashed var(--gold);border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--mut);font-size:13px;overflow:hidden}
-#ft{margin-top:70px;border-top:1px solid var(--line);background:#080a0e;padding:36px 0 30px;text-align:center;color:var(--mut);font-size:13px}
-#ft .slog{font-family:var(--serif);font-size:22px;color:var(--ink);margin-bottom:8px}
-#ft a{color:var(--gold2);cursor:pointer}
-.modal{position:fixed;inset:0;background:rgba(4,6,10,.78);display:none;align-items:center;justify-content:center;z-index:1000;padding:20px}
-.mbox{background:var(--panel);border:1px solid var(--gold);border-radius:16px;padding:30px;max-width:400px;width:100%;color:var(--ink);position:relative}
-.mbox h3{font-family:var(--serif);color:var(--gold2);margin-bottom:8px}
-.mbox .x{position:absolute;right:14px;top:10px;color:var(--mut);font-size:22px;cursor:pointer;line-height:1}
-.mbox .mini{color:var(--mut);font-size:13px;line-height:2}
-.mbox input{width:100%;margin:14px 0;padding:12px;font-size:20px;text-align:center;letter-spacing:5px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);outline:none}
-.mrow{display:flex;gap:10px;justify-content:flex-end;margin-top:10px}
-.err{color:#f87171;font-size:13px;min-height:18px}
-#toast{position:fixed;left:50%;bottom:34px;transform:translateX(-50%);background:var(--gold);color:#17120a;padding:10px 22px;border-radius:10px;font-weight:700;font-size:14px;opacity:0;pointer-events:none;transition:.25s;z-index:1001}
-#toast.show{opacity:1}
+:root{
+  --paper:#F6F3EC; --paper2:#EFE9DC; --ink:#191714; --ink-soft:#4A453B; --ink2:#7A7365;
+  --line:#DCD5C6; --accent:#C8451B; --seal:#B3271E;
+  --serif:'Noto Serif SC','Songti SC','STSong',serif;
+  --sans:'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+  --pad:clamp(1.2rem,4vw,3rem);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:84px}
+body{
+  font-family:var(--sans);color:var(--ink);
+  background:
+    linear-gradient(rgba(25,23,20,.042) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(25,23,20,.042) 1px,transparent 1px),
+    var(--paper);
+  background-size:56px 56px,56px 56px,auto;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1200px;margin:0 auto;padding-left:var(--pad);padding-right:var(--pad)}
+button{font-family:var(--sans)}
+::selection{background:var(--accent);color:var(--paper)}
+
+/* ============ 页眉 ============ */
+header{
+  position:sticky;top:0;z-index:50;height:64px;
+  display:flex;align-items:center;gap:2.2rem;
+  padding:0 var(--pad);border-bottom:1px solid var(--line);
+  background:rgba(246,243,236,.88);backdrop-filter:blur(10px);
+}
+.brand{display:flex;align-items:center;gap:.8rem;text-decoration:none;color:var(--ink)}
+.seal{width:36px;height:36px;background:var(--seal);color:var(--paper);display:grid;place-items:center;font:900 19px/1 var(--serif);flex:0 0 auto}
+.brand-t{display:flex;flex-direction:column;line-height:1.25}
+.brand-t b{font:700 16px/1.2 var(--serif);letter-spacing:.06em}
+.brand-t span{font:500 8.5px var(--mono);letter-spacing:.32em;color:var(--ink2)}
+nav{display:flex;gap:1.8rem;margin-left:.5rem}
+nav a{font-size:14px;color:var(--ink);text-decoration:none;position:relative}
+nav a::after{content:'';position:absolute;left:0;bottom:-4px;width:0;height:1.5px;background:var(--accent);transition:.25s}
+nav a:hover{color:var(--accent)}
+nav a:hover::after{width:100%}
+nav a.active{color:var(--accent)}
+nav a.active::after{width:100%}
+.hd-badge{margin-left:auto;font:500 11px var(--mono);color:var(--ink2);letter-spacing:.04em;white-space:nowrap}
+.hd-badge b{color:var(--ink);font-weight:500}
+
+/* ============ Hero ============ */
+.hero{display:grid;grid-template-columns:1.05fr .95fr;gap:3rem;align-items:center;padding:clamp(2.6rem,6vh,5rem) 0 3.4rem}
+.eyebrow{display:flex;align-items:center;gap:.9rem;font:500 11px var(--mono);letter-spacing:.3em;color:var(--ink2);margin-bottom:1.8rem}
+.eyebrow::before{content:'';width:34px;height:2px;background:var(--accent)}
+h1{font:900 clamp(2.6rem,5.4vw,4.6rem)/1.18 var(--serif);letter-spacing:.01em}
+h1 .ai{font:500 .82em var(--mono);color:var(--accent)}
+.hero p.lead{max-width:34em;margin-top:1.6rem;font-size:15px;line-height:1.95;color:var(--ink-soft)}
+.cta{display:flex;gap:1rem;margin-top:2.4rem;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:.6em;padding:.95em 1.9em;border:1px solid var(--ink);font:500 14.5px var(--sans);cursor:pointer;text-decoration:none;transition:.25s;border-radius:0}
+.btn-solid{background:var(--ink);color:var(--paper)}
+.btn-solid:hover{background:var(--accent);border-color:var(--accent)}
+.btn-ghost{background:transparent;color:var(--ink)}
+.btn-ghost:hover{background:var(--ink);color:var(--paper)}
+.hero-meta{margin-top:2.2rem;font:400 11px var(--mono);color:var(--ink2);letter-spacing:.06em}
+.hero-meta i{font-style:normal;margin:0 .8em;color:var(--line)}
+
+/* 三棱镜 */
+.prism-box{animation:fadeUp 1s .15s both}
+.prism{width:100%;height:auto;display:block}
+.pz{stroke:var(--ink);stroke-width:1.5;fill:rgba(25,23,20,.03);
+  stroke-dasharray:1;stroke-dashoffset:1;animation:draw 1.5s .2s ease forwards}
+.beam{stroke:var(--accent);stroke-width:1.5;stroke-dasharray:5 7;animation:flow 1.1s linear infinite}
+.inner{stroke:var(--ink);stroke-width:1.2;opacity:.32;
+  stroke-dasharray:1;stroke-dashoffset:1;animation:draw .5s 1.15s ease forwards}
+.ray{stroke-width:1.7;stroke-dasharray:1;stroke-dashoffset:1;animation:draw .8s ease forwards}
+.r1{stroke:#A4262C;animation-delay:1.35s}.r2{stroke:#C8451B;animation-delay:1.5s}
+.r3{stroke:#B98A1F;animation-delay:1.65s}.r4{stroke:#4C7A45;animation-delay:1.8s}
+.r5{stroke:#2E6F8E;animation-delay:1.95s}.r6{stroke:#5B4E9E;animation-delay:2.1s}
+.lab{font:500 11px var(--mono);fill:var(--ink2);letter-spacing:.12em}
+.fig{font-size:10px}
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes flow{to{stroke-dashoffset:-24}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+.hero-copy{animation:fadeUp .9s .1s both}
+
+/* ============ 数据带 ============ */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--ink);border-bottom:1px solid var(--line)}
+.stat{padding:1.5rem 1.6rem;border-left:1px solid var(--line)}
+.stat:first-child{border-left:none;padding-left:0}
+.s-label{display:flex;align-items:baseline;gap:.7em;font-size:12.5px;color:var(--ink2)}
+.s-label i{font:400 9px var(--mono);font-style:normal;letter-spacing:.22em}
+.s-num{display:block;font:500 clamp(1.7rem,2.8vw,2.5rem)/1.2 var(--mono);margin-top:.45rem}
+.s-num em{font:400 12px var(--sans);font-style:normal;color:var(--ink2);margin-left:.4em}
+
+/* ============ 小节头 ============ */
+section{scroll-margin-top:84px}
+.sec-head{display:grid;grid-template-columns:auto 1fr auto;align-items:end;gap:1.6rem;margin:4.6rem 0 .4rem}
+.sec-no{font:500 11px var(--mono);letter-spacing:.28em;color:var(--accent);padding-bottom:.9em}
+.sec-head h2{font:900 clamp(1.5rem,2.6vw,2.1rem) var(--serif)}
+.sec-head p{max-width:22em;font-size:13px;color:var(--ink2);text-align:right;padding-bottom:.35em;line-height:1.7}
+
+/* ============ 资源索引行 ============ */
+.row{
+  display:flex;align-items:center;gap:clamp(1rem,2.5vw,2rem);
+  border-top:1px solid var(--line);cursor:pointer;
+  margin:0 calc(var(--pad) * -1);padding:2.1rem var(--pad);
+  transition:background .3s;
+}
+.row:last-of-type{border-bottom:1px solid var(--line)}
+.row:hover{background:var(--paper2)}
+.row-no{font:500 13px var(--mono);color:var(--ink2);flex:0 0 3rem;transition:.3s}
+.row:hover .row-no{color:var(--accent)}
+.row-main{flex:1 1 auto;min-width:240px}
+.row-main h3{font:700 clamp(1.15rem,1.9vw,1.45rem) var(--serif);display:flex;align-items:baseline;gap:.9em;flex-wrap:wrap}
+.row-main h3 em{font:400 10px var(--mono);font-style:normal;letter-spacing:.26em;color:var(--ink2)}
+.row-main p{margin-top:.5rem;font-size:13.5px;color:var(--ink-soft);line-height:1.8}
+.row-meta{flex:0 0 auto;display:flex;align-items:baseline;gap:.45em;transition:.3s}
+.row-meta strong{font:500 clamp(1.9rem,3vw,2.7rem)/1 var(--mono)}
+.row-meta span{font-size:12.5px;color:var(--ink2)}
+.row:hover .row-meta strong{color:var(--accent)}
+.row-go{flex:0 0 auto;display:inline-flex;align-items:center;gap:.55em;border:1px solid var(--ink);background:transparent;padding:.6em 1.15em;font:500 12.5px var(--sans);cursor:pointer;transition:.25s;color:var(--ink);text-decoration:none}
+.row-go svg{transition:transform .25s}
+.row:hover .row-go,.row-go:hover{background:var(--ink);color:var(--paper)}
+.row:hover .row-go svg{transform:translateX(3px)}
+.index-note{margin-top:1.4rem;font:400 11.5px var(--mono);color:var(--ink2);letter-spacing:.04em}
+
+/* ============ 关于 ============ */
+.about{display:grid;grid-template-columns:1.15fr .85fr;gap:4rem;padding:4.8rem 0 5rem;border-top:1px solid var(--line);margin-top:4.8rem}
+.about h2{font:900 clamp(1.7rem,3vw,2.5rem)/1.35 var(--serif);margin-top:1.2rem}
+.about h2 u{text-decoration:none;border-bottom:5px solid var(--accent)}
+.about .bio{margin-top:1.6rem;max-width:36em;font-size:14px;line-height:2;color:var(--ink-soft)}
+.oa{display:flex;gap:1.3rem;align-items:center;border-left:1px solid var(--ink);padding-left:1.6rem;cursor:pointer;transition:.25s;align-self:center}
+.oa:hover .oa-qr{border-color:var(--accent)}
+.oa-qr{width:118px;height:118px;padding:8px;background:#fff;border:1px solid var(--line);flex:0 0 auto;transition:.25s}
+.oa b{display:block;font:700 15.5px var(--serif)}
+.oa p{margin-top:.55em;font-size:13px;color:var(--ink2);line-height:1.8}
+
+/* ============ 页脚 ============ */
+footer{border-top:1px solid var(--ink)}
+.f-in{display:flex;align-items:center;gap:2rem;padding-top:2.2rem;padding-bottom:2.4rem;flex-wrap:wrap}
+.f-brand{display:flex;align-items:center;gap:1rem}
+.seal-lg{width:44px;height:44px;font-size:14px;writing-mode:vertical-rl;line-height:1.15;letter-spacing:.1em}
+.f-brand p{font:700 14px var(--serif)}
+.f-meta{font:400 11.5px var(--mono);color:var(--ink2)}
+.f-admin{margin-left:auto;background:none;border:none;font:400 11.5px var(--mono);color:var(--ink2);cursor:pointer;border-bottom:1px dashed var(--ink2);padding-bottom:2px}
+.f-admin:hover{color:var(--accent);border-color:var(--accent)}
+
+/* ============ 左侧小程序签 ============ */
+.dock{position:fixed;left:0;top:50%;transform:translateY(-50%);z-index:55}
+.dock-tab{
+  writing-mode:vertical-rl;background:var(--ink);color:var(--paper);
+  border:none;padding:1.35rem .78rem;font:500 12.5px var(--sans);
+  letter-spacing:.4em;cursor:pointer;border-radius:0 4px 4px 0;transition:.25s;
+}
+.dock-tab:hover,.dock.open .dock-tab{background:var(--accent)}
+.dock-panel{
+  position:absolute;left:calc(100% + 12px);top:50%;width:212px;
+  transform:translateY(-50%) translateX(-8px);
+  background:var(--paper);border:1px solid var(--ink);padding:1.15rem 1.1rem;
+  box-shadow:9px 9px 0 rgba(25,23,20,.09);
+  opacity:0;visibility:hidden;transition:.28s cubic-bezier(.2,.7,.2,1);text-align:center;
+}
+.dock.open .dock-panel{opacity:1;visibility:visible;transform:translateY(-50%) translateX(0)}
+.dock-panel .qr{width:126px;height:126px;padding:7px;background:#fff;border:1px solid var(--line);margin:0 auto;display:block}
+.dock-panel p{margin-top:.8rem;font-size:13px}
+.dock-note{font-size:11.5px;color:var(--ink2);line-height:1.8;margin-top:.5rem}
+.fab{display:none;position:fixed;right:1.1rem;bottom:1.3rem;width:52px;height:52px;background:var(--ink);color:var(--paper);border:none;border-radius:50%;z-index:60;place-items:center;box-shadow:0 8px 24px rgba(25,23,20,.28);cursor:pointer}
+.fab:active{background:var(--accent)}
+
+/* ============ 模态：下载码 ============ */
+.modal{position:fixed;inset:0;z-index:70;display:grid;place-items:center;padding:1rem;visibility:hidden;pointer-events:none}
+.modal.open{visibility:visible;pointer-events:auto}
+.modal-mask{position:absolute;inset:0;background:rgba(25,23,20,.44);opacity:0;transition:.3s}
+.modal.open .modal-mask{opacity:1}
+.modal-panel{
+  position:relative;width:min(780px,94vw);background:var(--paper);
+  border:1px solid var(--ink);box-shadow:12px 12px 0 rgba(25,23,20,.16);
+  display:grid;grid-template-columns:252px 1fr;
+  opacity:0;transform:translateY(16px);transition:.32s cubic-bezier(.2,.7,.2,1);
+}
+.modal.open .modal-panel{opacity:1;transform:none}
+.modal-panel.shake{animation:shake .4s}
+@keyframes shake{20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
+.m-close{position:absolute;top:.6rem;right:.7rem;width:32px;height:32px;background:none;border:none;font-size:22px;line-height:1;color:var(--ink2);cursor:pointer;transition:.2s}
+.m-close:hover{color:var(--accent);transform:rotate(90deg)}
+.m-left{background:var(--paper2);border-right:1px solid var(--line);padding:2rem 1.4rem;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.m-left .qr{width:168px;height:168px;padding:9px;background:#fff;border:1px solid var(--line)}
+.m-cap{margin-top:1.1rem;font:400 11px var(--mono);letter-spacing:.14em;color:var(--ink2)}
+.m-mp{margin-top:.4rem;font:700 16px var(--serif)}
+.m-right{padding:2rem 2.1rem 1.8rem}
+.m-right h3{font:700 19px var(--serif);padding-right:2rem}
+.m-steps{list-style:none;margin-top:1.4rem;display:flex;flex-direction:column;gap:.85rem}
+.m-steps li{display:flex;gap:.85rem;align-items:flex-start;font-size:13.5px;color:var(--ink-soft);line-height:1.7}
+.m-steps i{font:500 11px var(--mono);font-style:normal;width:21px;height:21px;border:1px solid var(--ink);display:grid;place-items:center;flex:0 0 auto;margin-top:.1em}
+.m-steps b{color:var(--accent)}
+.m-input{display:flex;margin-top:1.5rem;border:1px solid var(--ink)}
+#codeInput{flex:1;min-width:0;border:none;background:transparent;padding:.85em 1em;font:500 16px var(--mono);letter-spacing:.24em;text-transform:uppercase;outline:none;color:var(--ink)}
+#codeInput::placeholder{letter-spacing:.08em;font-family:var(--sans);font-size:13.5px;color:var(--ink2)}
+#codeBtn{border:none;background:var(--ink);color:var(--paper);padding:0 1.5em;font:500 13.5px var(--sans);cursor:pointer;transition:.25s;white-space:nowrap}
+#codeBtn:hover{background:var(--accent)}
+.m-err{color:var(--seal);font-size:12.5px;min-height:1.3em;margin-top:.65rem;line-height:1.6}
+.m-ok{color:#3E6B47}
+.m-tip{margin-top:.7rem;font-size:11.5px;color:var(--ink2);line-height:1.8;border-top:1px dashed var(--line);padding-top:.8rem}
+
+/* ============ Toast ============ */
+.toast{
+  position:fixed;left:50%;bottom:2.4rem;transform:translate(-50%,16px);
+  background:var(--ink);color:var(--paper);font:500 13px var(--sans);
+  padding:.85em 1.5em;opacity:0;pointer-events:none;transition:.3s;z-index:99;max-width:88vw;
+}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* ============ 入场 ============ */
+.reveal{opacity:0;transform:translateY(18px);transition:.75s cubic-bezier(.2,.7,.2,1)}
+.reveal.in{opacity:1;transform:none}
+
+/* ============ 数据页扩展（与原风格同源） ============ */
+.kgrid{display:grid;gap:1.1rem;grid-template-columns:repeat(auto-fill,minmax(255px,1fr))}
+.kcard{background:var(--paper);border:1px solid var(--line);padding:1.15rem 1.25rem;display:flex;flex-direction:column;gap:.6rem;transition:.25s;cursor:pointer}
+.kcard:hover{border-color:var(--accent);box-shadow:9px 9px 0 rgba(25,23,20,.08);transform:translateY(-2px)}
+.kcard h3{font:700 1.05rem var(--serif)}
+.ktags{display:flex;flex-wrap:wrap;gap:.4em}
+.ktag{font:500 10px var(--mono);letter-spacing:.12em;border:1px solid var(--line);color:var(--ink2);padding:2px 8px}
+.ktag.gold{color:var(--accent);border-color:var(--accent)}
+.kdesc{font-size:13px;color:var(--ink-soft);line-height:1.8;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.kfoot{margin-top:auto;font:400 11px var(--mono);color:var(--ink2);letter-spacing:.06em}
+.kfoot .ok{color:#3E6B47;font-weight:500}
+.kx{display:none;border-top:1px dashed var(--line);margin-top:.7rem;padding-top:.9rem}
+.kcard.open .kx{display:block}
+.kdl{display:grid;grid-template-columns:5.5em 1fr;gap:.35em .8em;font-size:12.5px;margin:.2em 0 .6em}
+.kdl dt{color:var(--ink2)}
+.kdl dd{border-bottom:1px dashed var(--line)}
+.kbtn{display:inline-flex;align-items:center;gap:.5em;border:1px solid var(--ink);background:var(--ink);color:var(--paper);padding:.55em 1.1em;font:500 12.5px var(--sans);cursor:pointer;transition:.25s;margin:.7em .6em 0 0;text-decoration:none}
+.kbtn:hover{background:var(--accent);border-color:var(--accent)}
+.kbtn.ghost{background:transparent;color:var(--ink)}
+.kbtn.ghost:hover{background:var(--ink);color:var(--paper)}
+.kpre{white-space:pre-wrap;word-break:break-word;font:400 12.5px/1.9 var(--mono);background:var(--paper2);border:1px solid var(--line);padding:1rem 1.1rem;max-height:22rem;overflow:auto;margin:.6em 0 .2em}
+.ktabs{display:flex;gap:.7rem;margin:1.6rem 0 .4rem;flex-wrap:wrap}
+.ktab{border:1px solid var(--ink);background:transparent;padding:.6em 1.4em;font:500 13.5px var(--sans);cursor:pointer;transition:.25s;color:var(--ink)}
+.ktab.on{background:var(--ink);color:var(--paper)}
+.ktab.on:hover{background:var(--accent);border-color:var(--accent)}
+.kchips{display:flex;flex-wrap:wrap;gap:.5em;margin:.9rem 0 .2rem}
+.kchip{border:1px solid var(--line);background:transparent;color:var(--ink2);padding:.35em 1em;font:500 12.5px var(--sans);cursor:pointer;transition:.2s}
+.kchip:hover{border-color:var(--accent);color:var(--accent)}
+.kchip.on{background:var(--accent);border-color:var(--accent);color:var(--paper)}
+.ksearch{width:100%;border:1px solid var(--ink);background:transparent;padding:.8em 1em;font:500 14px var(--sans);outline:none;margin:1rem 0 .3rem;color:var(--ink)}
+.ksearch:focus{border-color:var(--accent)}
+.kcount{font:400 11px var(--mono);color:var(--ink2);letter-spacing:.08em;margin:.2rem 0 1rem}
+.fgrid{display:grid;gap:1.4rem;grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
+.fcard{display:block;text-decoration:none;color:var(--ink);border:1px solid var(--ink);background:var(--paper);box-shadow:9px 9px 0 rgba(25,23,20,.09);transition:.25s}
+.fcard:hover{transform:translateY(-3px);box-shadow:12px 12px 0 rgba(200,69,27,.18);border-color:var(--accent)}
+.fimg{position:relative;aspect-ratio:16/9;background:var(--paper2);border-bottom:1px solid var(--line);overflow:hidden}
+.fimg img{width:100%;height:100%;object-fit:cover;display:block}
+.ftag{position:absolute;left:.6rem;top:.6rem;background:var(--paper);border:1px solid var(--ink);font:500 10px var(--mono);letter-spacing:.1em;padding:2px 8px}
+.fbody{padding:.85rem 1rem .95rem}
+.fbody b{font:700 .98rem var(--serif)}
+.fbody p{margin-top:.3em;font-size:12.5px;color:var(--ink2);line-height:1.7}
+.fmore{margin-top:.45em;font:400 10.5px var(--mono);color:#3E6B47;letter-spacing:.06em}
+.knote{border:1px solid var(--accent);background:rgba(200,69,27,.05);padding:.9rem 1.1rem;font-size:13px;color:var(--ink-soft);line-height:1.9;margin-top:1.4rem}
+.knote b{color:var(--accent)}
+
+/* ============ 响应式 ============ */
+@media (max-width:1024px){
+  .hero{grid-template-columns:1fr .9fr}
+}
+@media (max-width:860px){
+  nav{display:none}
+  .hero{grid-template-columns:1fr;gap:2rem}
+  .prism-box{max-width:540px}
+  .stats{grid-template-columns:1fr 1fr}
+  .stat{padding:1.2rem 1.3rem}
+  .stat:nth-child(odd){border-left:none;padding-left:0}
+  .stat:nth-child(n+3){border-top:1px solid var(--line)}
+  .sec-head{grid-template-columns:1fr;gap:.5rem;margin-top:3.4rem}
+  .sec-head p{text-align:left}
+  .row{flex-wrap:wrap}
+  .row-main{flex-basis:100%;min-width:0}
+  .about{grid-template-columns:1fr;gap:2.6rem;padding:3.4rem 0 4rem}
+  .dock-tab{display:none}
+  .fab{display:grid}
+  .dock.open .dock-panel{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:65}
+  .modal-panel{grid-template-columns:1fr;max-height:88vh;overflow:auto}
+  .m-left{border-right:none;border-bottom:1px solid var(--line);padding:1.6rem}
+  .m-right{padding:1.5rem 1.4rem 1.4rem}
+  .f-admin{margin-left:0}
+}
 </style>
-<script src="data.js"></script>
 </head>
 <body>
-<header id="nav"><div class="wrap navi" id="navi"></div></header>
-<main id="app"></main>
-<footer id="ft"><div class="wrap">
- <div class="slog">开物</div>
- 把 AI 变成科学课的实验器材。<br><br>
- © 2026 开物AI科学 · 某ICP备0000000号（占位）<br>
- 本站资源仅供教学交流，请勿商用 · <a id="ftAdmin">站长入口</a>
-</div></footer>
 
-<div class="modal" id="oaModal" onclick="this.style.display='none'"><div class="mbox" style="text-align:center" onclick="event.stopPropagation()">
- <span class="x" onclick="this.closest('.modal').style.display='none'">×</span>
- <h3>微信扫一扫 · 关注公众号</h3><p class="mini">开物AI科学</p>
- <div class="qrx" id="oaQr">上传 assets/qr.png 后<br>此处自动显示二维码</div>
- <p class="mini">资源上新与下载码，都在这里发放</p>
-</div></div>
+<!-- ================= 页眉 ================= -->
+<header>
+  <a class="brand" href="#/home">
+    <span class="seal">开</span>
+    <span class="brand-t"><b>开物AI科学</b><span>KAIWU SCIENCE LAB</span></span>
+  </a>
+  <nav>
+    <a href="#/home" data-route="home">首页</a>
+    <a href="#/prompts" data-route="prompts">提示词库</a>
+    <a href="#/labs" data-route="labs">互动网页</a>
+    <a href="#/design" data-route="design">教学设计</a>
+    <a href="#/about" data-route="about">关于</a>
+    <a href="javascript:void(0)" id="navOa">公众号</a>
+  </nav>
+  <div class="hd-badge">NO.<b id="hdTotal">—</b> · 您的第 <b id="hdVisits">—</b> 次到访</div>
+</header>
 
-<div class="modal" id="mpModal" onclick="this.style.display='none'"><div class="mbox" style="text-align:center" onclick="event.stopPropagation()">
- <span class="x" onclick="this.closest('.modal').style.display='none'">×</span>
- <h3>「开物AI科学」小程序</h3>
- <p class="mini">小程序内可直接下载全部资源<br>使用前请先关注公众号「开物AI科学」</p>
- <div class="qrx">小程序码占位</div>
-</div></div>
+<main class="wrap" id="top">
+  <div id="homeRoot">
 
-<div class="modal" id="cdModal" onclick="this.style.display='none'"><div class="mbox" onclick="event.stopPropagation()">
- <span class="x" onclick="this.closest('.modal').style.display='none'">×</span>
- <h3>获取资源下载码</h3>
- <p class="mini">1. 扫码关注公众号「开物AI科学」<br>2. 在对话框回复关键词：<b style="color:var(--gold2)">开物</b><br>3. 输入收到的下载码，验证后立即下载</p>
- <input id="cdin" placeholder="• • • • •" inputmode="numeric">
- <button class="kbtn" style="width:100%" onclick="kwTry()">验证并下载</button>
- <p class="err" id="cderr"></p>
- <p class="mini" style="border-top:1px dashed var(--line);padding-top:10px">下载码每日 0 点自动更换，昨日码当晚仍可使用。</p>
-</div></div>
-<div id="toast"></div>
+  <!-- ================= Hero ================= -->
+  <section class="hero">
+    <div class="hero-copy">
+      <div class="eyebrow">KAIWU SCIENCE LAB · EST. 2026</div>
+      <h1>把 <span class="ai">AI</span> 变成<br>科学课的实验器材</h1>
+      <p class="lead">提示词、互动网页、教学设计——我把用 AI 备课的全部家当放在这里。每一样都经过真实课堂的检验，扫码即得，免费取用。</p>
+      <div class="cta">
+        <a class="btn btn-solid" href="#/labs">进入资源库</a>
+        <button class="btn btn-ghost" id="ctaMini">小程序直接下载</button>
+      </div>
+      <p class="hero-meta">全部资源免费<i>/</i>仅供教学交流<i>/</i>每周更新</p>
+    </div>
 
-<script>
-(function(){
-const $=s=>document.querySelector(s);
-const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const ymd=(d=new Date())=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
-function fnv(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
-const code=(o=0)=>10000+fnv(ymd(new Date(Date.now()-o*864e5))+"|"+CONFIG.SECRET)%90000;
-const isTodo=v=>!v||String(v).indexOf("TODO")>-1;
-if(typeof CONFIG==="undefined"){$("#app").innerHTML='<div style="padding:60px 20px;text-align:center;color:#f87171">未找到 data.js —— 请确认仓库根目录存在 data.js 文件后刷新</div>';return}
+    <!-- 视觉母题：三棱镜色散 -->
+    <div class="prism-box">
+      <svg class="prism" viewBox="0 0 640 460" fill="none" role="img" aria-label="三棱镜色散示意图：AI 输入，折射为科学课的光谱">
+        <path class="pz" pathLength="1" d="M340 80 L430 380 L250 380 Z"/>
+        <line class="beam" x1="20" y1="233" x2="294" y2="233"/>
+        <line class="inner" pathLength="1" x1="294" y1="233" x2="386" y2="253"/>
+        <line class="ray r1" pathLength="1" x1="386" y1="253" x2="620" y2="224"/>
+        <line class="ray r2" pathLength="1" x1="386" y1="253" x2="620" y2="239"/>
+        <line class="ray r3" pathLength="1" x1="386" y1="253" x2="620" y2="253"/>
+        <line class="ray r4" pathLength="1" x1="386" y1="253" x2="620" y2="269"/>
+        <line class="ray r5" pathLength="1" x1="386" y1="253" x2="620" y2="288"/>
+        <line class="ray r6" pathLength="1" x1="386" y1="253" x2="620" y2="307"/>
+        <text class="lab" x="20" y="214">AI · 输入</text>
+        <text class="lab" x="478" y="338">科学课 · 输出</text>
+        <text class="lab fig" x="20" y="442">FIG.01 — 光的色散 / DISPERSION</text>
+      </svg>
+    </div>
+  </section>
 
-/* localStorage 统计 */
-let ST=JSON.parse(localStorage.getItem("kw_st")||"{}");
-if(!ST.meta)ST.meta={visits:0,mine:0,dl:0};
-ST.meta.visits++;ST.meta.mine++;localStorage.setItem("kw_st",JSON.stringify(ST));
-const cnt=(i,k)=>(ST[i]||{})[k]||0;
-const bump=(i,k)=>{(ST[i]=ST[i]||{v:0,d:0})[k]++;localStorage.setItem("kw_st",JSON.stringify(ST))};
-function toast(m){const t=$("#toast");t.textContent=m;t.className="show";setTimeout(()=>t.className="",1800)}
-function copyTxt(s){const fb=()=>{const t=document.createElement("textarea");t.value=s;document.body.appendChild(t);t.select();document.execCommand("copy");t.remove();toast("已复制 ✓")};
- if(navigator.clipboard)navigator.clipboard.writeText(s).then(()=>toast("已复制 ✓")).catch(fb);else fb()}
+  <!-- ================= 数据带 ================= -->
+  <section class="stats reveal" aria-label="站点访问数据">
+    <div class="stat"><span class="s-label">累计到访<i>VISITS</i></span><strong class="s-num"><span id="stTotal">0</span><em>人次</em></strong></div>
+    <div class="stat"><span class="s-label">您的到访<i>YOURS</i></span><strong class="s-num"><span id="stVisits">0</span><em>次</em></strong></div>
+    <div class="stat"><span class="s-label">资源总数<i>ITEMS</i></span><strong class="s-num"><span id="stRes">0</span><em>份</em></strong></div>
+    <div class="stat"><span class="s-label">累计下载<i>DOWNLOADS</i></span><strong class="s-num"><span id="stDl">0</span><em>次</em></strong></div>
+  </section>
 
-/* 动态下载码 */
-window.kwGate=function(url){if(!url||isTodo(url))return toast("该资源整理中，敬请期待 🙌");
- if(localStorage.getItem("kw_day")===ymd())return window.open(url,"_blank");
- const m=$("#cdModal");m.dataset.url=url;m.style.display="flex";$("#cdin").value="";$("#cderr").textContent="";setTimeout(()=>$("#cdin").focus(),60)};
-window.kwTry=function(){const m=$("#cdModal"),v=$("#cdin").value.trim();
- if(v===String(code())||v===String(code(1))){localStorage.setItem("kw_day",ymd());ST.meta.dl++;bump("site","d");localStorage.setItem("kw_st",JSON.stringify(ST));m.style.display="none";toast("验证通过，开始下载 ✓");window.open(m.dataset.url,"_blank")}
- else $("#cderr").textContent="下载码不对，看看数字有没有敲错～"};
-window.kwAdmin=function(){const p=prompt("站长密码：");if(p===null)return;
- if(p===CONFIG.ADMIN_PASS)alert("今日下载码："+code()+"\n（每天0点自动更换，昨日码兜底）\n公众号回复「开物」下发给老师");else alert("密码不对")};
-$("#ftAdmin").onclick=kwAdmin;
-window.oaOpen=()=>$("#oaModal").style.display="flex";
-window.mpOpen=()=>$("#mpModal").style.display="flex";
-function fillQr(id){if(!CONFIG.QR)return;const im=new Image();im.onload=()=>{const b=document.getElementById(id);if(!b)return;b.innerHTML="";im.style.cssText="width:100%;height:100%;object-fit:contain";b.appendChild(im)};im.src=CONFIG.QR}
-fillQr("oaQr");
+  <!-- ================= 资源索引 ================= -->
+  <section id="index">
+    <div class="sec-head reveal">
+      <span class="sec-no">01 — RESOURCES</span>
+      <h2>资源索引</h2>
+      <p>三类家当，随取随用。下载前需要一把"钥匙"：关注公众号即可领取下载码。</p>
+    </div>
 
-/* 数据 */
-const ALL=[...WEB_ITEMS,...TOOLS],byId=id=>ALL.find(x=>x.id===id);
-const GRADES=["三年级","三年级上","三年级下","四年级上","五年级上","六年级上","八年级","全年级","通用"];
-const uniq=a=>[...new Set(a.filter(x=>x&&!isTodo(x)))].sort((x,y)=>{const i=GRADES.indexOf(x),j=GRADES.indexOf(y);return (i<0?99:i)-(j<0?99:j)});
-const bdgs=it=>[it.g,it.ty,!isTodo(it.u)?it.u:""].filter(Boolean).map(x=>`<span class="bdg">${esc(x)}</span>`).join("");
-const FEAT=[["w10","教学网页 · 精选"],["w17","教学网页 · 精选"],["t15","课堂工具 · 精选"],["t08","课堂工具 · 精选"],["t02","月相积分 · 提示词同款"],["w06","消化系统 · 提示词同款"],["w05","AR小车 · 提示词同款"]];
-let pending=null;
+    <article class="row reveal" data-name="提示词库" data-route="#/prompts">
+      <span class="row-no">01</span>
+      <div class="row-main">
+        <h3>提示词库<em>PROMPT LIBRARY</em></h3>
+        <p>经过课堂验证的 AI 提示词，复制即用，覆盖备课、出题、实验设计与学情分析。</p>
+      </div>
+      <div class="row-meta"><strong id="cntPrompts">0</strong><span>套</span></div>
+      <a class="row-go" href="#/prompts">查看全部 <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h9M8 3.5L11.5 7 8 10.5" stroke="currentColor" stroke-width="1.5"/></svg></a>
+    </article>
 
-/* 首页（原文保留 + 动态数字） */
-function home(){$("#app").innerHTML=`
-<section class="hero"><div class="wrap">
- <div class="visit">NO.<b>${ST.meta.visits}</b> · 您的第 <b>${ST.meta.mine}</b> 次到访</div>
- <div class="est">KAIWU SCIENCE LAB · EST. 2026</div>
- <h1>把 AI 变成<br>科学课的实验器材</h1>
- <p>提示词、互动网页、教学设计——我把用 AI 备课的全部家当放在这里。每一样都经过真实课堂的检验，扫码即得，免费取用。</p>
- <a class="btn big" href="javascript:kwScroll('kwindex')">进入资源库</a>
- <button class="btn gh big" onclick="mpOpen()">小程序直接下载</button>
- <div class="hb"><span>全部资源免费</span><span>仅供教学交流</span><span>每周更新</span></div>
- <div class="fig">AI · 输入 → 科学课 · 输出 &nbsp;·&nbsp; <b>FIG.01</b> — 光的色散 / DISPERSION</div>
-</div></section>
-<div class="stats">
- <div class="stat"><b>${ST.meta.visits}</b><span>累计到访 VISITS · 人次</span></div>
- <div class="stat"><b>${ST.meta.mine}</b><span>您的到访 YOURS · 次</span></div>
- <div class="stat"><b>${PROMPTS.length+WEB_ITEMS.length+TOOLS.length+DESIGNS.length}</b><span>资源总数 ITEMS · 份</span></div>
- <div class="stat"><b>${ST.meta.dl}</b><span>累计下载 DOWNLOADS · 次</span></div>
+    <article class="row reveal" data-name="互动教学网页" data-route="#/labs">
+      <span class="row-no">02</span>
+      <div class="row-main">
+        <h3>互动教学网页<em>WEB LABS</em></h3>
+        <p>单文件 HTML 互动演示，支持在线预览，课堂投屏即用，也可打包下载离线运行。</p>
+      </div>
+      <div class="row-meta"><strong id="cntLabs">0</strong><span>个</span></div>
+      <a class="row-go" href="#/labs">查看全部 <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h9M8 3.5L11.5 7 8 10.5" stroke="currentColor" stroke-width="1.5"/></svg></a>
+    </article>
+
+    <article class="row reveal" data-name="教学设计" data-route="#/design">
+      <span class="row-no">03</span>
+      <div class="row-main">
+        <h3>教学设计<em>LESSON DESIGNS</em></h3>
+        <p>对照新课标编制的完整教学设计，含实验记录单与评价量表，可直接进课堂。</p>
+      </div>
+      <div class="row-meta"><strong id="cntDesign">0</strong><span>份</span></div>
+      <a class="row-go" href="#/design">查看全部 <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h9M8 3.5L11.5 7 8 10.5" stroke="currentColor" stroke-width="1.5"/></svg></a>
+    </article>
+
+    <p class="index-note reveal">// 已支持按「年级 × 类型 × 教材单元」交叉筛选与搜索，7 个精品支持在线预览。</p>
+  </section>
+
+  <!-- ================= 关于 / 公众号 ================= -->
+  <section class="about reveal" id="about">
+    <div>
+      <span class="sec-no">02 — ABOUT</span>
+      <h2>好工具，<u>不该锁在抽屉里</u>。</h2>
+      <p class="bio">我是这里唯一的站长——一名小学科学老师。站内所有东西都是我备课时的真实产出：踩过的坑、调好的提示词、课堂上真的能跑起来的演示页。愿它们替你省下那些熬过的夜。</p>
+    </div>
+    <div class="oa" id="oa" role="button" tabindex="0" aria-label="扫码关注公众号开物AI科学">
+      <svg class="qr oa-qr" data-seed="8803" role="img" aria-label="公众号二维码"></svg>
+      <div>
+        <b>公众号 · 开物AI科学</b>
+        <p>资源上新与下载码，都在这里发放。<br>微信扫一扫，即刻关注。</p>
+      </div>
+    </div>
+  </section>
+
+  </div><!-- /homeRoot -->
+
+  <!-- 数据页面容器（提示词库/互动网页/教学设计/关于） -->
+  <div id="pageRoot" hidden></div>
+</main>
+
+<!-- ================= 页脚 ================= -->
+<footer>
+  <div class="wrap f-in">
+    <div class="f-brand">
+      <span class="seal seal-lg">开物</span>
+      <p>把 AI 变成科学课的实验器材。</p>
+    </div>
+    <p class="f-meta">© 2026 开物AI科学 · 某ICP备0000000号（占位）</p>
+    <p class="f-meta">本站资源仅供教学交流，请勿商用</p>
+    <button class="f-admin" id="adminLink" type="button">站长入口</button>
+  </div>
+</footer>
+
+<!-- ================= 左侧小程序入口 ================= -->
+<aside class="dock" id="dock">
+  <button class="dock-tab" id="dockTab" type="button" aria-expanded="false">小程序 · 直接下载</button>
+  <div class="dock-panel" role="dialog" aria-label="小程序入口">
+    <svg class="qr" data-seed="8801" role="img" aria-label="小程序码占位"></svg>
+    <p><b>「开物AI科学」小程序</b></p>
+    <p class="dock-note">小程序内可直接下载全部资源<br>使用前请先关注公众号「开物AI科学」</p>
+  </div>
+</aside>
+
+<button class="fab" id="fab" type="button" aria-label="打开小程序入口">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm11-2h2v2h-2v-2zm-4 4h2v2h-2v-2zm4 0h3v2h-3v-2zm0-4h3v2h-3v-2zm-4 8h2v2h-2v-2z"/></svg>
+</button>
+
+<!-- ================= 下载码模态 ================= -->
+<div class="modal" id="modal" aria-hidden="true">
+  <div class="modal-mask" id="modalMask"></div>
+  <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="mTitle" id="mPanel">
+    <button class="m-close" id="mClose" type="button" aria-label="关闭">×</button>
+    <div class="m-left">
+      <svg class="qr" data-seed="8802" role="img" aria-label="公众号二维码"></svg>
+      <p class="m-cap">微信扫一扫 · 关注公众号</p>
+      <p class="m-mp">开物AI科学</p>
+    </div>
+    <div class="m-right">
+      <h3 id="mTitle">获取资源下载码</h3>
+      <ol class="m-steps">
+        <li><i>1</i><span>扫码关注公众号「开物AI科学」</span></li>
+        <li><i>2</i><span>在对话框回复关键词：<b>开物</b></span></li>
+        <li><i>3</i><span>输入收到的下载码，验证后立即下载</span></li>
+      </ol>
+      <div class="m-input">
+        <input id="codeInput" maxlength="5" placeholder="输入 5 位下载码" autocomplete="off" inputmode="numeric">
+        <button id="codeBtn" type="button">验证并下载</button>
+      </div>
+      <p class="m-err" id="mErr"></p>
+      <p class="m-tip">下载码每日 0 点自动更换；昨日码当晚 24 点前仍可使用。验证通过后，当天内再次下载免验证。</p>
+    </div>
+  </div>
 </div>
-<div class="wrap" id="kwindex">
- <div class="snum">01 — RESOURCES</div><h2 class="sec">资源索引</h2>
- <p class="sub">三类家当，随取随用。下载前需要一把"钥匙"：关注公众号即可领取下载码。</p>
- <div class="grid">
-  <a class="card cat click" href="#/prompts"><span class="no">01</span><h3>提示词库 <span style="font-size:11px;letter-spacing:2px;color:var(--mut)">PROMPT LIBRARY</span></h3>
-   <div class="num">${PROMPTS.length}<small> 套</small></div>
-   <p class="desc">经过课堂验证的 AI 提示词，复制即用，覆盖备课、出题、实验设计与学情分析。</p>
-   <div class="foot">进入 →</div></a>
-  <a class="card cat click" href="#/labs"><span class="no">02</span><h3>互动教学网页 <span style="font-size:11px;letter-spacing:2px;color:var(--mut)">WEB LABS</span></h3>
-   <div class="num">${WEB_ITEMS.length+TOOLS.length}<small> 个</small></div>
-   <p class="desc">单文件 HTML 互动演示，支持在线预览，课堂投屏即用，也可打包下载离线运行。</p>
-   <div class="foot">进入 →</div></a>
-  <a class="card cat click" href="#/design"><span class="no">03</span><h3>教学设计 <span style="font-size:11px;letter-spacing:2px;color:var(--mut)">LESSON DESIGNS</span></h3>
-   <div class="num">${DESIGNS.length}<small> 份</small></div>
-   <p class="desc">对照新课标编制的完整教学设计，含实验记录单与评价量表，可直接进课堂。</p>
-   <div class="foot">进入 →</div></a>
- </div>
- <p class="hint">✦ 已支持按「年级 × 类型 × 教材单元」交叉筛选与搜索，${FEAT.length} 个精品可在线预览。</p>
- <div class="snum">02 — ABOUT</div><h2 class="sec">好工具，不该锁在抽屉里。</h2>
- <div class="grid" style="grid-template-columns:1.4fr 1fr;align-items:start">
-  <div class="card"><p style="color:var(--mut)">我是这里唯一的站长——一名小学科学老师。站内所有东西都是我备课时的真实产出：踩过的坑、调好的提示词、课堂上真的能跑起来的演示页。愿它们替你省下那些熬过的夜。</p>
-  <div style="margin-top:8px"><button class="kbtn gh" onclick="oaOpen()">公众号 · 开物AI科学</button></div></div>
-  <div class="oacard"><b style="font-family:var(--serif)">公众号 · 开物AI科学</b>
-   <div class="qrx" id="oaQr2">上传 assets/qr.png 后<br>自动显示二维码</div>
-   <p class="mini">资源上新与下载码，都在这里发放。<br>微信扫一扫，即刻关注。</p></div>
- </div>
-</div>`;fillQr("oaQr2")}
-window.kwScroll=id=>{const el=document.getElementById(id);el&&el.scrollIntoView({behavior:"smooth"})};
 
-/* 提示词库 */
-function prompts(){$("#app").innerHTML=`<div class="wrap">
- <div class="snum">01 · PROMPT LIBRARY</div><h2 class="sec">提示词库</h2>
- <p class="sub">共 ${PROMPTS.length} 套 · 点击卡片查看全文，复制给 DeepSeek 等AI，你也能生成同款课堂互动网页</p>
- <div class="grid">${PROMPTS.map(p=>{const prod=p.pr?byId(p.pr):null;return `
-  <div class="card click" data-toggle id="kw-${p.id}"><h3>${esc(p.t)}</h3>
-   ${p.plat?`<div><span class="bdg">适用：${esc(p.plat)}</span></div>`:""}
-   <p class="desc">${esc(p.txt.slice(0,56))}…</p>
-   <div class="foot">${prod?'<span class="live">● 有同款成品</span> · ':''}点击查看全文 ↓</div>
-   <div class="kx"><pre class="pbox">${esc(p.txt)}</pre>
-    <button class="kbtn" data-copy="${p.id}">📋 复制全文</button>
-    ${prod?`<button class="kbtn gh" data-jump="${prod.id}">🚀 同款成品「${esc(prod.t)}」</button>`:""}
-   </div></div>`}).join("")}</div></div>`}
+<div class="toast" id="toast" role="status"></div>
 
-/* 互动网页 */
-const FL={web:{g:"",ty:"",f:"",u:"",q:""},tools:{g:"",ty:"",q:""},tab:"web"};
-function labs(){const feat=FEAT.map(([id,tag])=>{const it=byId(id);if(!it)return"";
- return `<a class="fcard" href="${it.lv||"javascript:void(0)"}" target="_blank" ${it.lv?"":'onclick="event.preventDefault();toast(\'链接整理中\')"'}"><div class="fimg">🧪<img src="${it.sh||""}" onerror="this.remove()" alt=""><span class="ftag">${tag}</span></div>
- <div class="fbody"><b>${esc(it.t)}</b><p class="desc" style="margin-top:4px">${esc(it.d)}</p>
- <div class="foot" style="margin-top:8px"><span class="live">● 点击照片在线体验</span></div></div></a>`}).join("");
- $("#app").innerHTML=`<div class="wrap">
- <div class="snum">02 · WEB LABS</div><h2 class="sec">互动教学网页</h2>
- <p class="sub">共 ${WEB_ITEMS.length+TOOLS.length} 个 · ${FEAT.length} 个常驻精品在线即用，其余可下载离线运行</p>
- <div class="fgrid">${feat}</div>
- <div class="tabs"><button class="tab ${FL.tab==="web"?"on":""}" data-tab="web">教学网页（${WEB_ITEMS.length}）</button>
- <button class="tab ${FL.tab==="tools"?"on":""}" data-tab="tools">课堂工具（${TOOLS.length}）</button></div>
- <div id="labBody"></div></div>`;drawLab()}
-function drawLab(){const sec=FL.tab,f=FL[sec],src=sec==="web"?WEB_ITEMS:TOOLS;
- const chips=k=>{const vs=uniq(src.map(x=>x[k]));if(vs.length<2)return"";
-  return `<div class="chips">${vs.map(v=>`<button class="chip ${f[k]===v?"on":""}" data-f="${k}" data-v="${esc(v)}">${esc(v)}</button>`).join("")}</div>`};
- const arr=src.filter(it=>(!f.g||it.g===f.g)&&(!f.ty||it.ty===f.ty)&&(!f.f||it.f===f.f)&&(!f.u||it.u===f.u)&&(!f.q||(it.t+it.d+(it.u||"")+(it.c||"")).indexOf(f.q)>-1));
- $("#labBody").innerHTML=chips("g")+chips("ty")+(sec==="web"?chips("f")+chips("u"):"")+
- `<input class="ksearch" id="labq" placeholder="🔍 搜索名称 / 简介 / 单元…" value="${esc(f.q)}">
- <p style="color:var(--mut);font-size:12.5px;margin:-6px 0 12px">筛选出 ${arr.length} 个</p>
- <div class="grid">${arr.map(it=>`
-  <div class="card click" data-toggle id="kw-${it.id}"><h3>${esc(it.t)}</h3><div>${bdgs(it)}</div>
-  <p class="desc">${esc(it.d)}</p>
-  <div class="foot">${it.lv?'<span class="live">● 可在线体验</span> · ':isTodo(it.lk)?'整理中… · ':''}点击展开 ↓</div>
-  <div class="kx"><dl class="kdl">${[["年级",it.g],["教材单元",it.u],["课时",it.ls],["科学领域",it.f],["核心概念",it.c],["类型",it.ty]].filter(x=>x[1]).map(x=>`<dt>${x[0]}</dt><dd>${esc(x[1])}</dd>`).join("")}</dl>
-  <div>${it.lv?`<a class="kbtn" href="${it.lv}" target="_blank">🚀 在线体验</a>`:""}
-  ${isTodo(it.lk)?"":`<button class="kbtn ${it.lv?"gh":""}" data-dl="${it.lk}">⬇ 下载资源</button>`}
-  ${it.pp?`<a class="kbtn gh" href="javascript:void(0)" data-pp="${it.pp}">📄 生成它的提示词</a>`:""}</div></div></div>`).join("")||'<p style="color:var(--mut)">没有符合条件的资源</p>'}</div>`;
- if(pending&&pending.t==="item"){const el=document.getElementById("kw-"+pending.id);
-  if(el){el.classList.add("open");setTimeout(()=>el.scrollIntoView({behavior:"smooth",block:"center"}),80);el.style.outline="2px solid var(--gold)";setTimeout(()=>el.style.outline="",1600)}pending=null}
- const q=$("#labq");if(q)q.oninput=e=>{f.q=e.target.value.trim();drawLab();
-  const n=$("#labq");n.focus();n.setSelectionRange(n.value.length,n.value.length)}}
-
-/* 教学设计 */
-function design(){$("#app").innerHTML=`<div class="wrap">
- <div class="snum">03 · LESSON DESIGNS</div><h2 class="sec">教学设计</h2>
- <p class="sub">共 ${DESIGNS.length} 份 · 对照新课标编制，含实验记录单与评价量表，下载码同公众号领取</p>
- <div class="grid">${DESIGNS.map(d=>`<div class="card"><h3>${esc(d.t)}</h3>
-  <div><span class="bdg">${esc(d.g)}</span><span class="bdg">提取码：${esc(d.cd)}</span></div>
-  <p class="desc">${esc(d.d)}</p>
-  <div><button class="kbtn gh" data-copydl="${esc(d.lk)}|${esc(d.cd)}">📋 复制链接+提取码</button>
-  <button class="kbtn" data-dl="${esc(d.lk)}">⬇ 下载</button></div></div>`).join("")}</div></div>`}
-
-/* 关于 */
-function about(){$("#app").innerHTML=`<div class="wrap">
- <div class="snum">04 · ABOUT</div><h2 class="sec">关于站长</h2>
- <div class="grid" style="grid-template-columns:1.4fr 1fr;align-items:start">
- <div class="card">${ABOUT.split("\n").map(x=>`<p style="margin:8px 0;color:var(--mut)">${esc(x)}</p>`).join("")}
- <div class="note">🔑 <b>每日下载码</b>：关注公众号「开物AI科学」，回复关键词「开物」获取当日 5 位下载码，每天 0 点更换，昨日码当晚仍可用。</div></div>
- <div class="oacard"><b style="font-family:var(--serif)">公众号 · 开物AI科学</b>
-  <div class="qrx" id="oaQr3">上传 assets/qr.png 后<br>自动显示二维码</div>
-  <p class="mini">资源上新与下载码，都在这里发放。</p>
-  <button class="kbtn" onclick="oaOpen()">放大二维码</button></div></div></div>`;fillQr("oaQr3")}
-
-/* 路由：首页/提示词库/互动网页/教学设计/关于 */
-const NAVI=[["home","首页"],["prompts","提示词库"],["labs","互动网页"],["design","教学设计"],["about","关于"]];
-const PAGES={home,prompts,labs,design,about};
-function route(){const p=(location.hash||"#/home").split("/")[1]||"home";
- $("#navi").innerHTML=`<a class="logo" href="#/home">开物AI科学<small>KAIWU SCIENCE LAB</small></a>`+
-  NAVI.map(l=>`<a class="nl ${p===l[0]?"on":""}" href="#/${l[0]}">${l[1]}</a>`).join("")+
-  `<span class="sp"></span><a class="nl" href="javascript:oaOpen()">公众号</a>`;
- window.scrollTo(0,0);(PAGES[p]||home)()}
-window.onhashchange=route;
-
-/* 全站事件 */
-document.addEventListener("click",e=>{
- const tb=e.target.closest("[data-tab]");if(tb){FL.tab=tb.dataset.tab;labs();return}
- const c=e.target.closest(".chip[data-f]");if(c){const f=FL[FL.tab];f[c.dataset.f]=f[c.dataset.f]===c.dataset.v?"":c.dataset.v;drawLab();return}
- const cp=e.target.closest("[data-copy]");if(cp){copyTxt(PROMPTS.find(p=>p.id===cp.dataset.copy).txt);return}
- const cd=e.target.closest("[data-copydl]");if(cd){const a=cd.dataset.copydl.split("|");copyTxt(a[0]+" 提取码："+a[1]);return}
- const jp=e.target.closest("[data-jump]");if(jp){const it=byId(jp.dataset.jump);
-  if(it){FL.tab=WEB_ITEMS.includes(it)?"web":"tools";pending={t:"item",id:it.id};
-  if(location.hash==="#/labs")labs();else location.hash="#/labs"}return}
- const pp=e.target.closest("[data-pp]");if(pp){pending={t:"item",id:pp.dataset.pp};
-  if(location.hash==="#/prompts"){const el=document.getElementById("kw-"+pp.dataset.pp);if(el){el.classList.add("open");el.scrollIntoView({behavior:"smooth",block:"center"})}pending=null}
-  else location.hash="#/prompts";return}
- const dl=e.target.closest("[data-dl]");if(dl){kwGate(dl.dataset.dl);return}
- if(e.target.closest("pre,button,a,input"))return;
- const card=e.target.closest(".card[data-toggle]");if(card)card.classList.toggle("open")});
-
-route();
-})();
-</script>
-<!-- ═══ 开物功能层：只加不改，原样式零改动 ═══ -->
 <script>
-(function(){
-if(typeof CONFIG==="undefined"){alert("未找到 data.js：请先在 </head> 前加 <script src='data.js'></script>");return}
-const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
-const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const ymd=(d=new Date())=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
-function fnv(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
-const code=(o=0)=>10000+fnv(ymd(new Date(Date.now()-o*864e5))+"|"+CONFIG.SECRET)%90000;
-const isTodo=v=>!v||String(v).indexOf("TODO")>-1;
+/* ================= 工具：伪随机（小程序码占位图形） ================= */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
 
-/* localStorage 统计 */
-let ST;try{ST=JSON.parse(localStorage.getItem("kw_st")||"{}")}catch(e){ST={}}
-ST.meta=ST.meta||{visits:0,mine:0,dl:0};ST.meta.visits++;ST.meta.mine++;
-const save=()=>localStorage.setItem("kw_st",JSON.stringify(ST));save();
-const cnt=(i,k)=>(ST[i]||{})[k]||0;
-const bump=(i,k)=>{(ST[i]=ST[i]||{v:0,d:0})[k]++;save()};
+/* 二维码：公众号位用 assets/qr.png（CONFIG.QR），小程序位保留占位 */
+var HAS_DATA=(typeof CONFIG!=='undefined'&&typeof WEB_ITEMS!=='undefined'&&typeof PROMPTS!=='undefined'&&typeof TOOLS!=='undefined'&&typeof DESIGNS!=='undefined');
+document.querySelectorAll('svg.qr').forEach(function(el){
+  var seed=el.dataset.seed;
+  if(HAS_DATA&&CONFIG.QR&&seed!=='8801'){
+    var img=document.createElement('img');
+    img.src=CONFIG.QR;img.alt='公众号二维码';
+    img.className=el.className;
+    img.style.width='100%';img.style.height='100%';img.style.objectFit='contain';
+    el.replaceWith(img);return;
+  }
+  var N=21,Q=8,rnd=mulberry32(+seed||1),rects='';
+  var inFinder=function(r,c){return (r<7&&c<7)||(r<7&&c>=N-7)||(r>=N-7&&c<7)};
+  for(var r=0;r<N;r++)for(var c=0;c<N;c++){
+    var fill;
+    if(inFinder(r,c)){var fr=r<7?r:r-(N-7),fc=c<7?c:c-(N-7);var ring=Math.max(Math.abs(fr-3),Math.abs(fc-3));fill=ring!==2;}
+    else{fill=rnd()<0.46}
+    if(fill)rects+='<rect x="'+(c*Q)+'" y="'+(r*Q)+'" width="'+Q+'" height="'+Q+'"/>';
+  }
+  el.setAttribute('viewBox','0 0 '+(N*Q)+' '+(N*Q));
+  el.setAttribute('fill','#191714');
+  el.setAttribute('shape-rendering','crispEdges');
+  el.innerHTML=rects;
+});
 
-/* 从你的页面现场取样式 */
-function leaf(t){return $$("body *").find(e=>!e.children.length&&e.textContent.trim()===t)}
-function up(el,n){while(n-->0&&el)el=el.parentElement;return el}
-const T={ink:"#ece7dc",bg:"#0b0d12",panel:"#12151d",line:"#242a3a",gold:"#d9a441",gold2:"#f0c674",mut:"#8b93a7",serif:"Georgia,serif"};
-(function(){try{
- const b=getComputedStyle(document.body);T.ink=b.color;T.bg=b.backgroundColor;
- const h=document.querySelector("h1,h2");if(h)T.serif=getComputedStyle(h).fontFamily;
- const s=leaf("32"),card=up(s,3);
- if(card){const cs=getComputedStyle(card);T.panel=cs.backgroundColor;T.line=cs.borderTopColor;
-  const p=card.querySelector("p");if(p)T.mut=getComputedStyle(p).color}
- const btn=$$("a,button,div,span").find(e=>!e.children.length&&/^获取下载/.test(e.textContent))||up(leaf("获取下载"),1);
- if(btn){const cs=getComputedStyle(btn);
-  if(cs.backgroundColor&&cs.backgroundColor!=="rgba(0, 0, 0, 0)")T.gold=cs.backgroundColor;
-  if(cs.color)T.gold2=cs.color}
-}catch(e){}})();
+/* ================= 访客计数（localStorage） =================
+   想让数字从一个基数起步，改下面两个值即可 */
+var TOTAL_BASE=0;   /* 累计到访基数 */
+var DL_BASE=0;      /* 累计下载基数 */
+var KEY_T='kw_total',KEY_V='kw_visits',KEY_D='kw_dl',KEY_OK='kw_day';
+var total=(+(localStorage.getItem(KEY_T)||TOTAL_BASE))+1;
+var visits=(+(localStorage.getItem(KEY_V)||0))+1;
+var dl=+(localStorage.getItem(KEY_D)||DL_BASE);
+localStorage.setItem(KEY_T,total);localStorage.setItem(KEY_V,visits);
+var RES_TOTAL=HAS_DATA?(PROMPTS.length+WEB_ITEMS.length+TOOLS.length+DESIGNS.length):0;
 
-/* 首页假数字换真数据 */
-function setLeaf(txt,val,ctx){for(const el of $$("body *")){if(!el.children.length&&el.textContent.trim()===txt){let a=el;
- for(let i=0;i<6&&a&&a!==document.body;i++){a=a.parentElement;if(a&&a.textContent.includes(ctx)){el.textContent=val;return}}}}}
-const TOTAL=PROMPTS.length+WEB_ITEMS.length+TOOLS.length+DESIGNS.length;
-setLeaf("32",String(PROMPTS.length),"提示词库");
-setLeaf("18",String(WEB_ITEMS.length+TOOLS.length),"互动教学网页");
-setLeaf("26",String(DESIGNS.length),"教学设计");
-setLeaf("0",String(ST.meta.visits),"累计到访");
-setLeaf("0",String(ST.meta.mine),"您的到访");
-setLeaf("0",String(TOTAL),"资源总数");
-setLeaf("0",String(ST.meta.dl),"累计下载");
-(function(){const a=$$("body *").find(e=>e.children.length<=2&&/NO\./.test(e.textContent)&&/—/.test(e.textContent));
- if(a)a.innerHTML=a.innerHTML.replace(/—/,ST.meta.visits);
- const b=$$("body *").find(e=>e.children.length<=2&&/您的第/.test(e.textContent)&&/—/.test(e.textContent));
- if(b)b.innerHTML=b.innerHTML.replace(/—/,ST.meta.mine)})();
-$$("body *").forEach(e=>{if(!e.children.length&&e.textContent.includes("（此处替换为你的简介）"))e.textContent=e.textContent.replace("（此处替换为你的简介）","").trim()});
+/* ================= 数字滚动 ================= */
+function countUp(el,target,dur){
+  dur=dur||1400;
+  var t0=performance.now();
+  function tick(t){
+    var p=Math.min(1,(t-t0)/dur),e=1-Math.pow(1-p,3);
+    el.textContent=Math.round(target*e).toLocaleString('zh-Hans-CN');
+    if(p<1)requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+countUp(document.getElementById('stTotal'),total);
+countUp(document.getElementById('stVisits'),visits);
+countUp(document.getElementById('stRes'),RES_TOTAL);
+countUp(document.getElementById('stDl'),dl);
+document.getElementById('hdTotal').textContent=total.toLocaleString('zh-Hans-CN');
+document.getElementById('hdVisits').textContent=visits;
+if(HAS_DATA){
+  var cntMap={cntPrompts:PROMPTS.length,cntLabs:WEB_ITEMS.length+TOOLS.length,cntDesign:DESIGNS.length};
+  for(var cid in cntMap){var ce=document.getElementById(cid);if(ce)ce.textContent=cntMap[cid];}
+  var bio=document.querySelector('.about .bio');
+  if(bio&&typeof ABOUT!=='undefined')bio.textContent=ABOUT.split('\n')[0];
+}
 
-/* 克隆替换=剥掉原型演示行为，接真逻辑 */
-function swap(el){const c=el.cloneNode(true);el.parentNode.replaceChild(c,el);return c}
-function exact(t){return $$("a,button,div,span").filter(e=>e.textContent.trim()===t)}
-let curUrl=null;
-function modalOf(el){let m=el;while(m&&m!==document.body&&getComputedStyle(m).position!=="fixed")m=m.parentElement;return m||document.body}
-function cdModal(){const l=leaf("获取资源下载码")||$$("body *").find(e=>e.textContent.includes("回复关键词")&&e.textContent.includes("下载码"));return l?modalOf(l):null}
-window.kwGate=function(url){if(!url||isTodo(url))return alert("该资源整理中，敬请期待 🙌");
- if(localStorage.getItem("kw_day")===ymd())return window.open(url,"_blank");
- curUrl=url;const m=cdModal();if(!m)return alert("今日下载码："+code());
- m.style.display="flex";const i=m.querySelector("input");if(i){i.value="";setTimeout(()=>i.focus(),60)}};
-window.kwTry=function(){const m=cdModal();if(!m)return;const i=m.querySelector("input");const v=((i&&i.value)||"").trim();
- if(v===String(code())||v===String(code(1))){localStorage.setItem("kw_day",ymd());ST.meta.dl++;bump("site","d");m.style.display="none";window.open(curUrl,"_blank")}
- else alert("下载码不对，看看数字有没有敲错～")};
-window.kwAdmin=function(){const p=prompt("站长密码：");if(p===null)return;
- if(p===CONFIG.ADMIN_PASS)alert("今日下载码："+code()+"\n（每天0点自动更换，昨日码兜底）");else alert("密码不对")};
-exact("验证并下载").forEach(b=>{swap(b).onclick=e=>{e.preventDefault();e.stopPropagation();kwTry()}});
-$$("a,button,div,span").filter(e=>e.textContent.trim()==="站长入口").forEach(b=>{swap(b).onclick=e=>{e.preventDefault();kwAdmin()}});
-[["提示词库","#/prompts"],["互动教学网页","#/labs"],["教学设计","#/design"]].forEach((m,i)=>{
- const b=exact("获取下载")[i];if(b)swap(b).onclick=e=>{e.preventDefault();e.stopPropagation();location.hash=m[1]}});
-$$("a").forEach(a=>{const t=a.textContent.trim();
- if(t==="资源库")a.setAttribute("href","#/labs");
- if(t==="关于站长")a.setAttribute("href","#/about");
- if(t==="进入资源库")a.setAttribute("href","#/labs")});
-(function(){const proto=$$("a").find(a=>a.textContent.trim()==="资源库");if(!proto)return;const nav=proto.parentElement;
- [["提示词库","#/prompts"],["教学设计","#/design"]].forEach(m=>{const c=proto.cloneNode(true);c.textContent=m[0];c.setAttribute("href",m[1]);nav.insertBefore(c,proto.nextSibling)})})();
-$$("body *").forEach(e=>{if(!e.children.length&&e.textContent.includes("KAIWU"))e.style.display="none"});
-(function(){if(!CONFIG.QR)return;const l=$$("body *").find(e=>!e.children.length&&e.textContent.includes("微信扫一扫"));const m=l?modalOf(l):null;
- if(m&&!m.querySelector("img")){const im=new Image();im.src=CONFIG.QR;im.style.cssText="width:170px;height:170px;object-fit:contain;margin:10px auto;display:block";m.appendChild(im)}})();
+/* ================= 入场动画 ================= */
+var io=new IntersectionObserver(function(es){
+  es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}});
+},{threshold:.12});
+document.querySelectorAll('.reveal').forEach(function(el){io.observe(el)});
 
-/* 新页面容器：配色/字体=从你页面取样 */
-const app=document.createElement("div");app.id="kw-app";document.body.appendChild(app);
-app.innerHTML=`<style>
-#kw-app{color:${T.ink};background:${T.bg};font:15px/1.8 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif;min-height:100vh;padding:34px 0 60px}
-#kw-app .w{max-width:1120px;margin:0 auto;padding:0 20px}
-#kw-app .no{font-size:11px;letter-spacing:4px;color:${T.gold};font-family:Georgia,serif}
-#kw-app h2{font-family:${T.serif};font-size:26px;margin:6px 0 4px}
-#kw-app .sub{color:${T.mut};font-size:14px;margin-bottom:20px}
-#kw-app .g{display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(255px,1fr))}
-#kw-app .c{background:${T.panel};border:1px solid ${T.line};border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:9px;transition:.18s}
-#kw-app .c.click{cursor:pointer}#kw-app .c.click:hover{border-color:${T.gold};transform:translateY(-3px)}
-#kw-app h3{font-family:${T.serif};font-size:16.5px}
-#kw-app .bd{font-size:12px;border:1px solid ${T.line};border-radius:6px;padding:2px 9px;margin:0 4px 4px 0;display:inline-block;color:${T.gold2};background:rgba(217,164,65,.08)}
-#kw-app .d{color:${T.mut};font-size:13.5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-#kw-app .f{margin-top:auto;display:flex;align-items:center;gap:8px;font-size:12.5px;color:${T.mut}}
-#kw-app .live{color:#4ade80;font-weight:700}
-#kw-app .fg{display:grid;gap:18px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
-#kw-app .fc{background:${T.panel};border:1px solid ${T.line};border-radius:12px;overflow:hidden;display:block;transition:.18s}
-#kw-app .fc:hover{transform:translateY(-4px);border-color:${T.gold}}
-#kw-app .fi{position:relative;aspect-ratio:16/9;background:linear-gradient(135deg,#1b2a55,#5b3a9e);display:flex;align-items:center;justify-content:center;font-size:44px}
-#kw-app .fi img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-#kw-app .ft{position:absolute;left:10px;top:10px;background:rgba(0,0,0,.6);color:${T.gold2};font-size:12px;padding:3px 10px;border-radius:7px}
-#kw-app .fb{padding:13px 16px}#kw-app .fb b{font-family:${T.serif};font-size:15.5px}
-#kw-app .tabs{display:flex;gap:10px;margin:22px 0 4px}
-#kw-app .tab{padding:9px 22px;border-radius:10px;border:1px solid ${T.line};background:${T.panel};color:${T.mut};font-weight:700;cursor:pointer;font-family:${T.serif};font-size:15px}
-#kw-app .tab.on{background:${T.gold};border-color:${T.gold};color:#17120a}
-#kw-app .chips{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 4px}
-#kw-app .chip{padding:5px 13px;border-radius:20px;border:1px solid ${T.line};background:${T.panel};color:${T.mut};font-size:13px;font-weight:600;cursor:pointer}
-#kw-app .chip.on{background:${T.gold};border-color:${T.gold};color:#17120a}
-#kw-app .sr{width:100%;padding:11px 14px;border:1px solid ${T.line};border-radius:10px;background:transparent;color:${T.ink};font-size:14px;margin:8px 0 14px;outline:none}
-#kw-app .x{display:none;border-top:1px dashed ${T.line};margin-top:6px;padding-top:14px}
-#kw-app .c.open .x{display:block}
-#kw-app dl{display:grid;grid-template-columns:92px 1fr;gap:5px 10px;font-size:13.5px;margin:4px 0 8px}
-#kw-app dt{color:${T.mut}}#kw-app dd{border-bottom:1px dashed ${T.line}}
-#kw-app .kb{display:inline-block;border:0;border-radius:10px;padding:9px 17px;font-weight:800;font-size:13.5px;cursor:pointer;margin:4px 6px 0 0;background:${T.gold};color:#17120a;text-decoration:none}
-#kw-app .kb.gh{background:transparent;color:${T.gold2};border:1.5px solid ${T.gold}}
-#kw-app pre{white-space:pre-wrap;word-break:break-word;font:13px/1.9 ui-monospace,Consolas,monospace;color:${T.ink};background:rgba(0,0,0,.25);border:1px solid ${T.line};border-radius:10px;padding:14px;max-height:340px;overflow:auto;margin:8px 0}
-</style><div class="w" id="kwview"></div>`;
+/* ================= Toast ================= */
+var toastEl=document.getElementById('toast'),toastTimer=null;
+function toast(msg){
+  toastEl.textContent=msg;toastEl.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(function(){toastEl.classList.remove('show')},2600);
+}
 
-const ALL=[...WEB_ITEMS,...TOOLS],byId=id=>ALL.find(x=>x.id===id);
-const GRADES=["三年级","三年级上","三年级下","四年级上","五年级上","六年级上","八年级","全年级","通用"];
-const uniq=a=>[...new Set(a.filter(x=>x&&!isTodo(x)))].sort((x,y)=>{const i=GRADES.indexOf(x),j=GRADES.indexOf(y);return (i<0?99:i)-(j<0?99:j)});
-const bdgs=it=>[it.g,it.ty,!isTodo(it.u)?it.u:""].filter(Boolean).map(x=>`<span class="bd">${esc(x)}</span>`).join("");
-const FEAT=[["w10","教学网页 · 精选"],["w17","教学网页 · 精选"],["t15","课堂工具 · 精选"],["t08","课堂工具 · 精选"],["t02","月相积分 · 提示词同款"],["w06","消化系统 · 提示词同款"],["w05","AR小车 · 提示词同款"]];
-let pending=null;
-function copyTxt(s){const fb=()=>{const t=document.createElement("textarea");t.value=s;document.body.appendChild(t);t.select();document.execCommand("copy");t.remove();alert("已复制 ✓")};if(navigator.clipboard)navigator.clipboard.writeText(s).then(()=>alert("已复制 ✓")).catch(fb);else fb()}
+/* ================= 小程序侧签 ================= */
+var dock=document.getElementById('dock'),dockTab=document.getElementById('dockTab');
+function toggleDock(force){
+  var open=typeof force==='boolean'?force:!dock.classList.contains('open');
+  dock.classList.toggle('open',open);
+  dockTab.setAttribute('aria-expanded',open);
+}
+dockTab.addEventListener('click',function(e){e.stopPropagation();toggleDock()});
+document.getElementById('fab').addEventListener('click',function(e){e.stopPropagation();toggleDock()});
+document.getElementById('ctaMini').addEventListener('click',function(){toggleDock(true)});
+document.addEventListener('click',function(e){if(!dock.contains(e.target))toggleDock(false)});
 
-function pPrompts(){return `<div class="no">01 · PROMPT LIBRARY</div><h2>提示词库</h2>
- <p class="sub">共 ${PROMPTS.length} 套 · 点击卡片查看全文，复制给 DeepSeek 等AI，你也能生成同款课堂互动网页</p>
- <div class="g">${PROMPTS.map(p=>{const pr=p.pr?byId(p.pr):null;return `
- <div class="c click" data-toggle id="it-${p.id}"><h3>${esc(p.t)}</h3>
-  ${p.plat?`<div><span class="bd">适用：${esc(p.plat)}</span></div>`:""}
-  <p class="d">${esc(p.txt.slice(0,56))}…</p>
-  <div class="f">${pr?'<span class="live">● 有同款成品</span> · ':''}点击查看全文 ↓</div>
-  <div class="x"><pre>${esc(p.txt)}</pre>
-   <button class="kb" data-copy="${p.id}">📋 复制全文</button>
-   ${pr?`<button class="kb gh" data-jump="${pr.id}">🚀 同款成品「${esc(pr.t)}」</button>`:""}
-  </div></div>`}).join("")}</div>`}
+/* ================= 动态下载码：SECRET + 日期（昨日码兜底） ================= */
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function ymd(d){d=d||new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function fnv(s){var h=2166136261;for(var i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
+function dayCode(offset){
+  offset=offset||0;
+  var d=new Date(Date.now()-offset*864e5);
+  return 10000+fnv(ymd(d)+'|'+CONFIG.SECRET)%90000;
+}
+function isTodo(v){return !v||String(v).indexOf('TODO')>-1}
 
-const FL={web:{g:"",ty:"",f:"",u:"",q:""},tools:{g:"",ty:"",q:""},tab:"web"};
-function pLabs(){const feat=FEAT.map(([id,tag])=>{const it=byId(id);if(!it)return"";
- return `<a class="fc" href="${it.lv||"javascript:void(0)"}" target="_blank"><div class="fi">🧪<img src="${it.sh||""}" onerror="this.remove()" alt=""><span class="ft">${tag}</span></div>
- <div class="fb"><b>${esc(it.t)}</b><p class="d" style="margin-top:4px">${esc(it.d)}</p>
- <div class="f" style="margin-top:8px"><span class="live">● 点击照片在线体验</span></div></div></a>`}).join("");
- return `<div class="no">02 · WEB LABS</div><h2>互动教学网页</h2>
- <p class="sub">共 ${WEB_ITEMS.length+TOOLS.length} 个 · ${FEAT.length} 个常驻精品在线即用，其余可下载离线运行</p>
- <div class="fg">${feat}</div>
- <div class="tabs"><button class="tab ${FL.tab==="web"?"on":""}" data-tab="web">教学网页（${WEB_ITEMS.length}）</button>
- <button class="tab ${FL.tab==="tools"?"on":""}" data-tab="tools">课堂工具（${TOOLS.length}）</button></div>
- <div id="labBody"></div>`}
-function drawLab(){const sec=FL.tab,f=FL[sec],src=sec==="web"?WEB_ITEMS:TOOLS,b=$("#labBody");if(!b)return;
- const chips=k=>{const vs=uniq(src.map(x=>x[k]));if(vs.length<2)return"";
-  return `<div class="chips">${vs.map(v=>`<button class="chip ${f[k]===v?"on":""}" data-f="${k}" data-v="${esc(v)}">${esc(v)}</button>`).join("")}</div>`};
- const arr=src.filter(it=>(!f.g||it.g===f.g)&&(!f.ty||it.ty===f.ty)&&(!f.f||it.f===f.f)&&(!f.u||it.u===f.u)&&(!f.q||(it.t+it.d+(it.u||"")+(it.c||"")).indexOf(f.q)>-1));
- b.innerHTML=chips("g")+chips("ty")+(sec==="web"?chips("f")+chips("u"):"")+
- `<input class="sr" id="labq" placeholder="🔍 搜索名称 / 简介 / 单元…" value="${esc(f.q)}">
- <p style="color:${T.mut};font-size:12.5px;margin:-6px 0 12px">筛选出 ${arr.length} 个</p>
- <div class="g">${arr.map(it=>`
-  <div class="c click" data-toggle id="it-${it.id}"><h3>${esc(it.t)}</h3><div>${bdgs(it)}</div>
-  <p class="d">${esc(it.d)}</p>
-  <div class="f">${it.lv?'<span class="live">● 可在线体验</span> · ':isTodo(it.lk)?'整理中… · ':''}点击展开 ↓</div>
-  <div class="x"><dl>${[["年级",it.g],["教材单元",it.u],["课时",it.ls],["科学领域",it.f],["核心概念",it.c],["类型",it.ty]].filter(x=>x[1]).map(x=>`<dt>${x[0]}</dt><dd>${esc(x[1])}</dd>`).join("")}</dl>
-  <div>${it.lv?`<a class="kb" href="${it.lv}" target="_blank">🚀 在线体验</a>`:""}
-  ${isTodo(it.lk)?"":`<button class="kb ${it.lv?"gh":""}" data-dl="${it.lk}">⬇ 下载资源</button>`}
-  ${it.pp?`<button class="kb gh" data-pp="${it.pp}">📄 生成它的提示词</button>`:""}</div></div></div>`).join("")||`<p style="color:${T.mut}">没有符合条件的资源</p>`}</div>`;
- if(pending){const el=document.getElementById("it-"+pending);if(el){el.classList.add("open");setTimeout(()=>el.scrollIntoView({behavior:"smooth",block:"center"}),80)}pending=null}
- const q=$("#labq");if(q)q.oninput=e=>{f.q=e.target.value.trim();drawLab();const n=$("#labq");n.focus();n.setSelectionRange(n.value.length,n.value.length)}}
+/* ================= 下载码模态 ================= */
+var modal=document.getElementById('modal'),mPanel=document.getElementById('mPanel'),
+    codeInput=document.getElementById('codeInput'),mErr=document.getElementById('mErr');
+var curName='',curUrl=null;
+function openModal(name,url){
+  curName=name||'';curUrl=url||null;
+  document.getElementById('mTitle').textContent=name?('获取「'+name+'」下载码'):'获取资源下载码';
+  mErr.textContent='';codeInput.value='';
+  modal.classList.add('open');modal.setAttribute('aria-hidden','false');
+  setTimeout(function(){codeInput.focus()},320);
+}
+function closeModal(){modal.classList.remove('open');modal.setAttribute('aria-hidden','true')}
 
-function pDesign(){return `<div class="no">03 · LESSON DESIGNS</div><h2>教学设计</h2>
- <p class="sub">共 ${DESIGNS.length} 份 · 对照新课标编制，含实验记录单与评价量表</p>
- <div class="g">${DESIGNS.map(d=>`<div class="c"><h3>${esc(d.t)}</h3>
-  <div><span class="bd">${esc(d.g)}</span><span class="bd">提取码：${esc(d.cd)}</span></div>
-  <p class="d">${esc(d.d)}</p>
-  <div><button class="kb gh" data-copydl="${esc(d.lk)}|${esc(d.cd)}">📋 复制链接+提取码</button>
-  <button class="kb" data-dl="${esc(d.lk)}">⬇ 下载</button></div></div>`).join("")}</div>`}
+function kwGate(name,url){
+  if(!HAS_DATA){toast('数据未加载：请检查仓库中的 data.js');return}
+  if(isTodo(url)){toast('该资源整理中，敬请期待 🙌');return}
+  if(localStorage.getItem(KEY_OK)===ymd()){window.open(url,'_blank');return}
+  openModal(name,url);
+}
+window.kwGate=kwGate;
 
-function pAbout(){return `<div class="no">04 · ABOUT</div><h2>关于站长</h2>
- <div class="g" style="grid-template-columns:1.4fr 1fr;align-items:start">
- <div class="c">${ABOUT.split("\n").map(x=>`<p style="margin:8px 0;color:${T.mut}">${esc(x)}</p>`).join("")}
- <div style="border:1px solid ${T.gold};background:rgba(217,164,65,.08);border-radius:10px;padding:12px 16px;color:${T.gold2};font-size:13.5px;margin-top:12px">🔑 <b>每日下载码</b>：关注公众号「开物AI科学」，回复关键词「开物」获取当日 5 位下载码，每天 0 点更换，昨日码当晚仍可用。</div></div>
- <div class="c" style="text-align:center">${CONFIG.QR?`<img src="${CONFIG.QR}" style="width:170px;margin:6px auto">`:""}<b style="font-family:${T.serif}">公众号 · 开物AI科学</b><p class="d" style="margin-top:6px">资源上新与下载码，都在这里发放。</p></div></div>`}
+document.getElementById('codeBtn').addEventListener('click',function(){
+  var v=codeInput.value.trim();
+  if(!HAS_DATA){mErr.textContent='数据未加载：请检查 data.js';return}
+  if(v===String(dayCode())||v===String(dayCode(1))){
+    localStorage.setItem(KEY_OK,ymd());
+    dl+=1;localStorage.setItem(KEY_D,dl);
+    document.getElementById('stDl').textContent=dl.toLocaleString('zh-Hans-CN');
+    closeModal();
+    toast('校验通过 · 开始下载');
+    if(curUrl)window.open(curUrl,'_blank');
+  }else{
+    mErr.className='m-err';
+    mErr.textContent='下载码不正确：请扫码关注公众号后按步骤获取今日码';
+    mPanel.classList.remove('shake');void mPanel.offsetWidth;
+    mPanel.classList.add('shake');
+  }
+});
+codeInput.addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('codeBtn').click()});
+document.getElementById('mClose').addEventListener('click',closeModal);
+document.getElementById('modalMask').addEventListener('click',closeModal);
+document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeModal();toggleDock(false)}});
+document.getElementById('oa').addEventListener('click',function(){openModal('')});
+document.getElementById('oa').addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();openModal('')}});
+document.getElementById('navOa').addEventListener('click',function(){openModal('')});
 
-const PAGES={prompts:pPrompts,labs:pLabs,design:pDesign,about:pAbout};
+/* ================= 站长入口 ================= */
+document.getElementById('adminLink').addEventListener('click',function(){
+  if(!HAS_DATA){toast('数据未加载：请检查 data.js');return}
+  var p=prompt('站长密码：');
+  if(p===null)return;
+  if(p===CONFIG.ADMIN_PASS){
+    alert('今日下载码：'+dayCode()+'\n\n· 每日 0 点自动更换\n· 昨日码今晚 24 点前仍可用\n· 公众号回复「开物」下发给老师');
+  }else{toast('密码不对')}
+});
 
-/* Hash 路由：首页/提示词库/互动网页/教学设计/关于 */
-function route(){let p=(location.hash||"#/home").split("?")[0];
- if(p==="#index")p="#/labs";if(p==="#about")p="#/about";if(p==="#top"||p==="#")p="#/home";
- const key=p.replace("#/","");const isHome=!PAGES[key];
- [...document.body.children].forEach(el=>{
-  if(el===app)return;const t=el.tagName;
-  if(/^(SCRIPT|STYLE|LINK|NOSCRIPT)$/.test(t))return;
-  if(/^(FOOTER|HEADER|NAV)$/.test(t))return;
-  if(/nav|head|foot|top|modal|toast/i.test(el.id||""))return;
-  let cs;try{cs=getComputedStyle(el)}catch(e){return}
-  if(cs.position==="fixed"||cs.position==="sticky")return;
-  el.style.display=isHome?"":"none"});
- if(isHome){app.style.display="none"}
- else{app.style.display="";$("#kwview").innerHTML=PAGES[key]();
-  if(key==="labs")drawLab();
-  if(pending){const el=document.getElementById("it-"+pending);if(el){el.classList.add("open");setTimeout(()=>el.scrollIntoView({behavior:"smooth",block:"center"}),80)}pending=null}}
- window.scrollTo(0,0)}
-window.addEventListener("hashchange",route);
+/* ================= 首页三行：点击进入对应页面 ================= */
+document.querySelectorAll('.row').forEach(function(row){
+  row.addEventListener('click',function(){location.hash=row.dataset.route});
+});
 
-app.addEventListener("click",e=>{
- const tb=e.target.closest("[data-tab]");if(tb){FL.tab=tb.dataset.tab;$("#kwview").innerHTML=pLabs();drawLab();return}
- const c=e.target.closest(".chip[data-f]");if(c){const f=FL[FL.tab];f[c.dataset.f]=f[c.dataset.f]===c.dataset.v?"":c.dataset.v;drawLab();return}
- const cp=e.target.closest("[data-copy]");if(cp){copyTxt(PROMPTS.find(p=>p.id===cp.dataset.copy).txt);return}
- const cd=e.target.closest("[data-copydl]");if(cd){const a=cd.dataset.copydl.split("|");copyTxt(a[0]+" 提取码："+a[1]);return}
- const jp=e.target.closest("[data-jump]");if(jp){FL.tab=WEB_ITEMS.some(x=>x.id===jp.dataset.jump)?"web":"tools";
-  pending=jp.dataset.jump;if(location.hash==="#/labs")route();else location.hash="#/labs";return}
- const pp=e.target.closest("[data-pp]");if(pp){pending=pp.dataset.pp;
-  if(location.hash==="#/prompts"){const el=document.getElementById("it-"+pp.dataset.pp);if(el){el.classList.add("open");el.scrollIntoView({behavior:"smooth",block:"center"})}pending=null}
-  else location.hash="#/prompts";return}
- const dl=e.target.closest("[data-dl]");if(dl){kwGate(dl.dataset.dl);return}
- if(e.target.closest("button,a,input,pre"))return;
- const card=e.target.closest(".c[data-toggle]");if(card)card.classList.toggle("open")});
+/* ================= 数据页：提示词库 / 互动网页 / 教学设计 / 关于 ================= */
+function copyText(s){
+  function fb(){var t=document.createElement('textarea');t.value=s;document.body.appendChild(t);t.select();try{document.execCommand('copy');toast('已复制到剪贴板 ✓')}catch(e){toast('复制失败，请手动选择复制')}t.remove()}
+  if(navigator.clipboard){navigator.clipboard.writeText(s).then(function(){toast('已复制到剪贴板 ✓')},fb)}else fb();
+}
+
+var ALL=HAS_DATA?WEB_ITEMS.concat(TOOLS):[];
+function byId(id){for(var i=0;i<ALL.length;i++){if(ALL[i].id===id)return ALL[i]}return null}
+var GRADES=['三年级','三年级上','三年级下','四年级上','五年级上','六年级上','八年级','全年级','通用'];
+var FL={tab:'web',web:{g:'',ty:'',f:'',u:'',q:''},tools:{g:'',ty:'',q:''}};
+var pending=null;
+var FEAT=[['w10','教学网页 · 精选'],['w17','教学网页 · 精选'],['t15','课堂工具 · 精选'],['t08','课堂工具 · 精选'],['t02','月相积分 · 提示词同款'],['w06','消化系统 · 提示词同款'],['w05','AR小车 · 提示词同款']];
+
+function uniqVals(src,key){
+  var seen={},vs=[];
+  src.forEach(function(it){var v=it[key];if(v&&!isTodo(v)&&!seen[v]){seen[v]=1;vs.push(v)}});
+  vs.sort(function(a,b){var i=GRADES.indexOf(a),j=GRADES.indexOf(b);return (i<0?99:i)-(j<0?99:j)});
+  return vs;
+}
+function chipRow(src,key){
+  var vs=uniqVals(src,key);if(vs.length<2)return'';
+  var f=FL[FL.tab];
+  return '<div class="kchips">'+vs.map(function(v){
+    return '<button class="kchip'+(f[key]===v?' on':'')+'" data-f="'+key+'" data-v="'+esc(v)+'">'+esc(v)+'</button>';
+  }).join('')+'</div>';
+}
+function cardHTML(it){
+  var rows=[['年级',it.g],['教材单元',it.u],['课时',it.ls],['科学领域',it.f],['核心概念',it.c],['类型',it.ty]]
+    .filter(function(x){return x[1]})
+    .map(function(x){return '<dt>'+esc(x[0])+'</dt><dd>'+esc(x[1])+'</dd>'}).join('');
+  var foot=it.lv?'<span class="ok">● 可在线体验</span> · ':(isTodo(it.lk)?'整理中 · ':'');
+  return '<div class="kcard" data-open id="it-'+it.id+'">'+
+    '<h3>'+esc(it.t)+'</h3>'+
+    '<div class="ktags">'+[it.g,it.ty,!isTodo(it.u)?it.u:''].filter(Boolean).map(function(v){return '<span class="ktag">'+esc(v)+'</span>'}).join('')+'</div>'+
+    '<p class="kdesc">'+esc(it.d)+'</p>'+
+    '<div class="kfoot">'+foot+'点击展开详情 ↓</div>'+
+    '<div class="kx"><dl class="kdl">'+rows+'</dl>'+
+    '<div>'+(it.lv?'<a class="kbtn" href="'+esc(it.lv)+'" target="_blank">🚀 在线体验</a>':'')+
+    (!isTodo(it.lk)?'<button class="kbtn'+(it.lv?' ghost':'')+'" data-dl="'+esc(it.lk)+'" data-name="'+esc(it.t)+'">⬇ 下载资源</button>':'')+
+    (it.pp?'<button class="kbtn ghost" data-pp="'+esc(it.pp)+'">📄 生成它的提示词</button>':'')+
+    '</div></div></div>';
+}
+function drawLabList(){
+  var box=document.getElementById('labList');if(!box)return;
+  var f=FL[FL.tab],src=FL.tab==='web'?WEB_ITEMS:TOOLS;
+  var q=(f.q||'').toLowerCase();
+  var arr=src.filter(function(it){
+    if(f.g&&it.g!==f.g)return false;
+    if(f.ty&&it.ty!==f.ty)return false;
+    if(FL.tab==='web'){if(f.f&&it.f!==f.f)return false;if(f.u&&it.u!==f.u)return false}
+    if(q){var hay=(it.t+' '+(it.d||'')+' '+(it.u||'')+' '+(it.c||'')+' '+(it.g||'')).toLowerCase();if(hay.indexOf(q)<0)return false}
+    return true;
+  });
+  var chips=chipRow(src,'g')+chipRow(src,'ty')+(FL.tab==='web'?chipRow(src,'f')+chipRow(src,'u'):'');
+  var filtered=f.g||f.ty||(FL.tab==='web'&&(f.f||f.u))||q;
+  box.innerHTML=chips+
+    '<p class="kcount">筛选出 '+arr.length+' / '+src.length+' 个'+(filtered?' · <a href="javascript:void(0)" id="kwClear" style="color:var(--accent)">清除筛选</a>':'')+'</p>'+
+    '<div class="kgrid">'+(arr.map(cardHTML).join('')||'<p style="color:var(--ink2)">没有符合条件的资源</p>')+'</div>';
+  var cl=document.getElementById('kwClear');
+  if(cl)cl.addEventListener('click',function(){
+    FL.web={g:'',ty:'',f:'',u:'',q:''};FL.tools={g:'',ty:'',q:''};
+    var s=document.getElementById('labQ');if(s)s.value='';
+    drawLabList();
+  });
+}
+
+var PAGES={
+  prompts:function(){return '<section class="reveal">'+
+    '<div class="sec-head" style="margin-top:2.6rem"><span class="sec-no">01 — PROMPT LIBRARY</span><h2>提示词库</h2><p>点击卡片查看全文，复制给 DeepSeek 等AI，你也能生成同款课堂互动网页。</p></div>'+
+    '<div class="kgrid">'+PROMPTS.map(function(p){
+      var prod=p.pr?byId(p.pr):null;
+      return '<div class="kcard" data-open id="it-'+p.id+'"><h3>'+esc(p.t)+'</h3>'+
+        (p.plat?'<div class="ktags"><span class="ktag gold">适用 · '+esc(p.plat)+'</span></div>':'')+
+        '<p class="kdesc">'+esc(p.txt.slice(0,60))+'…</p>'+
+        '<div class="kfoot">'+(prod?'<span class="ok">● 有同款成品</span> · ':'')+'点击查看全文 ↓</div>'+
+        '<div class="kx"><pre class="kpre">'+esc(p.txt)+'</pre>'+
+        '<button class="kbtn" data-copy="'+p.id+'">📋 复制全文</button>'+
+        (prod?'<button class="kbtn ghost" data-jump="'+prod.id+'">🚀 同款成品「'+esc(prod.t)+'」</button>':'')+
+        '</div></div>';
+    }).join('')+'</div></section>'},
+  labs:function(){
+    var feat=FEAT.map(function(pair){
+      var it=byId(pair[0]);if(!it)return'';
+      return '<a class="fcard" href="'+esc(it.lv||'javascript:void(0)')+'" target="_blank">'+
+        '<div class="fimg">'+(it.sh?'<img src="'+esc(it.sh)+'" alt="'+esc(it.t)+'" onerror="this.style.display=\'none\'">':'🧪')+'<span class="ftag">'+pair[1]+'</span></div>'+
+        '<div class="fbody"><b>'+esc(it.t)+'</b><p>'+esc(it.d)+'</p>'+
+        '<div class="fmore">● 点击照片在线体验 →</div></div></a>';
+    }).join('');
+    return '<section class="reveal">'+
+      '<div class="sec-head" style="margin-top:2.6rem"><span class="sec-no">02 — WEB LABS</span><h2>互动教学网页</h2><p>常驻精品点击照片在线体验；其余按年级、单元筛选后下载离线运行。</p></div>'+
+      '<div class="fgrid">'+feat+'</div>'+
+      '<div class="ktabs"><button class="ktab'+(FL.tab==='web'?' on':'')+'" data-tab="web">教学网页（'+WEB_ITEMS.length+'）</button>'+
+      '<button class="ktab'+(FL.tab==='tools'?' on':'')+'" data-tab="tools">课堂工具（'+TOOLS.length+'）</button></div>'+
+      '<input class="ksearch" id="labQ" placeholder="搜索名称 / 简介 / 单元 / 核心概念…" value="'+esc(FL[FL.tab].q)+'">'+
+      '<div id="labList"></div></section>';
+  },
+  design:function(){return '<section class="reveal">'+
+    '<div class="sec-head" style="margin-top:2.6rem"><span class="sec-no">03 — LESSON DESIGNS</span><h2>教学设计</h2><p>对照新课标编制，含实验记录单与评价量表，可直接进课堂。下载码同公众号领取。</p></div>'+
+    '<div class="kgrid">'+DESIGNS.map(function(d){
+      return '<div class="kcard" style="cursor:default"><h3>'+esc(d.t)+'</h3>'+
+        '<div class="ktags"><span class="ktag">'+esc(d.g)+'</span><span class="ktag gold">提取码 · '+esc(d.cd)+'</span></div>'+
+        '<p class="kdesc">'+esc(d.d)+'</p>'+
+        '<div><button class="kbtn ghost" data-copydl="'+esc(d.lk)+'|'+esc(d.cd)+'">📋 复制链接+提取码</button>'+
+        '<button class="kbtn" data-dl="'+esc(d.lk)+'" data-name="'+esc(d.t)+'">⬇ 下载</button></div></div>';
+    }).join('')+'</div></section>'},
+  about:function(){return '<section class="reveal">'+
+    '<div class="sec-head" style="margin-top:2.6rem"><span class="sec-no">04 — ABOUT</span><h2>关于站长</h2><p>好工具，不该锁在抽屉里。</p></div>'+
+    '<div class="kgrid" style="grid-template-columns:1.4fr .9fr;align-items:start">'+
+    '<div class="kcard" style="cursor:default">'+(typeof ABOUT!=='undefined'?ABOUT.split('\n').map(function(x){return '<p style="font-size:13.5px;color:var(--ink-soft);line-height:2;margin:.35em 0">'+esc(x)+'</p>'}).join(''):'')+
+    '<div class="knote">🔑 <b>每日下载码</b>：关注公众号「开物AI科学」，回复关键词「开物」获取当日 5 位下载码。每天 0 点更换，昨日码当晚 24 点前仍可用。</div></div>'+
+    '<div class="kcard" style="cursor:default;text-align:center">'+(HAS_DATA&&CONFIG.QR?'<img src="'+esc(CONFIG.QR)+'" alt="公众号二维码" style="width:160px;height:160px;object-fit:contain;margin:0 auto;background:#fff;border:1px solid var(--line);padding:8px">':'')+
+    '<b style="font:700 15px var(--serif);margin-top:.6em">公众号 · 开物AI科学</b>'+
+    '<p style="font-size:12.5px;color:var(--ink2);margin-top:.5em;line-height:1.9">资源上新与下载码，都在这里发放。<br>微信扫一扫，即刻关注。</p></div>'+
+    '</div></section>'}
+};
+
+var pageRoot=document.getElementById('pageRoot');
+function route(){
+  var h=location.hash||'#/home';
+  if(h==='#index'){location.replace('#/labs');return}
+  if(h==='#about'){location.replace('#/about');return}
+  if(h==='#top'||h==='#'){location.replace('#/home');return}
+  var key=h.replace(/^#\//,'').split('?')[0];
+  var known={home:1,prompts:1,labs:1,design:1,about:1};
+  if(!known[key])key='home';
+  var isHome=(key==='home');
+  document.getElementById('homeRoot').style.display=isHome?'':'none';
+  pageRoot.hidden=isHome;
+  document.querySelectorAll('nav a[data-route]').forEach(function(a){
+    a.classList.toggle('active',!isHome&&a.getAttribute('data-route')===key);
+  });
+  if(isHome){window.scrollTo(0,0);return}
+  pageRoot.innerHTML=PAGES[key]();
+  if(key==='labs'){
+    drawLabList();
+    var sq=document.getElementById('labQ');
+    if(sq)sq.addEventListener('input',function(){FL[FL.tab].q=sq.value.trim();drawLabList()});
+  }
+  if(pending){
+    var el=document.getElementById('it-'+pending);
+    if(el){el.classList.add('open');setTimeout(function(){el.scrollIntoView({behavior:'smooth',block:'center'})},150)}
+    pending=null;
+  }
+  pageRoot.querySelectorAll('.reveal').forEach(function(el){io.observe(el)});
+  window.scrollTo(0,0);
+}
+window.addEventListener('hashchange',route);
+
+/* 数据页事件委托 */
+pageRoot.addEventListener('click',function(e){
+  var t;
+  t=e.target.closest('.ktab');
+  if(t){FL.tab=t.getAttribute('data-tab');
+    pageRoot.querySelectorAll('.ktab').forEach(function(x){x.classList.toggle('on',x===t)});
+    drawLabList();return}
+  t=e.target.closest('.kchip');
+  if(t){var f=FL[FL.tab],k=t.getAttribute('data-f'),v=t.getAttribute('data-v');
+    f[k]=(f[k]===v)?'':v;drawLabList();return}
+  t=e.target.closest('[data-copy]');
+  if(t){var p=PROMPTS.find(function(x){return x.id===t.getAttribute('data-copy')});if(p)copyText(p.txt);return}
+  t=e.target.closest('[data-copydl]');
+  if(t){var a=t.getAttribute('data-copydl').split('|');copyText(a[0]+' 提取码：'+a[1]);return}
+  t=e.target.closest('[data-dl]');
+  if(t){kwGate(t.getAttribute('data-name'),t.getAttribute('data-dl'));return}
+  t=e.target.closest('[data-jump]');
+  if(t){var it=byId(t.getAttribute('data-jump'));
+    if(it){FL.tab=WEB_ITEMS.some(function(x){return x.id===it.id})?'web':'tools';pending=it.id;
+      if(location.hash==='#/labs')route();else location.hash='#/labs'}
+    return}
+  t=e.target.closest('[data-pp]');
+  if(t){pending=t.getAttribute('data-pp');
+    if(location.hash==='#/prompts'){var el2=document.getElementById('it-'+pending);
+      if(el2){el2.classList.add('open');el2.scrollIntoView({behavior:'smooth',block:'center'})}pending=null}
+    else location.hash='#/prompts';
+    return}
+  if(e.target.closest('button,a,input,pre'))return;
+  t=e.target.closest('.kcard[data-open]');
+  if(t)t.classList.toggle('open');
+});
 
 route();
-})();
 </script>
-<!-- ═══ 功能层结束 ═══ -->
 </body>
 </html>
