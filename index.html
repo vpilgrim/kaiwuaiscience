@@ -509,6 +509,65 @@ footer{border-top:1px solid var(--ink)}
     </div>
   </div>
 </div>
+<!-- ================= 右侧资源搜索 ================= -->
+<button class="s-tab" id="sTab" type="button" aria-label="搜索资源">搜索资源</button>
+<button class="s-fab" id="sFab" type="button" aria-label="搜索资源">🔍</button>
+<div class="s-mask" id="sMask"></div>
+<aside class="s-panel" id="sPanel" role="dialog" aria-label="资源搜索">
+  <div class="s-head">
+    <input class="s-input" id="sInput" placeholder="搜索：课题 / 单元 / 素养 / 提示词…" autocomplete="off">
+    <button class="s-close" id="sClose" type="button" aria-label="关闭">×</button>
+  </div>
+  <div class="s-body" id="sBody">
+    <p class="s-empty">输入关键词，一次搜索全部资源：<br>教学网页 · 课堂工具 · 提示词 · 教学设计</p>
+  </div>
+</aside>
+<script>
+(function(){
+  var mask=document.getElementById('sMask'),panel=document.getElementById('sPanel'),
+      input=document.getElementById('sInput'),body=document.getElementById('sBody');
+  function openS(){mask.classList.add('open');panel.classList.add('open');setTimeout(function(){input.focus()},250)}
+  function closeS(){mask.classList.remove('open');panel.classList.remove('open')}
+  document.getElementById('sTab').addEventListener('click',openS);
+  document.getElementById('sFab').addEventListener('click',openS);
+  document.getElementById('sClose').addEventListener('click',closeS);
+  mask.addEventListener('click',closeS);
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')closeS()});
+  var EMPTY='<p class="s-empty">输入关键词，一次搜索全部资源：<br>教学网页 · 课堂工具 · 提示词 · 教学设计</p>';
+  function go(k,id){
+    closeS();
+    if(k==='p'){pending=id;if(location.hash==='#/prompts'){route()}else{location.hash='#/prompts'}return}
+    if(k==='d'){location.hash='#/design';return}
+    FL.tab=(k==='w')?'web':'tools';pending=id;
+    if(location.hash==='#/labs'){route()}else{location.hash='#/labs'}
+  }
+  input.addEventListener('input',function(){
+    var q=input.value.trim().toLowerCase();
+    if(!q){body.innerHTML=EMPTY;return}
+    var out='';
+    function grp(title,items,kind,meta){
+      if(!items.length)return;
+      out+='<p class="s-grp">'+title+'<i>'+items.length+'</i></p>'+items.map(function(o){
+        return '<button class="s-item" data-k="'+kind+'" data-id="'+o.id+'"><b>'+esc(o.t)+'</b><span>'+esc(meta(o)||'')+'</span></button>';
+      }).join('');
+    }
+    function hit(o){return (String(o.t)+' '+(o.d||'')+' '+(o.u||'')+' '+(o.c||'')+' '+(o.g||'')+' '+(o.ty||'')).toLowerCase().indexOf(q)>-1}
+    grp('教学网页',WEB_ITEMS.filter(hit),'w',function(o){return [o.g,o.ty].filter(Boolean).join(' · ')});
+    grp('课堂工具',TOOLS.filter(hit),'t',function(o){return [o.g,o.ty].filter(Boolean).join(' · ')});
+    grp('提示词',PROMPTS.filter(function(o){return (String(o.t)+' '+(o.txt||'')+' '+(o.plat||'')).toLowerCase().indexOf(q)>-1}),'p',function(o){return o.plat||''});
+    grp('教学设计',DESIGNS.filter(hit),'d',function(o){return o.g||''});
+    body.innerHTML=out||'<p class="s-empty">没有找到与「'+esc(input.value.trim())+'」相关的资源</p>';
+  });
+  body.addEventListener('click',function(e){
+    var b=e.target.closest('.s-item');if(b)go(b.getAttribute('data-k'),b.getAttribute('data-id'));
+  });
+  input.addEventListener('keydown',function(e){
+    if(e.key!=='Enter')return;
+    var f=body.querySelector('.s-item');
+    if(f)go(f.getAttribute('data-k'),f.getAttribute('data-id'));
+  });
+})();
+</script>
 
 <div class="toast" id="toast" role="status"></div>
 
