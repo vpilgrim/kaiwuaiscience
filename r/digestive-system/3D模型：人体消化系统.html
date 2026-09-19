@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>🧬 消化系统实验室 · 强磁吸版</title>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: radial-gradient(circle at 30% 40%, #e9f2f5, #b0c4de); 
+            font-family: "Segoe UI", "Microsoft YaHei", sans-serif; 
+        }
+        
+        #ui-layer { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            pointer-events: none; 
+        }
+        
+        /* === 左侧面板 === */
+        #left-panel {
+            position: absolute; 
+            top: 20px; 
+            left: 20px; 
+            width: 280px;
+            pointer-events: auto; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 15px;
+        }
+
+        .title-box {
+            background: rgba(255,255,255,0.9); 
+            backdrop-filter: blur(12px);
+            padding: 16px 20px; 
+            border-radius: 24px; 
+            border: 1px solid rgba(255,255,255,0.6);
+            box-shadow: 0 10px 30px rgba(0,40,40,0.1);
+            border-left: 6px solid #2b8c7c;
+        }
+        .panel-header { 
+            font-size: 22px; 
+            font-weight: 700; 
+            color: #1e5f55; 
+            margin: 0; 
+            letter-spacing: 0.5px; 
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .task-container {
+            background: rgba(255,255,255,0.9); 
+            backdrop-filter: blur(12px);
+            border-radius: 20px; 
+            border: 1px solid rgba(255,255,255,0.5);
+            box-shadow: 0 8px 28px rgba(0,0,0,0.06);
+            overflow: hidden; 
+            transition: all 0.3s ease;
+        }
+        .task-header {
+            padding: 14px 18px; 
+            background: #d9eee9; 
+            cursor: pointer;
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            font-weight: 700; 
+            color: #1a5e53; 
+            font-size: 15px;
+            border-bottom: 1px solid transparent;
+            transition: background 0.2s;
+        }
+        .task-header:hover { background: #c0e3da; }
+        .arrow { transition: transform 0.3s; font-size: 16px; }
+        .collapsed .arrow { transform: rotate(-90deg); }
+        .task-content {
+            padding: 18px; 
+            font-size: 14px; 
+            color: #2c4a42; 
+            line-height: 1.7;
+            background: #f6fbfa;
+            display: block;
+        }
+        .collapsed .task-content { display: none; }
+
+        /* 操作提示 */
+        .hint-badge {
+            display: inline-block;
+            background: #c8e6e0;
+            padding: 2px 10px;
+            border-radius: 30px;
+            font-size: 13px;
+            font-weight: 500;
+            margin-top: 8px;
+        }
+
+        /* === 右侧面板 === */
+        #right-panel {
+            position: absolute; 
+            top: 20px; 
+            right: 20px; 
+            width: 300px;
+            pointer-events: auto; 
+            background: rgba(255,255,255,0.9); 
+            backdrop-filter: blur(12px);
+            padding: 22px 20px; 
+            border-radius: 24px; 
+            border: 1px solid rgba(255,255,255,0.7);
+            box-shadow: 0 12px 36px rgba(0,30,30,0.12);
+            transition: box-shadow 0.3s;
+        }
+        
+        h2 { 
+            margin: 0 0 14px; 
+            color: #1e3b36; 
+            font-size: 20px; 
+            font-weight: 700; 
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        #desc-box { 
+            font-size: 15px; 
+            color: #2e4e44; 
+            line-height: 1.6; 
+            min-height: 85px; 
+            margin-bottom: 22px; 
+            background: #fff7e6; 
+            padding: 16px 16px; 
+            border-radius: 16px; 
+            border-left: 6px solid #f4a261;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.02);
+        }
+        
+        button {
+            width: 100%; 
+            padding: 14px; 
+            border: none; 
+            border-radius: 40px; 
+            cursor: pointer;
+            font-weight: 700; 
+            color: white; 
+            margin-bottom: 12px; 
+            transition: all 0.2s ease; 
+            font-size: 15px;
+            box-shadow: 0 6px 10px rgba(0,0,0,0.08);
+            display: flex; 
+            justify-content: center; 
+            align-items: center;
+            gap: 8px;
+            letter-spacing: 0.3px;
+        }
+        
+        #btn-play { 
+            background: linear-gradient(145deg, #f4a261, #e07c3c); 
+            box-shadow: 0 8px 16px rgba(228, 120, 51, 0.25);
+        }
+        #btn-play:hover:not(:disabled) { 
+            transform: translateY(-3px); 
+            box-shadow: 0 12px 20px rgba(228, 120, 51, 0.35);
+            background: linear-gradient(145deg, #ffb07c, #f08a4a);
+        }
+        #btn-play:disabled { 
+            background: #b0bec5; 
+            cursor: not-allowed; 
+            box-shadow: none; 
+            opacity: 0.6;
+        }
+        
+        #btn-diff { background: #2a9d8f; } 
+        #btn-diff:hover { background: #21867a; transform: scale(1.01); }
+        #btn-reset { background: #5f7b8c; } 
+        #btn-reset:hover { background: #4a6677; }
+        
+        /* 重置视角按钮 */
+        #btn-view-reset {
+            background: #78909c;
+            margin-top: -4px;
+        }
+        #btn-view-reset:hover {
+            background: #607d8b;
+        }
+        
+        #progress-bar { 
+            width: 100%; 
+            height: 10px; 
+            background: #e2e8f0; 
+            border-radius: 20px; 
+            overflow: hidden; 
+            margin-top: 15px;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+        }
+        #progress-fill { 
+            height: 100%; 
+            width: 0%; 
+            background: linear-gradient(90deg, #2a9d8f, #43b5a5); 
+            transition: width 0.5s cubic-bezier(0.2, 0.9, 0.4, 1); 
+            border-radius: 20px;
+        }
+        #prog-text {
+            text-align: right; 
+            font-size: 13px; 
+            color: #577a8a; 
+            margin-top: 6px; 
+            font-weight: 500;
+        }
+
+        #success-modal { 
+            display: none; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(255, 255, 255, 0.96); 
+            backdrop-filter: blur(8px);
+            z-index: 1000; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            animation: fadeIn 0.4s; 
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        #success-modal h1 { 
+            color: #1e6b5e; 
+            font-size: 52px; 
+            margin-bottom: 10px; 
+            text-shadow: 0 4px 12px rgba(0,80,70,0.15);
+        }
+        .modal-btn {
+            width: 220px;
+            margin-top: 24px;
+            background: #2a9d8f;
+            padding: 16px 20px;
+            border: none;
+            border-radius: 60px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 18px;
+            box-shadow: 0 10px 18px rgba(42,157,143,0.3);
+            transition: all 0.2s;
+        }
+        .modal-btn:hover {
+            background: #1f7a6f;
+            transform: scale(1.02);
+        }
+
+        /* 右下角操作提示 */
+        #hint-rotate {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(30, 60, 55, 0.65);
+            backdrop-filter: blur(6px);
+            color: #eef7f2;
+            padding: 8px 18px;
+            border-radius: 40px;
+            font-size: 14px;
+            pointer-events: none;
+            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+    </style>
+    
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body>
+
+<div id="ui-layer">
+    <div id="left-panel">
+        <div class="title-box">
+            <h1 class="panel-header" id="mainTitle">🧪 消化系统实验室</h1>
+        </div>
+        <div class="task-container collapsed" id="task-box">
+            <div class="task-header" onclick="toggleTask()">
+                <span>🎯 实验目标</span>
+                <span class="arrow">▼</span>
+            </div>
+            <div class="task-content">
+                <div style="display:flex; gap:6px; margin-bottom:8px;">🔬 1. 将左侧器官拖至人体虚线位置</div>
+                <div style="display:flex; gap:6px; margin-bottom:8px;">🧩 2. 正确放置8个器官完成拼装</div>
+                <div style="display:flex; gap:6px;">✨ 3. 点击演示观察消化旅程</div>
+                <div class="hint-badge">💡 强磁吸模式：靠近目标即自动吸附</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="right-panel">
+        <h2 id="ui-name">🔍 等待实验...</h2>
+        <div id="desc-box">👆 点击或拖动左侧器官，此处将显示生物学功能介绍。</div>
+        
+        <button id="btn-play" disabled>▶ 演示消化过程</button>
+        <button id="btn-diff" onclick="cycleDifficulty()">🟢 难度：简单 (常显)</button>
+        <button id="btn-reset">↻ 重置实验</button>
+        <button id="btn-view-reset" title="将视角恢复至正面最佳位置">🔄 重置视角</button>
+        
+        <div id="progress-bar"><div id="progress-fill"></div></div>
+        <div id="prog-text">进度: 0 / 8</div>
+    </div>
+
+    <div id="hint-rotate">
+        🖱️ 鼠标拖动旋转 · 滚轮缩放 · 强磁吸轻松拼装
+    </div>
+</div>
+
+<div id="success-modal">
+    <h1>🎉 拼装成功!</h1>
+    <p style="font-size:20px; color:#2a5e53; margin:5px 0;">系统结构正确，准备进行消化演示。</p>
+    <button class="modal-btn" id="modal-play-btn">✨ 开始演示</button>
+    <button onclick="document.getElementById('success-modal').style.display='none'" style="background:transparent; border:none; margin-top:16px; color:#4f7b73; text-decoration:underline; cursor:pointer; font-size:15px;">稍后手动演示</button>
+</div>
+
+<script type="module">
+    import * as THREE from 'three';
+    import { DragControls } from 'three/addons/controls/DragControls.js';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    // --- 全局状态与配置 ---
+    const BODY_Y = -3.0;
+    let difficultyMode = 0;
+    const ghostMeshes = [];
+    const organs = [];
+    let placedCount = 0;
+    let currentDragControls = null;
+    let demoAnimationId = null;
+    let demoBall = null;
+    let isDemoPlaying = false;
+    
+    // UI元素
+    const uiName = document.getElementById('ui-name');
+    const uiDesc = document.getElementById('desc-box');
+    const uiProg = document.getElementById('progress-fill');
+    const uiText = document.getElementById('prog-text');
+    const btnPlay = document.getElementById('btn-play');
+    const modal = document.getElementById('success-modal');
+    const modalPlayBtn = document.getElementById('modal-play-btn');
+
+    // 默认初始相机参数
+    const INIT_CAMERA_POS = new THREE.Vector3(5, 2, 26);
+    const INIT_CAMERA_TARGET = new THREE.Vector3(0, 0, 0);
+
+    // --- 曲线定义 (小肠/大肠) ---
+    class SmallIntestineCurve extends THREE.Curve {
+        getPoint(t) {
+            const bends = 12;
+            const widthEnvelope = Math.sin(t * Math.PI);
+            const x = Math.sin(t * Math.PI * bends) * (1.8 * widthEnvelope);
+            const y = (0.5 - t) * 2.2;
+            const z = Math.cos(t * Math.PI * bends * 0.5) * 0.4;
+            return new THREE.Vector3(x, y, z);
+        }
+    }
+
+    function getLargeIntestinePath() {
+        const path = new THREE.CurvePath();
+        const r = 2.8; const h = 1.2; const bottom = -2.0;
+        path.add(new THREE.LineCurve3(new THREE.Vector3(-r, bottom, 0), new THREE.Vector3(-r, h, 0)));
+        path.add(new THREE.QuadraticBezierCurve3(new THREE.Vector3(-r, h, 0), new THREE.Vector3(0, h-0.8, 0.5), new THREE.Vector3(r, h, 0)));
+        path.add(new THREE.LineCurve3(new THREE.Vector3(r, h, 0), new THREE.Vector3(r, bottom, 0)));
+        path.add(new THREE.QuadraticBezierCurve3(new THREE.Vector3(r, bottom, 0), new THREE.Vector3(1, bottom-1, 0), new THREE.Vector3(0, bottom-1.5, 0)));
+        return path;
+    }
+
+    // --- UI辅助 ---
+    window.toggleTask = function() {
+        document.getElementById('task-box').classList.toggle('collapsed');
+    };
+
+    window.cycleDifficulty = function() {
+        difficultyMode = (difficultyMode + 1) % 3;
+        const btn = document.getElementById('btn-diff');
+        if(difficultyMode === 0) {
+            btn.innerText = "🟢 难度：简单 (常显)";
+            btn.style.background = "#2a9d8f";
+        } else if(difficultyMode === 1) {
+            btn.innerText = "🟡 难度：中等 (拖动显)";
+            btn.style.background = "#e09f3e";
+        } else {
+            btn.innerText = "🔴 难度：困难 (隐藏)";
+            btn.style.background = "#b54a4a";
+        }
+        updateAllGhosts();
+    };
+
+    function updateAllGhosts() {
+        ghostMeshes.forEach((mesh, idx) => {
+            if (organs[idx] && organs[idx].userData.isPlaced) {
+                mesh.visible = false;
+            } else {
+                mesh.visible = (difficultyMode === 0);
+            }
+        });
+    }
+
+    // --- 场景初始化 ---
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf0f6fa);
+    scene.fog = new THREE.Fog(0xf0f6fa, 35, 100);
+
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 1000);
+    camera.position.copy(INIT_CAMERA_POS);
+    camera.lookAt(INIT_CAMERA_TARGET);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    document.body.appendChild(renderer.domElement);
+
+    // 灯光
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.75);
+    scene.add(ambientLight);
+    const mainLight = new THREE.DirectionalLight(0xfff5e6, 1.2);
+    mainLight.position.set(8, 14, 10);
+    mainLight.castShadow = true;
+    mainLight.shadow.mapSize.width = 1024;
+    mainLight.shadow.mapSize.height = 1024;
+    scene.add(mainLight);
+    const fillLight = new THREE.DirectionalLight(0xd4e9ff, 0.6);
+    fillLight.position.set(-8, 2, 8);
+    scene.add(fillLight);
+    const backLight = new THREE.PointLight(0xcce3de, 0.5);
+    backLight.position.set(0, 0, 15);
+    scene.add(backLight);
+
+    // --- 器官材质 ---
+    const organMaterial = (color, opacity = 0.88) => new THREE.MeshPhysicalMaterial({
+        color, roughness: 0.28, metalness: 0.05, clearcoat: 0.7, clearcoatRoughness: 0.15,
+        transparent: true, opacity, side: THREE.DoubleSide, depthWrite: true
+    });
+
+    // --- 模型工厂 ---
+    function createLiverMesh() {
+        const shape = new THREE.Shape();
+        shape.moveTo(0, 0); shape.bezierCurveTo(-1.5, -0.5, -3.5, -1.0, -4.5, -0.5);
+        shape.bezierCurveTo(-5.0, 1.5, -4.0, 3.5, -1.5, 3.0);
+        shape.bezierCurveTo(0.5, 2.8, 2.0, 1.0, 2.5, 0.5);
+        shape.lineTo(2.8, -0.2); shape.bezierCurveTo(1.5, -0.2, 0.5, 0.2, 0, 0);
+        const geo = new THREE.ExtrudeGeometry(shape, { depth: 1.5, bevelEnabled: true, bevelSegments: 5 });
+        geo.center();
+        const mesh = new THREE.Mesh(geo, organMaterial(0x8b5e4b));
+        mesh.scale.set(0.55, 0.55, 0.55);
+        const gall = new THREE.Mesh(new THREE.SphereGeometry(0.5, 16), organMaterial(0x2e7d5e, 0.9));
+        gall.scale.set(0.6, 1.2, 0.6);
+        gall.position.set(-0.5, -0.8, 0.8); gall.rotation.z = -0.5;
+        mesh.add(gall);
+        return mesh;
+    }
+
+    function createStomach() {
+        const shape = new THREE.Shape();
+        shape.moveTo(0, 0); shape.bezierCurveTo(0.3, 0.8, 1.2, 1.2, 1.8, 0.5);
+        shape.bezierCurveTo(2.5, -1.0, 2.2, -3.0, 1.0, -3.5);
+        shape.bezierCurveTo(0.2, -3.8, -0.8, -3.2, -0.8, -2.5);
+        shape.bezierCurveTo(-0.5, -1.5, -0.4, -0.5, 0, 0);
+        const geo = new THREE.ExtrudeGeometry(shape, { depth: 0.7, bevelEnabled: true, bevelSegments: 4 });
+        geo.center();
+        const mesh = new THREE.Mesh(geo, organMaterial(0xe07a6f));
+        mesh.scale.set(0.65, 0.65, 0.65);
+        return mesh;
+    }
+
+    function createPancreas() {
+        const s = new THREE.Shape();
+        s.moveTo(0, 0); s.bezierCurveTo(-0.5, 0.5, -0.8, -0.5, 0, -0.8);
+        s.bezierCurveTo(1.0, -0.6, 2.0, -0.3, 2.5, 0.2);
+        s.bezierCurveTo(1.5, 0.1, 0.5, 0.3, 0, 0);
+        const g = new THREE.ExtrudeGeometry(s, { depth: 0.3, bevelEnabled: true });
+        g.center();
+        return new THREE.Mesh(g, organMaterial(0xf5c56b));
+    }
+
+    function createSmallIntestine() {
+        const curve = new SmallIntestineCurve();
+        return new THREE.Mesh(new THREE.TubeGeometry(curve, 250, 0.33, 10, false), organMaterial(0xf09b7e));
+    }
+
+    function createLargeIntestine() {
+        const path = getLargeIntestinePath();
+        return new THREE.Mesh(new THREE.TubeGeometry(path, 100, 0.5, 12, false), organMaterial(0xb9a69b));
+    }
+
+    function createAnus() {
+        const geo = new THREE.TorusGeometry(0.25, 0.15, 12, 24);
+        const mesh = new THREE.Mesh(geo, organMaterial(0x6d5248));
+        mesh.rotation.x = Math.PI / 2;
+        return mesh;
+    }
+
+    function getStorePos(index) {
+        const col = index % 2;
+        const row = Math.floor(index / 2);
+        return new THREE.Vector3(-12 + col * 5, 4.5 - row * 3.5, 0);
+    }
+
+    const organConfig = [
+        { id:'liver', func:createLiverMesh, name:'肝脏和胆囊', pos: new THREE.Vector3(-1.4, 2.5 + BODY_Y, 0.5), rot: [0, 0, 0.5], desc:'【肝脏】人体最大的消化腺，分泌胆汁。胆囊储存浓缩胆汁。' },
+        { id:'stomach', func:createStomach, name:'胃', pos: new THREE.Vector3(1.2, 2.0 + BODY_Y, 0.5), rot: [0, 0, -0.52], desc:'【胃】J型囊袋，通过蠕动研磨食物，分泌胃酸和胃蛋白酶。' },
+        { id:'pancreas', func:createPancreas, name:'胰腺', pos: new THREE.Vector3(0.5, 1.2 + BODY_Y, -0.5), rot: [0,0,0.2], desc:'【胰腺】位于胃后方，分泌胰液(含多种消化酶)和胰岛素。' },
+        { id:'large', func:createLargeIntestine, name:'大肠', pos: new THREE.Vector3(0, -1.0 + BODY_Y, -0.2), desc:'【大肠】吸收水分和电解质，形成粪便。' },
+        { id:'small', func:createSmallIntestine, name:'小肠', pos: new THREE.Vector3(0, -1.5 + BODY_Y, 0.2), desc:'【小肠】消化吸收的主要场所，分为十二指肠、空肠、回肠。' },
+        { id:'esophagus', func:() => new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 3.5, 16), organMaterial(0xe6a3b5)), name:'食道', pos: new THREE.Vector3(0, 4.5 + BODY_Y, -0.5), desc:'【食道】通过蠕动将食物推送至胃。' },
+        { id:'mouth', func:() => new THREE.Mesh(new THREE.TorusGeometry(0.6, 0.15, 8, 20, Math.PI), organMaterial(0xf0bfb0)), name:'口腔', pos: new THREE.Vector3(0, 7.0 + BODY_Y, 0), rot: [Math.PI, 0, 0], desc:'【口腔】消化起点，牙齿咀嚼，唾液淀粉酶初步分解淀粉。' },
+        { id:'anus', func:createAnus, name:'肛门', pos: new THREE.Vector3(0, -5.2 + BODY_Y, 0), desc:'【肛门】排出食物残渣的出口。' }
+    ];
+
+    // 生成器官和幽灵
+    organConfig.forEach((cfg, i) => {
+        const mesh = cfg.func();
+        mesh.position.copy(getStorePos(i));
+        if(cfg.rot) mesh.rotation.set(...cfg.rot);
+        mesh.userData = { 
+            originalPos: getStorePos(i), targetPos: cfg.pos, isPlaced: false, 
+            name: cfg.name, desc: cfg.desc, ghostIndex: i 
+        };
+        mesh.castShadow = true; mesh.receiveShadow = true;
+        scene.add(mesh);
+        organs.push(mesh);
+
+        const ghost = mesh.clone();
+        const ghostMat = new THREE.MeshBasicMaterial({ 
+            color: 0x5e7c8c, wireframe: true, transparent: true, opacity: 0.48,
+            depthTest: false, depthWrite: false
+        });
+        ghost.traverse((child) => { if(child.isMesh) child.material = ghostMat; });
+        ghost.position.copy(cfg.pos);
+        if(cfg.rot) ghost.rotation.set(...cfg.rot);
+        ghost.visible = (difficultyMode === 0);
+        scene.add(ghost);
+        ghostMeshes.push(ghost);
+    });
+
+    // --- 透明人体轮廓 ---
+    const bodyGeo = new THREE.CapsuleGeometry(3.8, 9.0, 4, 32);
+    const bodyMat = new THREE.MeshBasicMaterial({ color: 0xf0f9ff, transparent: true, opacity: 0.12, depthWrite: false, side: THREE.DoubleSide });
+    const bodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
+    bodyMesh.position.set(0, BODY_Y + 1.2, -1.5);
+    scene.add(bodyMesh);
+    
+    const outlineGeo = new THREE.CapsuleGeometry(3.8, 9.0, 4, 10);
+    const outlineMat = new THREE.MeshBasicMaterial({ color: 0x7f9aa5, wireframe: true, transparent: true, opacity: 0.16 });
+    const outlineMesh = new THREE.Mesh(outlineGeo, outlineMat);
+    outlineMesh.position.copy(bodyMesh.position);
+    scene.add(outlineMesh);
+
+    // 装饰粒子
+    const stars = new THREE.Points(
+        new THREE.BufferGeometry().setFromPoints(Array.from({length:200},()=>new THREE.Vector3((Math.random()-0.5)*40, (Math.random()-0.5)*30, (Math.random()-0.5)*40))),
+        new THREE.PointsMaterial({color:0xbcd4df, size:0.08, transparent:true})
+    );
+    scene.add(stars);
+
+    // --- 轨道控制器 (降低灵敏度) ---
+    const orbit = new OrbitControls(camera, renderer.domElement);
+    orbit.enableDamping = true;
+    orbit.dampingFactor = 0.05;
+    orbit.rotateSpeed = 0.6;
+    orbit.autoRotate = false;
+    orbit.enablePan = true;
+    orbit.maxPolarAngle = Math.PI / 1.9;
+    orbit.minPolarAngle = 0.1;
+    orbit.target.copy(INIT_CAMERA_TARGET);
+
+    // --- 重置视角功能 ---
+    function resetCameraView() {
+        const startPos = camera.position.clone();
+        const startTarget = orbit.target.clone();
+        const endPos = INIT_CAMERA_POS;
+        const endTarget = INIT_CAMERA_TARGET;
+        
+        let progress = 0;
+        const duration = 20;
+        
+        function animateCamera() {
+            progress += 1/duration;
+            if (progress >= 1) {
+                camera.position.copy(endPos);
+                orbit.target.copy(endTarget);
+                orbit.update();
+                return;
+            }
+            const eased = 1 - Math.pow(1 - progress, 2);
+            camera.position.lerpVectors(startPos, endPos, eased);
+            orbit.target.lerpVectors(startTarget, endTarget, eased);
+            orbit.update();
+            requestAnimationFrame(animateCamera);
+        }
+        animateCamera();
+    }
+
+    document.getElementById('btn-view-reset').addEventListener('click', resetCameraView);
+
+    // --- 拖拽系统 (强磁吸：阈值大幅提升) ---
+    function getLogicalObject(obj) {
+        if (obj.userData && obj.userData.name) return obj;
+        if (obj.parent && obj.parent.userData && obj.parent.userData.name) return obj.parent;
+        return obj;
+    }
+
+    function rebuildDragControls() {
+        if (currentDragControls) currentDragControls.dispose();
+        const draggable = organs.filter(o => !o.userData.isPlaced);
+        currentDragControls = new DragControls(draggable, camera, renderer.domElement);
+        
+        currentDragControls.addEventListener('dragstart', (e) => {
+            orbit.enabled = false;
+            const logical = getLogicalObject(e.object);
+            logical.traverse((child) => { if(child.isMesh) child.material.emissive?.setHex(0x444444); });
+            uiName.innerText = logical.userData.name;
+            uiDesc.innerText = logical.userData.desc;
+            if(difficultyMode === 1) {
+                const idx = logical.userData.ghostIndex;
+                if(idx !== undefined && ghostMeshes[idx]) ghostMeshes[idx].visible = true;
+            }
+        });
+
+        currentDragControls.addEventListener('dragend', (e) => {
+            orbit.enabled = true;
+            const logical = getLogicalObject(e.object);
+            logical.traverse((child) => { if(child.isMesh) child.material.emissive?.setHex(0); });
+            
+            if(difficultyMode === 1 && !logical.userData.isPlaced) {
+                const idx = logical.userData.ghostIndex;
+                if(idx !== undefined && ghostMeshes[idx]) ghostMeshes[idx].visible = false;
+            }
+
+            if(logical.userData.isPlaced) {
+                snapTo(logical, logical.userData.targetPos);
+                return;
+            }
+
+            // 🔥 强磁吸：大幅提高吸附阈值，胰腺更大
+            const threshold = logical.userData.name === '胰腺' ? 5.0 : 4.0;
+            
+            if(logical.position.distanceTo(logical.userData.targetPos) < threshold) {
+                snapTo(logical, logical.userData.targetPos);
+                logical.userData.isPlaced = true;
+                placedCount++;
+                
+                const gIdx = logical.userData.ghostIndex;
+                if(gIdx !== undefined) ghostMeshes[gIdx].visible = false;
+                
+                const pct = (placedCount / 8) * 100;
+                uiProg.style.width = pct + '%';
+                uiText.innerText = `进度: ${placedCount} / 8`;
+                
+                rebuildDragControls();
+                
+                if(placedCount === 8) {
+                    modal.style.display = 'flex';
+                    btnPlay.disabled = false;
+                }
+            } else {
+                snapTo(logical, logical.userData.originalPos);
+                uiName.innerText = "📍 位置不正确";
+                uiDesc.innerText = difficultyMode === 2 ? "困难模式无提示，请回忆解剖位置。" : "再靠近一点，强磁吸会帮你归位。";
+            }
+        });
+    }
+
+    function snapTo(obj, target) {
+        const start = obj.position.clone();
+        let t = 0;
+        function step() {
+            t += 0.1;
+            if(t >= 1) { obj.position.copy(target); return; }
+            obj.position.lerpVectors(start, target, t);
+            requestAnimationFrame(step);
+        }
+        step();
+    }
+
+    rebuildDragControls();
+
+    // --- 演示动画 ---
+    function startDigestionDemo() {
+        if (isDemoPlaying) return;
+        if (demoBall) scene.remove(demoBall);
+        
+        const ball = new THREE.Mesh(new THREE.SphereGeometry(0.32, 24), new THREE.MeshStandardMaterial({ color: 0xffd966, emissive: new THREE.Color(0xb45f06), emissiveIntensity: 0.8 }));
+        ball.castShadow = true;
+        const light = new THREE.PointLight(0xffb347, 2.5, 10);
+        ball.add(light);
+        scene.add(ball);
+        demoBall = ball;
+        isDemoPlaying = true;
+        btnPlay.disabled = true;
+        
+        const y = BODY_Y;
+        const points = [
+            {v:new THREE.Vector3(0, 7.0 + y, 0), c:0xffd966, t:"🥄 食物进入口腔，咀嚼并与唾液混合。"},
+            {v:new THREE.Vector3(0, 4.5 + y, 0), c:0xffd966, t:"⬇️ 通过食道，蠕动推进。"},
+            {v:new THREE.Vector3(1.0, 2.0 + y, 0.5), c:0xffb347, t:"🧪 进入胃部，胃酸和酶开始消化蛋白质。"},
+            {v:new THREE.Vector3(1.2, 1.8 + y, 0.5), c:0xe67300, t:"🌀 胃内搅拌形成食糜。"},
+            {v:new THREE.Vector3(0.5, 1.0 + y, 0), c:0xe67300, t:"🌿 进入十二指肠，胰液和胆汁加入。"}
+        ];
+
+        const smCurve = new SmallIntestineCurve();
+        const smOffset = new THREE.Vector3(0, -1.5 + y, 0.2);
+        for(let i=0; i<=1; i+=0.018) {
+            points.push({v: smCurve.getPoint(i).add(smOffset), c:0xe67e22, t:"🧫 小肠内壁吸收营养..."});
+        }
+        
+        const lgPath = getLargeIntestinePath();
+        const lgOffset = new THREE.Vector3(0, -1.0 + y, -0.2);
+        const lgPoints = lgPath.getSpacedPoints(45);
+        lgPoints.forEach((p, idx) => {
+            points.push({v: p.clone().add(lgOffset), c: idx<8?0xb08d6a:0x8b6f5e, t:"💧 大肠吸收水分，形成粪便。"});
+        });
+        points.push({v:new THREE.Vector3(0, -5.2 + y, 0), c:0x6d4c41, t:"🚽 到达肛门，排出体外。"});
+
+        let idx = 0;
+        ball.position.copy(points[0].v);
+        uiName.innerText = "🧬 消化演示中";
+        uiDesc.innerText = points[0].t;
+
+        function runPath() {
+            if (idx >= points.length - 1) {
+                scene.remove(ball);
+                demoBall = null;
+                isDemoPlaying = false;
+                btnPlay.disabled = (placedCount !== 8);
+                uiName.innerText = "✅ 演示结束";
+                uiDesc.innerText = "食物残渣已排出。您可以重置或继续探索。";
+                demoAnimationId = null;
+                return;
+            }
+            const target = points[idx+1].v;
+            const dist = ball.position.distanceTo(target);
+            if(dist < 0.12) {
+                idx++;
+                if(points[idx].t) uiDesc.innerText = points[idx].t;
+                if(points[idx].c) {
+                    ball.material.color.setHex(points[idx].c);
+                    light.color.setHex(points[idx].c);
+                }
+            }
+            const dir = new THREE.Vector3().subVectors(target, ball.position).normalize();
+            ball.position.add(dir.multiplyScalar(0.18));
+            demoAnimationId = requestAnimationFrame(runPath);
+        }
+        demoAnimationId = requestAnimationFrame(runPath);
+    }
+
+    // --- 重置功能 (软重置) ---
+    function resetExperiment() {
+        if (demoAnimationId) {
+            cancelAnimationFrame(demoAnimationId);
+            demoAnimationId = null;
+        }
+        if (demoBall) { scene.remove(demoBall); demoBall = null; }
+        isDemoPlaying = false;
+        
+        placedCount = 0;
+        organs.forEach((mesh, i) => {
+            mesh.position.copy(mesh.userData.originalPos);
+            mesh.userData.isPlaced = false;
+            if(mesh.userData.rot) mesh.rotation.set(...mesh.userData.rot);
+        });
+        ghostMeshes.forEach((ghost, i) => {
+            ghost.visible = (difficultyMode === 0);
+        });
+        uiProg.style.width = '0%';
+        uiText.innerText = '进度: 0 / 8';
+        btnPlay.disabled = true;
+        modal.style.display = 'none';
+        uiName.innerText = '🔍 等待实验...';
+        uiDesc.innerText = '👆 点击或拖动左侧器官，此处将显示生物学功能介绍。';
+        rebuildDragControls();
+        resetCameraView();
+    }
+
+    // 绑定事件
+    btnPlay.addEventListener('click', startDigestionDemo);
+    modalPlayBtn.addEventListener('click', () => {
+        modal.style.display = 'none';
+        startDigestionDemo();
+    });
+    document.getElementById('btn-reset').addEventListener('click', resetExperiment);
+
+    // 动画循环
+    function animate() {
+        requestAnimationFrame(animate);
+        orbit.update();
+        renderer.render(scene, camera);
+    }
+    animate();
+
+    window.onresize = () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    };
+
+    window.resetExperiment = resetExperiment;
+    window.resetCameraView = resetCameraView;
+</script>
+<!-- ================= 开物AI科学 · 版权模块（单击显示 / 双击打开官网） ================= -->
+<style id="kaiming-copyright-style">
+  #kaiming-copyright {
+    position: fixed;
+    bottom: 26px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    pointer-events: none;
+    z-index: 999999;
+    transition: opacity 0.45s ease;
+    opacity: 0;
+    display: none;
+  }
+  #kaiming-copyright .inner {
+    display: inline-block;
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #eafaf2;
+    padding: 9px 26px;
+    border-radius: 60px;
+    /* 原稿为 14px；此处改为 16px 以符合本机 verify_html.py 的「字号不得小于 16px」硬规则 */
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.6px;
+    border: 1px solid rgba(255, 245, 210, 0.3);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+    font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+    white-space: nowrap;
+  }
+</style>
+
+<div id="kaiming-copyright">
+  <div class="inner">© 2026 开物AI科学 ｜ AI 赋能 · 教育公平</div>
+</div>
+
+<script id="kaiming-copyright-script">
+(function () {
+  "use strict";
+
+  /* 目标：单击标题 → 显示版权 3.5 秒；双击标题 → 打开 www.kaiwuaiscience.com */
+
+  const HOMEPAGE = "https://www.kaiwuaiscience.com";
+  const SHOW_MS = 3500;      // 版权显示时长
+  const DBL_WINDOW = 280;    // 双击判定的时间窗（毫秒）
+  const FADE_MS = 450;       // 淡出时长，与 CSS transition 一致
+
+  function bindCopyright() {
+    // 首选 #mainTitle（注入脚本会保证它存在）；后三个选择器是手写粘贴时的兜底
+    const title = document.getElementById("mainTitle") ||
+                  document.querySelector("h1, .title, .page-title, .main-title");
+    const box = document.getElementById("kaiming-copyright");
+    if (!title || !box) return;
+
+    title.style.cursor = "pointer";
+    title.style.userSelect = "none";
+    title.style.webkitUserSelect = "none";
+
+    let clickTimer = null;
+    let hideTimer = null;
+    let seq = 0;   // 每次显示/隐藏都 +1，用来作废在飞的定时器
+
+    function showCopyright() {
+      const my = ++seq;
+      if (hideTimer) clearTimeout(hideTimer);
+      box.style.display = "block";
+      /* 强制重绘，让 0 → 1 的淡入真的发生。
+         这里刻意不用 requestAnimationFrame：rAF 在页面不产生新帧时（后台标签页、
+         无头渲染、大屏久置）不保证触发——一旦它晚于下方的隐藏定时器回调，
+         就会把 opacity 又设成 1，导致版权条永久停在屏幕上。 */
+      void box.offsetHeight;
+      box.style.opacity = "1";
+      hideTimer = setTimeout(function () {
+        if (my !== seq) return;      // 期间又被点过，交给新的那一次收尾
+        box.style.opacity = "0";
+        setTimeout(function () {
+          if (my === seq) box.style.display = "none";
+        }, FADE_MS);
+      }, SHOW_MS);
+    }
+
+    function hideCopyright() {
+      const my = ++seq;              // 作废所有在飞的定时器，避免"淡出到一半又被点亮"卡住
+      if (hideTimer) clearTimeout(hideTimer);
+      if (box.style.display !== "block") return;
+      box.style.opacity = "0";
+      setTimeout(function () {
+        if (my === seq) box.style.display = "none";
+      }, FADE_MS);
+    }
+
+    function openHomepage() {
+      // 双击时隐藏版权，并跳转官网
+      hideCopyright();
+      window.open(HOMEPAGE, "_blank", "noopener,noreferrer");
+    }
+
+    title.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (clickTimer) return;   // 已在等待双击窗口，忽略这次单击
+      clickTimer = setTimeout(function () {
+        clickTimer = null;
+        showCopyright();        // 确认是单击
+      }, DBL_WINDOW);
+    });
+
+    title.addEventListener("dblclick", function (e) {
+      e.stopPropagation();
+      if (clickTimer) {         // 取消挂起的单击
+        clearTimeout(clickTimer);
+        clickTimer = null;
+      }
+      openHomepage();
+    });
+
+    // 点击页面其它地方，立即隐藏版权
+    document.addEventListener("click", function (e) {
+      if (e.target === title) return;
+      hideCopyright();
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bindCopyright);
+  } else {
+    bindCopyright();
+  }
+})();
+</script>
+<!-- ================= 开物AI科学 · 版权模块 结束 ================= -->
+
+</body>
+</html>

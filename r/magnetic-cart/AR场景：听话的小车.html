@@ -1,0 +1,417 @@
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>“听话”的小车 - 隐形磁铁揭秘</title>
+    <!-- 引入 MediaPipe 手势识别库 -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <style>
+        body, html { margin: 0; padding: 0; overflow: hidden; height: 100%; font-family: 'PingFang SC', 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f7f9fc; }
+        #app { position: relative; width: 100%; height: 100%; }
+        
+        #page-title { text-align: center; margin-top: 20px; font-size: 32px; color: #2c3e50; font-weight: bold; position: relative; z-index: 10; pointer-events: none; text-shadow: 2px 2px 4px rgba(255,255,255,0.8); }
+        
+        /* 视频和画布背景 */
+        #video-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; opacity: 0.15; pointer-events: none; transition: opacity 0.3s; }
+        #output_canvas { width: 100%; height: 100%; transform: scaleX(-1); object-fit: cover; }
+        #video { display: none; }
+
+        /* 教学模式状态栏 */
+        #teaching-status { position: absolute; top: 70px; left: 50%; transform: translateX(-50%); font-size: 22px; font-weight: bold; color: #e74c3c; display: none; z-index: 10; background: rgba(255,255,255,0.9); padding: 10px 20px; border-radius: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); border: 2px solid #e74c3c; }
+
+        /* 实体小车样式 */
+        .car-wrapper { position: absolute; left: 50%; top: 50%; width: 220px; height: 110px; transform: translate(-50%, -50%); z-index: 5; transition: left 0.1s ease-out; }
+        svg { width: 100%; height: 100%; filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.3)); }
+
+        /* --- 隐形磁铁样式 (跟随手部) --- */
+        #virtual-magnet { position: absolute; width: 160px; height: 50px; transform: translate(-50%, -50%); z-index: 6; display: none; opacity: 0.85; filter: drop-shadow(0 0 15px rgba(255,215,0,0.8)); transition: transform 0.1s; pointer-events: none; }
+        #virtual-magnet svg { filter: none; } /* 清除内部svg的默认阴影 */
+
+        /* --- 右下角控制台集合 --- */
+        #controls-container { position: absolute; bottom: 30px; right: 30px; z-index: 11; display: flex; gap: 20px; background: rgba(255,255,255,0.8); padding: 10px 20px; border-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        #controls-container div { font-size: 32px; cursor: pointer; transition: all 0.2s; user-select: none; opacity: 0.6; }
+        #controls-container div:hover { transform: scale(1.15); opacity: 1; }
+        .active-icon { filter: drop-shadow(0 0 8px #ffd700); opacity: 1 !important; transform: scale(1.1); }
+
+        /* 帮助面板 */
+        #help-panel { position: absolute; top: 0; right: -320px; width: 300px; height: 100%; background-color: white; z-index: 12; box-shadow: -4px 0 6px rgba(0,0,0,0.1); transition: right 0.3s ease-out; padding: 20px; display: flex; flex-direction: column; }
+        #help-panel.open { right: 0; }
+        #help-panel h2 { margin-top: 0; font-size: 24px; color: #2c3e50; border-bottom: 2px solid #e0e0e0; padding-bottom: 10px; }
+        #help-panel ul { list-style-type: none; padding: 0; }
+        #help-panel li { margin-bottom: 15px; font-size: 16px; color: #555; line-height: 1.5; }
+        #close-panel { position: absolute; top: 15px; left: 15px; font-size: 30px; cursor: pointer; color: #999; }
+        #close-panel:hover { color: #333; }
+    </style>
+</head>
+<body>
+
+    <div id="app">
+        <h1 id="page-title">“听话”的小车</h1>
+        <div id="teaching-status">✨ 隐形磁铁大揭秘 ✨</div>
+        
+        <!-- 背景摄像头画面 -->
+        <div id="video-container">
+            <video id="video" playsinline></video>
+            <canvas id="output_canvas"></canvas>
+        </div>
+        
+        <!-- 实体小车 -->
+        <div id="car-container-1" class="car-wrapper">
+            <svg viewBox="0 0 200 100">
+                <rect x="10" y="50" width="180" height="20" rx="5" fill="#f44336"/>
+                <g>
+                    <!-- 小车的固定极性：左N 右S -->
+                    <rect x="10" y="10" width="90" height="30" rx="3" fill="#f44336"/>
+                    <rect x="100" y="10" width="90" height="30" rx="3" fill="#3f51b5"/>
+                    <text x="55" y="32" fill="white" font-family="Arial" font-size="18" text-anchor="middle">N</text>
+                    <text x="145" y="32" fill="white" font-family="Arial" font-size="18" text-anchor="middle">S</text>
+                </g>
+                <circle cx="40" cy="80" r="15" fill="#e0e0e0" stroke="#ccc" stroke-width="1"/>
+                <circle cx="160" cy="80" r="15" fill="#e0e0e0" stroke="#ccc" stroke-width="1"/>
+                <circle cx="40" cy="80" r="5" fill="#666"/>
+                <circle cx="160" cy="80" r="5" fill="#666"/>
+            </svg>
+        </div>
+
+        <!-- 魔法揭秘：隐形磁铁 (跟随手部) -->
+        <div id="virtual-magnet">
+            <svg viewBox="0 0 160 50">
+                <!-- 隐形磁铁的左半边 -->
+                <rect id="v-mag-left" x="0" y="0" width="80" height="50" rx="5" fill="#f44336"/>
+                <!-- 隐形磁铁的右半边 -->
+                <rect id="v-mag-right" x="80" y="0" width="80" height="50" rx="5" fill="#3f51b5"/>
+                <text id="v-mag-text-left" x="40" y="32" fill="white" font-family="Arial" font-weight="bold" font-size="20" text-anchor="middle">N</text>
+                <text id="v-mag-text-right" x="120" y="32" fill="white" font-family="Arial" font-weight="bold" font-size="20" text-anchor="middle">S</text>
+            </svg>
+        </div>
+
+        <!-- 右下角控制台 -->
+        <div id="controls-container">
+            <div id="mode-icon" title="揭秘模式 (显示隐形磁铁)">📖</div>
+            <div id="ar-icon" title="AR功能 (显示真实画面)">📷</div>
+            <div id="help-icon" title="魔术指南">🧭</div>
+        </div>
+
+        <!-- 右侧帮助面板 -->
+        <div id="help-panel">
+            <span id="close-panel">&times;</span>
+            <h2>魔术师指南</h2>
+            <ul>
+                <li><strong>🖐️张开手：</strong> 小车靠近 (异极相吸)。</li>
+                <li><strong>✊握拳：</strong> 小车推开 (同极相斥)。</li>
+                <li><strong>📷 AR开关：</strong> 开启后显示真实摄像头画面，增强沉浸感。</li>
+                <li><strong>📖 揭秘开关：</strong> 重点！开启后，手部位置会显现出“隐形磁铁”。张开手或握拳时，隐形磁铁会翻转极性，完美解释小车运动的科学原理。</li>
+            </ul>
+        </div>
+    </div>
+
+<script>
+    const videoElement = document.getElementById('video');
+    const canvasElement = document.getElementById('output_canvas');
+    const canvasCtx = canvasElement.getContext('2d');
+    const videoContainer = document.getElementById('video-container');
+    
+    const car1Container = document.getElementById('car-container-1');
+    const virtualMagnet = document.getElementById('virtual-magnet');
+    
+    // 获取虚拟磁铁的各个部分以便动态修改颜色和文字
+    const vMagLeft = document.getElementById('v-mag-left');
+    const vMagRight = document.getElementById('v-mag-right');
+    const vMagTextLeft = document.getElementById('v-mag-text-left');
+    const vMagTextRight = document.getElementById('v-mag-text-right');
+    
+    const modeIcon = document.getElementById('mode-icon');
+    const arIcon = document.getElementById('ar-icon');
+    const teachingStatus = document.getElementById('teaching-status');
+    const helpIcon = document.getElementById('help-icon');
+    const helpPanel = document.getElementById('help-panel');
+    const closePanel = document.getElementById('close-panel');
+
+    let car1X = window.innerWidth / 2;
+    let isTeachingMode = false;
+    let isARMode = false;
+
+    // 统筹背景画面透明度的函数
+    function updateBackgroundOpacity() {
+        if (isARMode) {
+            videoContainer.style.opacity = '1'; 
+            arIcon.classList.add('active-icon');
+        } else if (isTeachingMode) {
+            videoContainer.style.opacity = '0.3'; 
+            arIcon.classList.remove('active-icon');
+        } else {
+            videoContainer.style.opacity = '0.1'; 
+            arIcon.classList.remove('active-icon');
+        }
+    }
+
+    // 切换揭秘模式 📖 (显示/隐藏隐形磁铁)
+    modeIcon.addEventListener('click', () => {
+        isTeachingMode = !isTeachingMode;
+        if (isTeachingMode) {
+            modeIcon.classList.add('active-icon');
+            teachingStatus.style.display = 'block';
+            virtualMagnet.style.display = 'block'; // 显示隐形磁铁
+        } else {
+            modeIcon.classList.remove('active-icon');
+            teachingStatus.style.display = 'none';
+            virtualMagnet.style.display = 'none'; // 隐藏隐形磁铁
+        }
+        updateBackgroundOpacity();
+    });
+
+    // 切换AR模式 📷
+    arIcon.addEventListener('click', () => {
+        isARMode = !isARMode;
+        updateBackgroundOpacity();
+    });
+
+    // 帮助面板控制 🧭
+    helpIcon.addEventListener('click', () => helpPanel.classList.toggle('open'));
+    closePanel.addEventListener('click', () => helpPanel.classList.remove('open'));
+
+    // 判断手势：张开还是握拳
+    function checkGesture(landmarks) {
+        const wrist = landmarks[0];
+        const middleTip = landmarks[12];
+        const middleBase = landmarks[9];
+        const indexTip = landmarks[8];
+        const indexBase = landmarks[5];
+        
+        const mDistToTip = Math.hypot(middleTip.x - wrist.x, middleTip.y - wrist.y);
+        const mDistToBase = Math.hypot(middleBase.x - wrist.x, middleBase.y - wrist.y);
+        const iDistToTip = Math.hypot(indexTip.x - wrist.x, indexTip.y - wrist.y);
+        const iDistToBase = Math.hypot(indexBase.x - wrist.x, indexBase.y - wrist.y);
+
+        return (mDistToTip < mDistToBase && iDistToTip < iDistToBase) ? "fist" : "open";
+    }
+
+    // 更新虚拟磁铁的极性
+    function updateVirtualMagnet(gesture) {
+        if (gesture === 'open') {
+            // 张开手：左 N (红) | 右 S (蓝)
+            vMagLeft.setAttribute('fill', '#f44336');
+            vMagTextLeft.textContent = 'N';
+            vMagRight.setAttribute('fill', '#3f51b5');
+            vMagTextRight.textContent = 'S';
+        } else if (gesture === 'fist') {
+            // 握拳：左 S (蓝) | 右 N (红)  --> 发生翻转！
+            vMagLeft.setAttribute('fill', '#3f51b5');
+            vMagTextLeft.textContent = 'S';
+            vMagRight.setAttribute('fill', '#f44336');
+            vMagTextRight.textContent = 'N';
+        }
+    }
+
+    function onResults(results) {
+        canvasCtx.save();
+        canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+        
+        if (isTeachingMode || isARMode) {
+            canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+        }
+
+        if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+            const landmarks = results.multiHandLandmarks[0];
+            // 获取手的中心坐标 (镜像翻转处理)
+            const handX = (1 - landmarks[9].x) * window.innerWidth;
+            const handY = landmarks[9].y * window.innerHeight;
+            
+            const gesture = checkGesture(landmarks);
+
+            // 1. 如果在揭秘模式，更新并让隐形磁铁跟随手部
+            if (isTeachingMode) {
+                // 画一点辅助骨骼线，看起来更有科技感
+                drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {color: 'rgba(0, 255, 0, 0.5)', lineWidth: 2});
+                
+                // 更新磁铁极性
+                updateVirtualMagnet(gesture);
+                
+                // 让虚拟磁铁紧紧贴在手的位置
+                virtualMagnet.style.left = handX + 'px';
+                virtualMagnet.style.top = handY + 'px';
+            }
+
+            // 2. 更新小车位置 (物理原理模拟)
+            if (gesture === "open") {
+                // 模拟异极相吸：小车向手(隐形磁铁)的位置移动
+                car1X += (handX - car1X) * 0.05; 
+            } else if (gesture === "fist") {
+                // 模拟同极相斥：小车背离手(隐形磁铁)的位置移动
+                car1X += (handX > car1X) ? -15 : 15; 
+            }
+
+            // 限制小车不出界
+            const carWidth = 220;
+            car1X = Math.max(carWidth / 2, Math.min(window.innerWidth - carWidth / 2, car1X));
+            car1Container.style.left = car1X + 'px';
+
+        } else {
+            // 如果手不在画面里，隐藏隐形磁铁
+            if (isTeachingMode) {
+                virtualMagnet.style.left = '-1000px'; 
+            }
+        }
+        canvasCtx.restore();
+    }
+
+    const hands = new Hands({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
+    hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.6, minTrackingConfidence: 0.6 });
+    hands.onResults(onResults);
+
+    const camera = new Camera(videoElement, {
+        onFrame: async () => { await hands.send({image: videoElement}); },
+        width: 1280, height: 720
+    });
+    camera.start();
+
+    function resize() {
+        canvasElement.width = window.innerWidth;
+        canvasElement.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+</script>
+
+
+<!-- ================= 开物AI科学 · 版权模块（单击显示 / 双击打开官网） ================= -->
+<style id="kaiming-copyright-style">
+  #kaiming-copyright {
+    position: fixed;
+    bottom: 26px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    pointer-events: none;
+    z-index: 999999;
+    transition: opacity 0.45s ease;
+    opacity: 0;
+    display: none;
+  }
+  #kaiming-copyright .inner {
+    display: inline-block;
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #eafaf2;
+    padding: 9px 26px;
+    border-radius: 60px;
+    /* 原稿为 14px；此处改为 16px 以符合本机 verify_html.py 的「字号不得小于 16px」硬规则 */
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.6px;
+    border: 1px solid rgba(255, 245, 210, 0.3);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+    font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+    white-space: nowrap;
+  }
+</style>
+
+<div id="kaiming-copyright">
+  <div class="inner">© 2026 开物AI科学 ｜ AI 赋能 · 教育公平</div>
+</div>
+
+<script id="kaiming-copyright-script">
+(function () {
+  "use strict";
+
+  /* 目标：单击标题 → 显示版权 3.5 秒；双击标题 → 打开 www.kaiwuaiscience.com */
+
+  const HOMEPAGE = "https://www.kaiwuaiscience.com";
+  const SHOW_MS = 3500;      // 版权显示时长
+  const DBL_WINDOW = 280;    // 双击判定的时间窗（毫秒）
+  const FADE_MS = 450;       // 淡出时长，与 CSS transition 一致
+
+  function bindCopyright() {
+    // 首选 #mainTitle（注入脚本会保证它存在）；后三个选择器是手写粘贴时的兜底
+    const title = document.getElementById("page-title") ||
+                  document.querySelector("h1, .title, .page-title, .main-title");
+    const box = document.getElementById("kaiming-copyright");
+    if (!title || !box) return;
+
+    title.style.cursor = "pointer";
+    title.style.userSelect = "none";
+    title.style.webkitUserSelect = "none";
+    /* 有些 3D 页面把 HUD 浮层（标题就在里面）设成 pointer-events:none，
+       好让鼠标事件穿透给下层画布；结果标题被"穿透"了——用户点它时事件落到画布上，
+       单击毫无反应，页面看起来就像没加版权。在标题自身把指针事件打开即可
+       （CSS 里后代可以覆盖祖先的 none，无需改动页面原有样式）。 */
+    title.style.pointerEvents = "auto";
+
+    let clickTimer = null;
+    let hideTimer = null;
+    let seq = 0;   // 每次显示/隐藏都 +1，用来作废在飞的定时器
+
+    function showCopyright() {
+      const my = ++seq;
+      if (hideTimer) clearTimeout(hideTimer);
+      box.style.display = "block";
+      /* 强制重绘，让 0 → 1 的淡入真的发生。
+         这里刻意不用 requestAnimationFrame：rAF 在页面不产生新帧时（后台标签页、
+         无头渲染、大屏久置）不保证触发——一旦它晚于下方的隐藏定时器回调，
+         就会把 opacity 又设成 1，导致版权条永久停在屏幕上。 */
+      void box.offsetHeight;
+      box.style.opacity = "1";
+      hideTimer = setTimeout(function () {
+        if (my !== seq) return;      // 期间又被点过，交给新的那一次收尾
+        box.style.opacity = "0";
+        setTimeout(function () {
+          if (my === seq) box.style.display = "none";
+        }, FADE_MS);
+      }, SHOW_MS);
+    }
+
+    function hideCopyright() {
+      const my = ++seq;              // 作废所有在飞的定时器，避免"淡出到一半又被点亮"卡住
+      if (hideTimer) clearTimeout(hideTimer);
+      if (box.style.display !== "block") return;
+      box.style.opacity = "0";
+      setTimeout(function () {
+        if (my === seq) box.style.display = "none";
+      }, FADE_MS);
+    }
+
+    function openHomepage() {
+      // 双击时隐藏版权，并跳转官网
+      hideCopyright();
+      window.open(HOMEPAGE, "_blank", "noopener,noreferrer");
+    }
+
+    title.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (clickTimer) return;   // 已在等待双击窗口，忽略这次单击
+      clickTimer = setTimeout(function () {
+        clickTimer = null;
+        showCopyright();        // 确认是单击
+      }, DBL_WINDOW);
+    });
+
+    title.addEventListener("dblclick", function (e) {
+      e.stopPropagation();
+      if (clickTimer) {         // 取消挂起的单击
+        clearTimeout(clickTimer);
+        clickTimer = null;
+      }
+      openHomepage();
+    });
+
+    // 点击页面其它地方，立即隐藏版权
+    document.addEventListener("click", function (e) {
+      if (e.target === title) return;
+      hideCopyright();
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bindCopyright);
+  } else {
+    bindCopyright();
+  }
+})();
+</script>
+<!-- ================= 开物AI科学 · 版权模块 结束 ================= -->
+
+</body>
+</html>
