@@ -426,7 +426,7 @@ footer{border-top:1px solid var(--ink)}
     </div>
     <p class="f-meta">© 2026 开物AI科学 · 助力教育公平</p>
     <p class="f-meta">本站资源仅供教学交流，请勿商用</p>
-    <button class="f-admin" id="adminLink" type="button">站长入口</button>
+
   </div>
 </footer>
 
@@ -620,15 +620,6 @@ document.getElementById('oa').addEventListener('click',function(){openModal('')}
 document.getElementById('oa').addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();openModal('')}});
 document.getElementById('navOa').addEventListener('click',function(){openModal('')});
 
-/* ================= 站长入口 ================= */
-document.getElementById('adminLink').addEventListener('click',function(){
-  if(!HAS_DATA){toast('数据未加载：请检查 data.js');return}
-  var p=prompt('站长密码：');
-  if(p===null)return;
-  if(p===CONFIG.ADMIN_PASS){
-    alert('今日下载码：'+dayCode()+'\n\n· 每日 0 点自动更换\n· 昨日码今晚 24 点前仍可用\n· 公众号回复「开物」下发给老师');
-  }else{toast('密码不对')}
-});
 
 /* ================= 首页三行：点击进入对应页面 ================= */
 document.querySelectorAll('.row').forEach(function(row){
