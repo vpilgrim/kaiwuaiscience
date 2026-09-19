@@ -646,4 +646,71 @@ renderAbout();cont.hidden=false;
 }
 });
 })();
+/* ---------- 追加补丁 v4：色散图最终版 / 实践经验8篇 / 关于页删句 ---------- */
+(function(){
+function ready(fn){document.readyState!=='loading'?fn():document.addEventListener('DOMContentLoaded',fn)}
+ready(function(){
+if(typeof ARTICLES==='undefined')return;
+
+/* 1) 实践经验：8篇真实公众号文章（替换原示例） */
+ARTICLES.length=0;
+ARTICLES.push(
+{id:"a01",t:"DeepSeek+小学科学：我用AI生成的「月相积分系统」，让学生在课堂上玩嗨了！",src:"公众号文章",d:"用 DeepSeek+AI 做出「月相积分系统」，把十个小组的观月任务变成课堂积分游戏。",lk:"https://mp.weixin.qq.com/s/fZInT04dr92NcHKeRIgZIw",img:""},
+{id:"a02",t:"蚂蚁「爬」进了PPT？零基础也能做的3D模型，带你玩转AR科学课！",src:"公众号文章",d:"零基础用 AI 生成 3D 模型，把蚂蚁「搬」进 PPT 与 AR 科学课。",lk:"https://mp.weixin.qq.com/s/aiamRE_-CJ35pEXSK_JxTA",img:""},
+{id:"a03",t:"用Deepseek生成「基于标准」的教学设计（自带格式）",src:"公众号文章",d:"用 DeepSeek 生成「基于标准」的教学设计：课标引用一字不差，目标动词规范，评价任务一一对应。",lk:"https://mp.weixin.qq.com/s/R_-lllVK1l70_t6s0XB9fw",img:""},
+{id:"a04",t:"用AI命制了一份「小学科学期末试卷」！附超详细提示词",src:"公众号文章",d:"用 AI 命制专业化、结构化的小学科学期末试卷，附超详细可复用提示词。",lk:"https://mp.weixin.qq.com/s/ej5TlITaBL0BQszQZoFBuQ",img:""},
+{id:"a05",t:"用deepseek生成课堂互动网页，实操+技术指南（提示词可复用）",src:"公众号文章",d:"DeepSeek 生成课堂互动网页的实操与技术指南，从「听话的小车」讲起，提示词可复用。",lk:"https://mp.weixin.qq.com/s/6uVYL4_SXix752J_5s_zmw",img:""},
+{id:"a06",t:"用AI生成3D虚拟实验室/开发互动教学资源：提示词解读+万能提示词模版",src:"公众号文章",d:"用 AI 生成 3D 虚拟实验室与互动教学资源，附提示词解读与万能模版。",lk:"https://mp.weixin.qq.com/s/C6oIP34RCnn-64GLzoAyQg",img:""},
+{id:"a07",t:"Agent教学指南：中小学教师WorkBuddy教育全景实操指南",src:"公众号文章",d:"中小学教师 WorkBuddy 教育教学全流程实操指南。",lk:"https://mp.weixin.qq.com/s/xaMl51a9K1ITRvgQb25t0A",img:""},
+{id:"a08",t:"用workbuddy生成整本教案，生成教学设计skill",src:"公众号文章",d:"用 WorkBuddy 生成全套教案与教学设计 skill 的方法。",lk:"https://mp.weixin.qq.com/s/4Dd61leqqCKZ6c-h3rriCQ",img:""}
+);
+var cP=document.getElementById('cntPractice');if(cP)cP.textContent=ARTICLES.length;
+var sR=document.getElementById('stRes');
+if(sR)sR.textContent=(PROMPTS.length+WEB_ITEMS.length+TOOLS.length+DESIGNS.length+ARTICLES.length+CASES.length+VIDEOS.length).toLocaleString('zh-Hans-CN');
+
+/* 2) 色散图最终版：白光水平入射→棱镜内红上紫下散开→出射全斜向下；输入/AI/输出标签 */
+var pr=document.querySelector('.prism');
+if(pr){
+pr.dataset.kwFixed='1';
+pr.setAttribute('aria-label','教师输入需求，经AI三棱镜色散出多彩教学成果');
+pr.innerHTML=
+'<path class="pz" pathLength="1" d="M340 80 L430 380 L250 380 Z"/>'+
+'<line class="beam" x1="20" y1="230" x2="294" y2="230"/>'+
+'<line class="ray ir1" pathLength="1" x1="295" y1="230" x2="373" y2="190"/>'+
+'<line class="ray ir2" pathLength="1" x1="295" y1="230" x2="368" y2="207"/>'+
+'<line class="ray ir3" pathLength="1" x1="295" y1="230" x2="373" y2="224"/>'+
+'<line class="ray ir4" pathLength="1" x1="295" y1="230" x2="381" y2="250"/>'+
+'<line class="ray ir5" pathLength="1" x1="295" y1="230" x2="388" y2="275"/>'+
+'<line class="ray ir6" pathLength="1" x1="295" y1="230" x2="406" y2="300"/>'+
+'<line class="ray r1" pathLength="1" x1="373" y1="190" x2="620" y2="238"/>'+
+'<line class="ray r2" pathLength="1" x1="368" y1="207" x2="620" y2="258"/>'+
+'<line class="ray r3" pathLength="1" x1="373" y1="224" x2="620" y2="280"/>'+
+'<line class="ray r4" pathLength="1" x1="381" y1="250" x2="620" y2="318"/>'+
+'<line class="ray r5" pathLength="1" x1="388" y1="275" x2="620" y2="354"/>'+
+'<line class="ray r6" pathLength="1" x1="406" y1="300" x2="620" y2="398"/>'+
+'<text class="lab" x="20" y="210">输入</text>'+
+'<text class="lab" x="320" y="326" style="fill:#C8451B;font-weight:700;letter-spacing:.35em">AI</text>'+
+'<text class="lab" x="488" y="196">输出</text>'+
+'<text class="lab fig" x="20" y="442">教师输入需求，AI三棱镜色散出多彩教学成果。</text>';
+}
+
+/* 3) 关于页：删掉"开物AI科学是一个免费开放的……"那句 */
+function trimAbout(){
+var p=document.querySelector('.ab-intro');
+if(p&&/免费开放的中小学科学教学资源库/.test(p.textContent))p.remove();
+}
+trimAbout();
+window.addEventListener('hashchange',function(){setTimeout(trimAbout,60)});
+});
+
+/* 4) 关于页模板兜底：重新渲染时也不再输出那句话 */
+var cont=document.getElementById('kwPage');
+if(cont){
+var mo=new MutationObserver(function(){
+var p=cont.querySelector('.ab-intro');
+if(p&&/免费开放的中小学科学教学资源库/.test(p.textContent))p.remove();
+});
+mo.observe(cont,{childList:true,subtree:true});
+}
+})();
 
