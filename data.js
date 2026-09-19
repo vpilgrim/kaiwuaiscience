@@ -866,4 +866,85 @@ window.addEventListener('hashchange',function(){setTimeout(override,30)});
 setTimeout(override,60);setTimeout(override,400);
 });
 })();
+/* ---------- 追加补丁 v8：科普视频59集（AI天文科普52 + AI生活科普7），系列横幅+主题分组 ---------- */
+(function(){
+function ready(fn){document.readyState!=='loading'?fn():document.addEventListener('DOMContentLoaded',fn)}
+ready(function(){
+if(typeof VIDEOS==='undefined')return;
+var E=window.esc||function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})};
+var B="https://www.bilibili.com/video/",pad=function(n){return ("0"+n).slice(-2)};
+
+/* 1) 系列一：AI天文科普 52 集 [标题, 主题, BV号] —— 以后加新集，往数组末尾照格式添一行即可 */
+var TW=[
+["太空梦","月球探索","BV1h6shzXECH"],["太空梦之登月","月球探索","BV1LZs3z6EpR"],["太空梦之探月","月球探索","BV1WBsnz5E5a"],["太空梦之回家","月球探索","BV1Q5szzkEWL"],["太空梦之爱国","月球探索","BV16VsmzjEVD"],
+["空间站实验研究","载人航天","BV1ZkykBfEye"],["空间站对接","载人航天","BV1icybBnEk3"],["月球基地实验研究","月球探索","BV1rH1MBgEtH"],
+["太空梦之向火星出发","火星探测","BV1HY1qBsESJ"],["太空梦之登陆火星","火星探测","BV12v1CB7EEZ"],["探索火星之心怀祖国","火星探测","BV1rW19BvEzu"],["搭建火星基地","火星探测","BV1wsyPBZE7H"],["探索火星地壳水冰","火星探测","BV1KjyPBPEJd"],["探索火星之钻取水冰","火星探测","BV1it2WB5EBa"],["探索火星之种植土豆","火星探测","BV1vh2WBGE5s"],["探索火星之太阳耀斑爆发","火星探测","BV1A32yB2EJv"],["探索火星之货运飞船","火星探测","BV1fwmJBzES3"],["探索火星之留守系统","火星探测","BV1nZmtBPEc6"],["探索火星之返程","火星探测","BV1o5mGB7E5L"],["探索火星之不忘初心","火星探测","BV1qom2B2ECJ"],["探索火星之返回地球","火星探测","BV1MPmXB7EZy"],["探索火星之成功降落地面","火星探测","BV1chmiBREJP"],
+["太空电梯","航天创想","BV1AYqhBQEGU"],["从太空看地球","对地观测","BV1f9q5BAEpU"],
+["太空梦之前往木星","木星探测","BV1cfB4BGE6u"],["探索木星之「引力弹弓」","木星探测","BV1viBMB5E9y"],["探索木星之轨道空间站","木星探测","BV1JWB7B5EaC"],["探测木星之探测大红斑","木星探测","BV1akBQBFEsD"],["探索木星之危机袭来","木星探测","BV1WWBYB8Ek9"],["探索木星之登陆木卫二","木星探测","BV1fXBCBJEuY"],["探索木星之搭建木卫二基地","木星探测","BV19vvkBwEeE"],["探索木星之钻探冰层","木星探测","BV1XpveBMExJ"],["探索木星之采集木卫二水样","木星探测","BV1b3iEBsETC"],["探测木星之木卫二冰下世界","木星探测","BV1wCibBVEVc"],["探索木星之返程","木星探测","BV1YyqPBbEen"],["探索木星","木星探测","BV1vNi1BVEdM"],["探索木卫一","木星探测","BV1z3i9B3EdM"],["探索木卫二","木星探测","BV1xwkKBeEU9"],["探索木卫三","木星探测","BV1Z5z6BkEoS"],["探索木卫四","木星探测","BV1emFUzyEHX"],["探索木卫五","木星探测","BV19DZiBTEFz"],["探索木卫六","木星探测","BV15dADzZEHg"],["探索木卫七","木星探测","BV1uhAazAEKZ"],["探索木星之返回地球","木星探测","BV1xNPgzeEq9"],
+["探索土星之出发","土星探测","BV1G7PezCE7V"],["探索土星之对接空间站","土星探测","BV1ZUSoBSESV"],["探索土星之穿越土星环","土星探测","BV1RjSoBrEGe"],["探索土星之采集冰晶","土星探测","BV1RjSoBrEgy"],["探索土星之登陆土卫六","土星探测","BV1RLSoBGEC4"],["探索土星之3D打印土卫六基地","土星探测","BV1LLSoBVEjP"],["探索土星之土卫六科研种植","土星探测","BV1QLoFBhEZr"],["探索土星之前往空天航母","土星探测","BV1KrVT6iEfU"]
+];
+/* 2) 系列二：AI生活科普 7 集 */
+var SH=[
+["落花生的由来","植物与农业","BV1zc4hzTEHk"],["蔡伦造纸","传统科技","BV1834BzCE9H"],["二十四节气之寒露","气象与节气","BV14kWnzmEqW"],["蚕的一生","动物与生命","BV1iBsczkEFz"],["榫卯：飞檐下的千年智慧","传统科技","BV1FJW1z6Eqc"],["浪漫的霞","大气与天象","BV11fWSzbE6x"],["春夏秋冬","气象与节气","BV146s4zTEZG"]
+];
+VIDEOS.length=0;
+TW.forEach(function(a,i){VIDEOS.push({id:"v"+pad(i+1),t:a[0],src:"AI天文科普",ty:a[1],d:"AI 航天科普系列第 "+(i+1)+" 集，主题："+a[0]+"。AI 生成。",lk:B+a[2]+"/",cover:""})});
+SH.forEach(function(a,i){VIDEOS.push({id:"v"+pad(TW.length+i+1),t:a[0],src:"AI生活科普",ty:a[1],d:"AI 生活科普系列第 "+(i+1)+" 集，主题："+a[0]+"。AI 生成。",lk:B+a[2]+"/",cover:""})});
+var cV=document.getElementById('cntVideos');if(cV)cV.textContent=VIDEOS.length;
+var sR=document.getElementById('stRes');
+if(sR)sR.textContent=(PROMPTS.length+WEB_ITEMS.length+TOOLS.length+DESIGNS.length+ARTICLES.length+CASES.length+VIDEOS.length).toLocaleString('zh-Hans-CN');
+
+/* 3) 样式：系列横幅 + 紧凑视频卡 */
+if(!document.getElementById('kwPatch8')){
+var st=document.createElement('style');st.id='kwPatch8';
+st.textContent=['.vbanner{display:flex;gap:1.1rem;align-items:center;border:1px solid var(--line);background:var(--paper);padding:.9rem;margin:1.5rem 0 .5rem}',
+'.vbanner img{width:200px;aspect-ratio:16/9;object-fit:cover;border:1px solid var(--line);flex-shrink:0}',
+'.vbanner b{font:700 16px var(--serif);display:block;margin-bottom:.35rem;color:var(--ink)}',
+'.vbanner span{font:400 12.5px/1.9 var(--sans);color:var(--ink2);display:block}',
+'.vgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:.7rem}',
+'.vcard{border:1px solid var(--line);background:var(--paper);padding:.7rem .8rem;display:flex;flex-direction:column;gap:.35rem;transition:.2s}',
+'.vcard:hover{border-color:var(--accent);transform:translateY(-2px)}',
+'.vno{font:500 9.5px var(--mono);letter-spacing:.18em;color:var(--accent)}',
+'.vcard b{font:700 13.5px var(--serif);color:var(--ink)}',
+'.vcard p{font:400 11.5px/1.75 var(--sans);color:var(--ink2);margin:0;flex:1}',
+'.vcard .kbtn{align-self:flex-start;padding:.35em .9em;font-size:11.5px}',
+'@media(max-width:640px){.vbanner{flex-direction:column;align-items:flex-start}.vbanner img{width:100%}}'].join('');
+document.head.appendChild(st);
+}
+
+/* 4) 科普视频页：系列横幅 → 主题分组 → 紧凑卡片 */
+var cont=document.getElementById('kwPage');
+function vcard(o,idx){
+return '<div class="vcard"><span class="vno">EP.'+pad(idx)+'</span><b>'+E(o.t)+'</b><p>'+E(o.d)+'</p><a class="kbtn" target="_blank" rel="noopener" href="'+E(o.lk)+'">▶ 去观看</a></div>';
+}
+function vgrp(title,arr,startIdx){
+var h='<p class="kw-sub">'+title+' · '+arr.length+'</p><div class="vgrid">';
+arr.forEach(function(o,i){h+=vcard(o,startIdx+i+1)});
+return h+'</div>';
+}
+function vbanner(img,name,desc,count){
+return '<div class="vbanner"><img src="'+img+'" alt="'+name+'" onerror="this.remove()"><div><b>'+name+'</b><span>'+desc+'（共 '+count+' 集）</span></div></div>';
+}
+function renderVideos(){
+if(!cont||cont.hidden)return;
+if((location.hash||'').indexOf('#/videos')!==0)return;
+var sec=cont.querySelector('section');if(!sec)return;
+var head=sec.querySelector('.sec-head');
+if(head){var p=head.querySelector('p');if(p)p.textContent='AI 天文科普与 AI 生活科普系列短视频，点击直达B站观看。课堂导入或课后拓展都能用。';}
+var tw=VIDEOS.filter(function(o){return o.src==='AI天文科普'});
+var sh=VIDEOS.filter(function(o){return o.src==='AI生活科普'});
+var twOrder=["月球探索","载人航天","火星探测","木星探测","土星探测","航天创想","对地观测"];
+var shOrder=["植物与农业","动物与生命","气象与节气","大气与天象","传统科技"];
+var body=vbanner("assets/kpsp-tw.png","AI 天文科普","从月球、空间站到火星、木星、土星，AI 生成的太空探索系列故事。",tw.length);
+var base=0;
+twOrder.forEach(function(ty){var g=tw.filter(function(o){return o.ty===ty});if(!g.length)return;body+=vgrp(ty,g,base);base+=g.length});
+body+=vbanner("assets/kpsp-sh.png","AI 生活科普","节气、动植物、传统科技与大气天象，AI 生成的生活科普短片。",sh.length);
+base=0;
+shOrder.forEach(function(ty){var g=sh.filter(function(o){return o.ty===ty});if(!g.length)return;body+=vgrp(ty,g,base);base+=g.length});
+sec.innerHTML='';if(head)sec.appendChild(head);sec.insertAdjacentHTML('beforeend',body);
+}
+window.addEventListener('hashchange',function(){setTimeout(renderVideos,30)});
+setTimeout(renderVideos,80);setTimeout(renderVideos,450);
+});
+})();
 
