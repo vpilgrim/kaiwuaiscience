@@ -424,7 +424,7 @@ footer{border-top:1px solid var(--ink)}
       <span class="seal seal-lg">开物</span>
       <p>开物AI赋能教育教学全流程。</p>
     </div>
-    <p class="f-meta">© 2026 开物AI科学 · 某ICP备0000000号（占位）</p>
+    <p class="f-meta">© 2026 开物AI科学 · 助力教育公平</p>
     <p class="f-meta">本站资源仅供教学交流，请勿商用</p>
     <button class="f-admin" id="adminLink" type="button">站长入口</button>
   </div>
@@ -684,7 +684,7 @@ function drawLabList(){
   var arr=src.filter(function(it){
     if(f.g&&it.g!==f.g)return false;
     if(f.ty&&it.ty!==f.ty)return false;
-    if(FL.tab==='web'){if(f.f&&it.f!==f.f)return false;if(f.u&&it.u!==f.u)return false}
+    if(FL.tab==='web'&&f.c&&it.c!==f.c)return false;
     if(q){var hay=(it.t+' '+(it.d||'')+' '+(it.u||'')+' '+(it.c||'')+' '+(it.g||'')).toLowerCase();if(hay.indexOf(q)<0)return false}
     return true;
   });
