@@ -496,4 +496,27 @@ sInput.addEventListener('keydown',function(e){if(e.key==='Enter'){var f=sBody.qu
 }
 });
 })();
+/* ---------- 追加补丁 v2：棱镜内光线显色 / 二维码限尺寸 / 删导航公众号 ---------- */
+(function(){
+function ready(fn){document.readyState!=='loading'?fn():document.addEventListener('DOMContentLoaded',fn)}
+ready(function(){
+var st=document.createElement('style');st.id='kwPatch2';
+st.textContent=[
+/* 棱镜内部六色光线：白光入射后，在玻璃内部就开始色散 */
+'.ir1{stroke:#C0392B;opacity:.92;stroke-dasharray:none!important}',
+'.ir2{stroke:#D68227;opacity:.92;stroke-dasharray:none!important}',
+'.ir3{stroke:#C9A227;opacity:.92;stroke-dasharray:none!important}',
+'.ir4{stroke:#3F7A3A;opacity:.92;stroke-dasharray:none!important}',
+'.ir5{stroke:#2C6E9B;opacity:.92;stroke-dasharray:none!important}',
+'.ir6{stroke:#5B4E9E;opacity:.92;stroke-dasharray:none!important}',
+/* 二维码限死尺寸：首页关于 / 弹窗 / 公众号页 都不超过150px */
+'.qr img{width:auto!important;height:auto!important;max-width:150px!important;max-height:150px!important;object-fit:contain!important}'
+].join('');
+document.head.appendChild(st);
+/* 删除导航栏里的"公众号" */
+document.querySelectorAll('header nav a').forEach(function(a){
+if(a.textContent.replace(/\s/g,'')==='公众号')a.remove();
+});
+});
+})();
 
