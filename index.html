@@ -82,6 +82,45 @@ h1 .ai{font:500 .82em var(--mono);color:var(--accent)}
 .r1{stroke:#A4262C;animation-delay:1.35s}.r2{stroke:#C8451B;animation-delay:1.5s}
 .r3{stroke:#B98A1F;animation-delay:1.65s}.r4{stroke:#4C7A45;animation-delay:1.8s}
 .r5{stroke:#2E6F8E;animation-delay:1.95s}.r6{stroke:#5B4E9E;animation-delay:2.1s}
+/* 色散：棱镜内先散开 */
+.ir1{animation-delay:.95s}.ir2{animation-delay:1.02s}.ir3{animation-delay:1.09s}
+.ir4{animation-delay:1.16s}.ir5{animation-delay:1.23s}.ir6{animation-delay:1.3s}
+/* Hero 三张示例卡 */
+.hero-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem;margin-top:1.4rem}
+.hcard{display:flex;flex-direction:column;gap:.45rem;border:1px solid var(--line);background:var(--paper);padding:.7rem .8rem;text-decoration:none;color:var(--ink);transition:.25s}
+.hcard:hover{border-color:var(--accent);box-shadow:7px 7px 0 rgba(200,69,27,.14);transform:translateY(-3px)}
+.hcard b{font:700 13px var(--serif)}
+.hcard i{font:400 10px var(--mono);font-style:normal;letter-spacing:.06em;color:var(--ink2)}
+.hc-img{display:block;height:64px;border:1px solid var(--line);overflow:hidden;background:var(--paper2)}
+.hc-img img{width:100%;height:100%;object-fit:cover;display:block}
+.hc-txt{display:block;height:64px;padding:.5em .6em;font:400 10.5px/1.8 var(--mono);color:var(--ink-soft);background:var(--paper2);border:1px solid var(--line);overflow:hidden}
+.hc-doc{display:grid;place-items:center;height:64px;font:500 11px var(--mono);letter-spacing:.08em;color:var(--ink-soft);background:var(--paper2);border:1px solid var(--line)}
+.ksoon{font:400 10.5px var(--mono);color:var(--ink2);letter-spacing:.06em}
+/* 右侧资源搜索 */
+.s-tab{position:fixed;right:0;top:50%;transform:translateY(-50%);z-index:55;writing-mode:vertical-rl;background:var(--ink);color:var(--paper);border:none;padding:1.35rem .78rem;font:500 12.5px var(--sans);letter-spacing:.4em;cursor:pointer;border-radius:4px 0 0 4px;transition:.25s}
+.s-tab:hover{background:var(--accent)}
+.s-fab{display:none;position:fixed;right:1.1rem;bottom:5.8rem;width:52px;height:52px;background:var(--accent);color:var(--paper);border:none;border-radius:50%;z-index:60;place-items:center;box-shadow:0 8px 24px rgba(25,23,20,.28);cursor:pointer;font-size:19px}
+.s-mask{position:fixed;inset:0;background:rgba(25,23,20,.44);z-index:74;opacity:0;visibility:hidden;transition:.28s}
+.s-mask.open{opacity:1;visibility:visible}
+.s-panel{position:fixed;top:0;right:0;height:100vh;width:min(360px,92vw);z-index:75;background:var(--paper);border-left:1px solid var(--ink);box-shadow:-10px 0 0 rgba(25,23,20,.08);transform:translateX(103%);transition:.3s cubic-bezier(.2,.7,.2,1);display:flex;flex-direction:column}
+.s-panel.open{transform:none}
+.s-head{display:flex;gap:.6rem;align-items:center;padding:1rem;border-bottom:1px solid var(--line)}
+.s-input{flex:1;min-width:0;border:1px solid var(--ink);background:transparent;padding:.7em .9em;font:500 14px var(--sans);outline:none;color:var(--ink)}
+.s-input:focus{border-color:var(--accent)}
+.s-close{width:34px;height:34px;background:none;border:none;font-size:24px;line-height:1;color:var(--ink2);cursor:pointer}
+.s-close:hover{color:var(--accent)}
+.s-body{flex:1;overflow:auto;padding:.8rem 1rem 2rem}
+.s-empty{font:400 12px var(--mono);color:var(--ink2);line-height:2;padding:.6rem 0}
+.s-grp{font:500 10.5px var(--mono);letter-spacing:.24em;color:var(--accent);margin:1.1rem 0 .45rem;display:flex;align-items:center;gap:.6em}
+.s-grp i{font-style:normal;color:var(--ink2)}
+.s-item{display:block;width:100%;text-align:left;background:var(--paper);border:1px solid var(--line);border-left:2px solid var(--line);padding:.6rem .8rem;margin-bottom:.45rem;cursor:pointer;transition:.2s;font-family:var(--sans)}
+.s-item:hover{border-color:var(--accent);border-left-color:var(--accent);background:var(--paper2)}
+.s-item b{display:block;font:700 13.5px var(--serif);color:var(--ink)}
+.s-item span{display:block;margin-top:.15em;font-size:11.5px;color:var(--ink2)}
+@media (max-width:860px){
+  .s-tab{display:none}
+  .s-fab{display:grid}
+}
 .lab{font:500 11px var(--mono);fill:var(--ink2);letter-spacing:.12em}
 .fig{font-size:10px}
 @keyframes draw{to{stroke-dashoffset:0}}
