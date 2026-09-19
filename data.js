@@ -947,4 +947,81 @@ window.addEventListener('hashchange',function(){setTimeout(renderVideos,30)});
 setTimeout(renderVideos,80);setTimeout(renderVideos,450);
 });
 })();
+/* ---------- 追加补丁 v9：教学设计9条真实链接+提取码，下载时自动复制提取码 ---------- */
+(function(){
+function ready(fn){document.readyState!=='loading'?fn():document.addEventListener('DOMContentLoaded',fn)}
+ready(function(){
+if(typeof DESIGNS==='undefined')return;
+
+/* 1) 9条真实蓝奏云合集：年级 / 册别 / 链接 / 访问密码 */
+var DL=[
+{g:"一年级",v:"上",lk:"https://wwbdj.lanzoul.com/b00g4hqova",cd:"279x"},
+{g:"二年级",v:"上",lk:"https://wwbdj.lanzoul.com/b00g4hqowb",cd:"50d9"},
+{g:"三年级",v:"上",lk:"https://wwbdj.lanzoul.com/b00g4hqoxc",cd:"audk"},
+{g:"四年级",v:"上",lk:"https://wwbdj.lanzoul.com/b00g4hqp0f",cd:"ct66"},
+{g:"五年级",v:"上",lk:"https://wwbdj.lanzoul.com/b00g4hqp2h",cd:"d9yr"},
+{g:"六年级",v:"上",lk:"https://wwbdj.lanzoul.com/b00g4hqp5a",cd:"bm8z"},
+{g:"一年级",v:"下",lk:"https://wwbdj.lanzoul.com/b00g4hqp7c",cd:"6fe1"},
+{g:"二年级",v:"下",lk:"https://wwbdj.lanzoul.com/b00g4hqpaf",cd:"f2mq"},
+{g:"三年级",v:"下",lk:"https://wwbdj.lanzoul.com/b00g4hqpch",cd:"5p2j"}
+];
+
+/* 2) 按标题里的年级+册别匹配，替换链接/提取码/简介 */
+DESIGNS.forEach(function(o){
+var t=String(o.t||'');
+for(var i=0;i<DL.length;i++){var r=DL[i];
+if(t.indexOf(r.g)>-1&&t.indexOf(r.v)>-1){
+o.lk=r.lk;o.cd=r.cd;
+o.d="大象版科学"+r.g+r.v+"册 AI 生成教学设计（教案）合集。";
+break;}
+}
+});
+
+/* 3) 已渲染出来的旧按钮（还挂着假链接）就地矫正 */
+function findRow(link,name){
+for(var i=0;i<DL.length;i++){if(link&&link.indexOf(DL[i].lk)>-1)return DL[i]}
+if(name){for(i=0;i<DL.length;i++){var r=DL[i];
+if(String(name).indexOf(r.g)>-1&&String(name).indexOf(r.v)>-1)return r}}
+return null;
+}
+function patchDom(){
+document.querySelectorAll('button[data-dl],a[data-dl]').forEach(function(b){
+var link=b.getAttribute('data-dl')||'';
+if(/wwdj\.lanzoul\.com|TODO/.test(link)){
+var row=findRow('',b.getAttribute('data-name')||'');
+if(row)b.setAttribute('data-dl',row.lk);
+}
+});
+}
+
+/* 4) 提示条 + 复制提取码 */
+if(!document.getElementById('kwToastStyle')){
+var st=document.createElement('style');st.id='kwToastStyle';
+st.textContent='.kw-toast{position:fixed;left:50%;bottom:2.2rem;transform:translateX(-50%);background:#191714;color:#F5F0E6;font:500 12.5px var(--mono,monospace);padding:.7em 1.2em;z-index:99;border-radius:3px;letter-spacing:.06em;box-shadow:0 8px 24px rgba(25,23,20,.25);transition:opacity .3s}';
+document.head.appendChild(st);
+}
+function toast(msg){
+var d=document.createElement('div');d.className='kw-toast';d.textContent=msg;document.body.appendChild(d);
+setTimeout(function(){d.style.opacity='0'},2200);setTimeout(function(){d.remove()},2600);
+}
+function copyCd(s){
+if(navigator.clipboard&&navigator.clipboard.writeText){
+navigator.clipboard.writeText(s).then(function(){toast('提取码 '+s+' 已复制，打开网盘后直接粘贴')},function(){fb(s)});
+}else fb(s);
+}
+function fb(s){var ta=document.createElement('textarea');ta.value=s;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');toast('提取码 '+s+' 已复制，打开网盘后直接粘贴')}catch(e){toast('本条提取码：'+s)}ta.remove()}
+
+/* 5) 点下载按钮 → 立即复制对应提取码（无论之后走网站验证还是兜底名单） */
+document.addEventListener('click',function(e){
+var b=e.target.closest('button[data-dl],a[data-dl]');if(!b)return;
+var row=findRow(b.getAttribute('data-dl')||'',b.getAttribute('data-name')||'');
+if(row)copyCd(row.cd);
+},true);
+
+patchDom();
+window.addEventListener('hashchange',function(){setTimeout(patchDom,80)});
+setTimeout(patchDom,300);
+try{if(location.hash==='#/design'&&window.route)window.route()}catch(e){}
+});
+})();
 
