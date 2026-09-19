@@ -797,4 +797,73 @@ e.stopPropagation();e.preventDefault();
 },true);
 });
 })();
+/* ---------- 追加补丁 v7：实践页强制带图重绘 + 教学案例8条真实数据 ---------- */
+(function(){
+function ready(fn){document.readyState!=='loading'?fn():document.addEventListener('DOMContentLoaded',fn)}
+ready(function(){
+if(typeof ARTICLES==='undefined'||typeof CASES==='undefined')return;
+var E=window.esc||function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})};
+var IT=window.isTodo||function(v){return !v||String(v).indexOf('TODO')>-1};
+
+/* 1) 实践经验8篇封面图（重复挂载，幂等） */
+var GM={a01:"assets/gzh1.png",a02:"assets/gzh2.png",a03:"assets/gzh3.png",a04:"assets/gzh4.png",a05:"assets/gzh5.png",a06:"assets/gzh6.png",a07:"assets/gzh7.png",a08:"assets/gzh8.png"};
+ARTICLES.forEach(function(o){if(GM[o.id])o.img=GM[o.id]});
+
+/* 2) 教学案例8条（按你表格，行序对应 jxal1~8；教学设计不配图） */
+CASES.length=0;
+CASES.push(
+{id:"c01",t:"月有阴晴圆缺",ty:"教学课件",g:"",d:"《月有阴晴圆缺》配套课件，金山文档在线查看。",lk:"https://www.kdocs.cn/l/ciZpQdFxQYaA",img:"assets/jxal1.png"},
+{id:"c02",t:"月有阴晴圆缺",ty:"教学设计",g:"",d:"《月有阴晴圆缺》教案，金山文档在线查看。",lk:"https://www.kdocs.cn/l/cjVyvSleYj1o",img:""},
+{id:"c03",t:"哺乳动物",ty:"教学课件",g:"",d:"《哺乳动物》教学课件，金山文档在线查看。",lk:"https://www.kdocs.cn/l/cs9AKC8yQUoj",img:"assets/jxal3.png"},
+{id:"c04",t:"哺乳动物",ty:"教学设计",g:"",d:"《哺乳动物》教案，金山文档在线查看。",lk:"https://www.kdocs.cn/l/chqrerKwNJjN",img:""},
+{id:"c05",t:"两极相遇了",ty:"教学课件",g:"三年级下",d:"《两极相遇了》教学课件，金山文档在线查看。",lk:"https://www.kdocs.cn/l/crRcVqFFfpYw",img:"assets/jxal5.png"},
+{id:"c06",t:"两极相遇了",ty:"教学设计",g:"三年级下",d:"《两极相遇了》教学设计，金山文档在线查看。",lk:"https://www.kdocs.cn/l/coI30cLJps1D",img:""},
+{id:"c07",t:"两极相遇了 · 课堂实录",ty:"课堂实录",g:"三年级下",d:"AI赋能课堂《两极相遇了》（大象版新教材三年级下册第一单元）课堂实录。",lk:"https://www.bilibili.com/video/BV1wieQ6gEqo/",img:"assets/jxal7.png"},
+{id:"c08",t:"不一样的岩石 · 课堂实录",ty:"课堂实录",g:"四年级下",d:"AI赋能课堂《不一样的岩石》（大象版四年级下册第二单元）课堂实录。",lk:"https://www.bilibili.com/video/BV1WSet6GEer/",img:"assets/jxal8.png"}
+);
+
+/* 3) 计数更新 */
+var cC=document.getElementById('cntCases');if(cC)cC.textContent=CASES.length;
+var sR=document.getElementById('stRes');
+if(sR)sR.textContent=(PROMPTS.length+WEB_ITEMS.length+TOOLS.length+DESIGNS.length+ARTICLES.length+CASES.length+VIDEOS.length).toLocaleString('zh-Hans-CN');
+
+/* 4) 卡片渲染（图挂了自动隐藏，不会出现裂图） */
+function card(o,btn){
+var tags=[o.g,o.ty].filter(Boolean).map(function(v){return '<span class="ktag">'+E(v)+'</span>'}).join('');
+var cov=o.img?'<img class="kcover" src="'+E(o.img)+'" alt="'+E(o.t)+'" onerror="this.remove()">':'';
+return '<div class="kcard" style="cursor:default">'+cov+'<h3>'+E(o.t)+'</h3><div class="ktags">'+tags+'</div><p class="kdesc">'+E(o.d)+'</p><div style="margin-top:.4rem">'+btn+'</div></div>';
+}
+function grp(title,arr,btnFn){
+var h='<p class="kw-sub">'+title+' · '+arr.length+'</p><div class="kgrid">';
+if(!arr.length)h+='<p class="s-empty">内容整理中。</p>';
+arr.forEach(function(o){h+=card(o,btnFn(o))});
+return h+'</div>';
+}
+
+/* 5) 覆盖渲染：实践页（带图）/ 案例页（三组新分类） */
+var cont=document.getElementById('kwPage');
+function override(){
+if(!cont||cont.hidden)return;
+var h=location.hash||'';
+var sec=cont.querySelector('section');if(!sec)return;
+var head=sec.querySelector('.sec-head');
+if(h.indexOf('#/practice')===0){
+var body=grp('公众号文章',ARTICLES.filter(function(o){return o.src==='公众号文章'}),function(o){
+return IT(o.lk)?'<span class="ksoon">链接整理中</span>':'<a class="kbtn" target="_blank" rel="noopener" href="'+E(o.lk)+'">↗ 阅读原文</a>';});
+sec.innerHTML='';if(head)sec.appendChild(head);sec.insertAdjacentHTML('beforeend',body);
+}else if(h.indexOf('#/cases')===0){
+if(head){var p=head.querySelector('p');if(p)p.textContent='教学课件、教学设计与课堂实录，看 AI 如何真实融入一堂课。';}
+var body2=grp('教学课件',CASES.filter(function(o){return o.ty==='教学课件'}),function(o){
+return IT(o.lk)?'<span class="ksoon">整理中</span>':'<a class="kbtn" target="_blank" rel="noopener" href="'+E(o.lk)+'">↗ 在线查看</a>';})
++grp('教学设计',CASES.filter(function(o){return o.ty==='教学设计'}),function(o){
+return IT(o.lk)?'<span class="ksoon">整理中</span>':'<a class="kbtn ghost" target="_blank" rel="noopener" href="'+E(o.lk)+'">↗ 在线查看</a>';})
++grp('课堂实录',CASES.filter(function(o){return o.ty==='课堂实录'}),function(o){
+return IT(o.lk)?'<span class="ksoon">视频整理中</span>':'<a class="kbtn" target="_blank" rel="noopener" href="'+E(o.lk)+'">▶ 去观看</a>';});
+sec.innerHTML='';if(head)sec.appendChild(head);sec.insertAdjacentHTML('beforeend',body2);
+}
+}
+window.addEventListener('hashchange',function(){setTimeout(override,30)});
+setTimeout(override,60);setTimeout(override,400);
+});
+})();
 
