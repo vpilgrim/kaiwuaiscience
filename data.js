@@ -713,4 +713,88 @@ if(p&&/免费开放的中小学科学教学资源库/.test(p.textContent))p.remo
 mo.observe(cont,{childList:true,subtree:true});
 }
 })();
+/* ---------- 追加补丁 v6：七色色散图(光线靠拢) + 下载码修复 ---------- */
+/* 下载码兜底名单：把公众号每日发的码填在这里（可同时放多个，建议把明天的也提前加上） */
+window.KW_CODES=["KWLPTK"];
+(function(){
+function ready(fn){document.readyState!=='loading'?fn():document.addEventListener('DOMContentLoaded',fn)}
+ready(function(){
+/* A) 样式：第7色(靛)的出场时间 */
+if(!document.getElementById('kwPatch6')){
+var st=document.createElement('style');st.id='kwPatch6';
+st.textContent=['.ir1,.ir2,.ir3,.ir4,.ir5,.ir6,.ir7{stroke-dasharray:none!important;opacity:.95}',
+'.r7{animation-delay:2.25s}'].join('');
+document.head.appendChild(st);
+}
+/* B) 色散图：红橙黄绿蓝靛紫七色；棱镜内扇形收拢(红上紫下)；出射全部斜向下 */
+var pr=document.querySelector('.prism');
+if(pr){
+pr.dataset.kwFixed='1';
+pr.setAttribute('aria-label','教师输入需求，AI三棱镜色散出七彩教学成果');
+pr.innerHTML=
+'<path class="pz" pathLength="1" d="M340 80 L430 380 L250 380 Z"/>'+
+'<line class="beam" x1="20" y1="230" x2="295" y2="230"/>'+
+'<line class="ray ir1" style="stroke:#C0392B;stroke-dasharray:none" pathLength="1" x1="295" y1="230" x2="380" y2="212"/>'+
+'<line class="ray ir2" style="stroke:#D68227;stroke-dasharray:none" pathLength="1" x1="295" y1="230" x2="382" y2="219"/>'+
+'<line class="ray ir3" style="stroke:#C9A227;stroke-dasharray:none" pathLength="1" x1="295" y1="230" x2="384" y2="226"/>'+
+'<line class="ray ir4" style="stroke:#3F7A3A;stroke-dasharray:none" pathLength="1" x1="295" y1="230" x2="386" y2="233"/>'+
+'<line class="ray ir5" style="stroke:#2C6E9B;stroke-dasharray:none" pathLength="1" x1="295" y1="230" x2="388" y2="240"/>'+
+'<line class="ray ir6" style="stroke:#3D4FA1;stroke-dasharray:none" pathLength="1" x1="295" y1="230" x2="390" y2="246"/>'+
+'<line class="ray ir7" style="stroke:#5B4E9E;stroke-dasharray:none" pathLength="1" x1="295" y1="230" x2="392" y2="253"/>'+
+'<line class="ray r1" style="stroke:#C0392B" pathLength="1" x1="380" y1="212" x2="620" y2="262"/>'+
+'<line class="ray r2" style="stroke:#D68227" pathLength="1" x1="382" y1="219" x2="620" y2="285"/>'+
+'<line class="ray r3" style="stroke:#C9A227" pathLength="1" x1="384" y1="226" x2="620" y2="308"/>'+
+'<line class="ray r4" style="stroke:#3F7A3A" pathLength="1" x1="386" y1="233" x2="620" y2="331"/>'+
+'<line class="ray r5" style="stroke:#2C6E9B" pathLength="1" x1="388" y1="240" x2="620" y2="354"/>'+
+'<line class="ray r6" style="stroke:#3D4FA1" pathLength="1" x1="390" y1="246" x2="620" y2="374"/>'+
+'<line class="ray r7" style="stroke:#5B4E9E" pathLength="1" x1="392" y1="253" x2="620" y2="398"/>'+
+'<text class="lab" x="20" y="210">输入</text>'+
+'<text class="lab" x="326" y="336" style="fill:#C8451B;font-weight:700;letter-spacing:.35em">AI</text>'+
+'<text class="lab" x="468" y="216">输出</text>'+
+'<text class="lab fig" x="20" y="442">教师输入需求，AI三棱镜色散出七彩教学成果。</text>';
+}
+/* C) 下载码修复：解除6位输入限制(自动作用于弹窗输入框) */
+document.querySelectorAll('input').forEach(function(i){if(i.maxLength>0&&i.maxLength<=6)i.maxLength=12});
+new MutationObserver(function(){
+document.querySelectorAll('input').forEach(function(i){if(i.maxLength>0&&i.maxLength<=6)i.maxLength=12});
+}).observe(document.body,{childList:true,subtree:true});
+/* D) 兜底验证：码在 KW_CODES 名单里 → 直接放行下载 */
+var pending=null;
+document.addEventListener('click',function(e){
+var b=e.target.closest('button[data-dl]');
+if(b)pending={link:b.getAttribute('data-dl'),name:b.getAttribute('data-name')||''};
+},true);
+function norm(v){return String(v||'').replace(/\s+/g,'').toUpperCase()}
+function inputOf(el){var p=el;for(var i=0;i<6&&p;i++){if(p.querySelector&&p.querySelector('input'))return p.querySelector('input');p=p.parentElement}return null}
+function closeModal(from){
+var p=from;
+for(var i=0;i<6&&p;i++){
+if(p.querySelectorAll){
+var x=p.querySelector('button');
+p.querySelectorAll('button').forEach(function(x){if((x.textContent||'').trim()==='×')x.click()});
+if(p.querySelector('input'))break;
+}
+p=p.parentElement;
+}
+document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));
+}
+document.addEventListener('click',function(e){
+var b=e.target.closest('button');if(!b||!pending)return;
+if((b.textContent||'').indexOf('验证')>-1){
+var inp=inputOf(b);
+if(inp&&window.KW_CODES.indexOf(norm(inp.value))>-1){
+window.open(pending.link,'_blank');closeModal(b);
+e.stopPropagation();e.preventDefault();
+}
+}
+},true);
+document.addEventListener('keydown',function(e){
+if(e.key!=='Enter'||!pending||!e.target||e.target.tagName!=='INPUT')return;
+if(window.KW_CODES.indexOf(norm(e.target.value))>-1){
+window.open(pending.link,'_blank');closeModal(e.target);
+e.stopPropagation();e.preventDefault();
+}
+},true);
+});
+})();
 
