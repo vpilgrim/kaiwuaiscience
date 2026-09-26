@@ -1163,4 +1163,50 @@ window.addEventListener('hashchange',function(){setTimeout(renderVideos2,45)});
 setTimeout(renderVideos2,500);setTimeout(renderVideos2,750);
 });
 })();
+/* ---------- 追加补丁 v12：下载码自动日码 + 秘密管理页 ---------- */
+(function(){
+function ready(fn){document.readyState!=='loading'?fn():document.addEventListener('DOMContentLoaded',fn)}
+ready(function(){
+var CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+function kwCode(ds){var s=ds+'|kaiwu-ai-science',h=0,i,c='';
+for(i=0;i<s.length;i++)h=(h*131+s.charCodeAt(i))>>>0;
+for(i=0;i<4;i++){h=(h*1103515245+12345)>>>0;c+=CH[h%CH.length]}
+return 'KW'+c}
+function dstr(d){return d.getFullYear()+('0'+(d.getMonth()+1)).slice(-2)+('0'+d.getDate()).slice(-2)}
+function code(off){var d=new Date();d.setDate(d.getDate()+off);return kwCode(dstr(d))}
+/* 手动名单：你自己定的码放这里（长期保留即可） */
+var BASE=["KWNJRR","KWLPTK"];
+window.KW_CODES=window.KW_CODES&&window.KW_CODES.length?window.KW_CODES:[];
+function sync(){BASE.concat([code(0),code(-1)]).forEach(function(c){if(window.KW_CODES.indexOf(c)<0)window.KW_CODES.push(c)})}
+sync();setInterval(sync,5*60*1000);
+
+/* 秘密管理页：访问 网址#/kw-set-2025 （可改成你自己的秘密段） */
+var ADMIN='#/kw-set-2025';
+if(!document.getElementById('kwAdminStyle')){
+var st=document.createElement('style');st.id='kwAdminStyle';
+st.textContent=['#kwAdmin{position:fixed;inset:0;background:rgba(25,23,20,.55);display:none;align-items:center;justify-content:center;z-index:9999}',
+'#kwAdmin.on{display:flex}',
+'#kwAdmin .box{background:var(--paper,#F7F3EA);border:1px solid var(--line,#D8D2C4);max-width:430px;width:88%;padding:1.6rem 1.8rem}',
+'#kwAdmin h3{font:700 17px var(--serif,serif);margin:0 0 1rem;color:var(--ink,#26221C)}',
+'#kwAdmin .row{display:flex;justify-content:space-between;align-items:center;padding:.6rem 0;border-bottom:1px dashed var(--line,#D8D2C4);font:500 13px var(--sans,system-ui);color:var(--ink2,#6B655B)}',
+'#kwAdmin .row b{font:700 17px var(--mono,monospace);letter-spacing:.22em;color:var(--ink,#26221C)}',
+'#kwAdmin .row em{font-style:normal;font:500 10px var(--mono,monospace);letter-spacing:.15em;color:var(--accent,#C8451B)}',
+'#kwAdmin .tip{font:400 11.5px/1.9 var(--sans,system-ui);color:var(--ink2,#6B655B);margin-top:1rem}',
+'#kwAdmin button{margin-top:1rem;padding:.5em 1.2em;border:1px solid var(--ink,#26221C);background:none;font:500 12px var(--sans);cursor:pointer}'].join('');
+document.head.appendChild(st);
+}
+var ov=document.getElementById('kwAdmin');
+if(!ov){ov=document.createElement('div');ov.id='kwAdmin';document.body.appendChild(ov)}
+function renderAdmin(){
+ov.innerHTML='<div class="box"><h3>开物AI科学 · 下载码管理</h3>'
++[['今日码',code(0),'TODAY'],['昨日码',code(-1),'昨日仍有效'],['明日码',code(1),'提前备好']].map(function(r){
+return '<div class="row"><span>'+r[0]+' <em>'+r[2]+'</em></span><b>'+r[1]+'</b></div>'}).join('')
++'<p class="tip">每天把「今日码」填进公众号自动回复即可，网站端自动识别（昨日码同时有效）。<br>手动名单：'+window.KW_CODES.join('、')+'</p>'
++'<button id="kwAdClose">关闭</button></div>';
+ov.querySelector('#kwAdClose').onclick=function(){location.hash=''};
+}
+function check(){(location.hash===ADMIN)?(renderAdmin(),ov.classList.add('on')):ov.classList.remove('on')}
+window.addEventListener('hashchange',check);setTimeout(check,600);
+});
+})();
 
