@@ -1209,4 +1209,29 @@ function check(){(location.hash===ADMIN)?(renderAdmin(),ov.classList.add('on')):
 window.addEventListener('hashchange',check);setTimeout(check,600);
 });
 })();
+/* ---------- 追加补丁 v13：管理页弹窗样式加固（防穿模） ---------- */
+(function(){
+var NEW=[
+'#kwAdmin{position:fixed!important;top:0!important;left:0!important;right:0!important;bottom:0!important;width:auto!important;height:auto!important;margin:0!important;padding:0!important;background:rgba(25,23,20,.62)!important;display:none!important;align-items:center!important;justify-content:center!important;z-index:2147483000!important}',
+'#kwAdmin.on{display:flex!important}',
+'#kwAdmin .box{background:#F7F3EA!important;border:1px solid #D8D2C4!important;box-shadow:0 24px 64px rgba(25,23,20,.4)!important;max-width:440px!important;width:88%!important;max-height:86vh!important;overflow:auto!important;padding:1.6rem 1.8rem!important;margin:0!important}',
+'#kwAdmin h3{font:700 17px Georgia,var(--serif),serif!important;margin:0 0 1rem!important;color:#26221C!important}',
+'#kwAdmin .row{display:flex!important;justify-content:space-between!important;align-items:center!important;padding:.65rem 0!important;border-bottom:1px dashed #D8D2C4!important;font:500 13px system-ui,sans-serif!important;color:#6B655B!important}',
+'#kwAdmin .row b{font:700 17px ui-monospace,monospace!important;letter-spacing:.22em!important;color:#26221C!important}',
+'#kwAdmin .row em{font-style:normal!important;font:500 10px ui-monospace,monospace!important;letter-spacing:.15em!important;color:#C8451B!important;margin-left:.4em!important}',
+'#kwAdmin .tip{font:400 11.5px/1.9 system-ui,sans-serif!important;color:#6B655B!important;margin-top:1rem!important}',
+'#kwAdmin button{margin-top:1rem!important;padding:.5em 1.2em!important;border:1px solid #26221C!important;background:#F7F3EA!important;font:500 12px system-ui!important;cursor:pointer!important}'
+].join('\n');
+var old=document.getElementById('kwAdminStyle');
+if(old){old.textContent=NEW}
+else{var st=document.createElement('style');st.id='kwAdminStyle';st.textContent=NEW;document.head.appendChild(st)}
+/* 把弹窗挪到 <html> 直属，避开页面里任何 transform/filters 造成的定位失灵 */
+var ov=document.getElementById('kwAdmin');
+if(ov){document.documentElement.appendChild(ov);
+ov.addEventListener('click',function(e){if(e.target===ov)location.hash=''});}
+document.addEventListener('keydown',function(e){
+var o=document.getElementById('kwAdmin');
+if(e.key==='Escape'&&o&&o.classList.contains('on'))location.hash='';
+});
+})();
 
