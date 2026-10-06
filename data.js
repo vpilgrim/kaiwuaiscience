@@ -1234,4 +1234,157 @@ var o=document.getElementById('kwAdmin');
 if(e.key==='Escape'&&o&&o.classList.contains('on'))location.hash='';
 });
 })();
+/* ---------- 追加补丁 v14：互动网页全量在线打开+预览图 + 精选区(含寻找彩虹) ---------- */
+(function(){
+function ready(fn){document.readyState!=='loading'?fn():document.addEventListener('DOMContentLoaded',fn)}
+ready(function(){
+var E=window.esc||function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})};
+var IT=window.isTodo||function(v){return !v||String(v).indexOf('TODO')>-1};
+
+/* A) 命名映射：教学网页 jxwy_1~31 / 课堂工具 ktgj_1~17（编号=数据表顺序，新增往后排，勿插号） */
+var F={};
+for(var i=1;i<=31;i++)F['w'+(i<10?'0'+i:i)]='jxwy_'+i;
+for(i=1;i<=17;i++)F['t'+(i<10?'0'+i:i)]='ktgj_'+i;
+function apply(arr){(arr||[]).forEach(function(o){if(F[o.id]){o.lv='/r/'+F[o.id]+'/';o.sh='assets/'+F[o.id]+'.png'}})}
+apply(window.WEB_ITEMS);apply(window.TOOLS);
+var FEAT=['w05','w06','w10','w17','w08'];
+
+/* B) 样式 */
+if(!document.getElementById('kwPatch14')){
+var st=document.createElement('style');st.id='kwPatch14';
+st.textContent=['.kw-tabs{display:flex;gap:.4rem;margin:1.2rem 0 .2rem}',
+'.kw-tab{background:none;border:1px solid var(--line);padding:.55em 1.3em;font:500 13px var(--sans);color:var(--ink2);cursor:pointer}',
+'.kw-tab.on{border-color:var(--ink);color:var(--ink);background:var(--paper2)}',
+'.kw-frow{display:flex;flex-wrap:wrap;align-items:center;gap:.45rem;margin:.7rem 0}',
+'.kw-chip{background:none;border:1px solid var(--line);border-radius:999px;padding:.3em .95em;font:400 12px var(--sans);color:var(--ink2);cursor:pointer;transition:.15s}',
+'.kw-chip i{font-style:normal;opacity:.55;margin-left:.15em;font-size:10px}',
+'.kw-chip:hover{border-color:var(--accent);color:var(--ink)}',
+'.kw-chip.on{background:var(--ink);border-color:var(--ink);color:var(--paper)}',
+'.kw-lg{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:.9rem;margin:.9rem 0 2rem}',
+'.kw-lc{border:1px solid var(--line);background:var(--paper);display:flex;flex-direction:column;transition:.2s}',
+'.kw-lc:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:6px 6px 0 rgba(200,69,27,.12)}',
+'.kw-cover{width:100%;aspect-ratio:16/10;object-fit:cover;border-bottom:1px solid var(--line);background:var(--paper2);display:block}',
+'.kw-lb{padding:.75rem .85rem .9rem;display:flex;flex-direction:column;gap:.4rem;flex:1}',
+'.kw-lb h3{font:700 14.5px var(--serif);color:var(--ink);margin:0}',
+'.kw-meta{font:400 10.5px/1.7 var(--mono);color:var(--ink2)}',
+'.kw-btns{display:flex;flex-wrap:wrap;gap:.45rem;margin-top:auto;padding-top:.45rem}',
+'.kw-btns .kbtn{padding:.4em 1em;font-size:12px}',
+'.kw-feat{display:grid;grid-template-columns:repeat(5,1fr);gap:.8rem;margin:.8rem 0 1.4rem}',
+'.kw-fc{border:1px solid var(--line);background:var(--paper);text-decoration:none;color:var(--ink);transition:.2s;cursor:pointer;display:block}',
+'.kw-fc:hover{border-color:var(--accent);transform:translateY(-3px)}',
+'.kw-fc img{width:100%;aspect-ratio:16/10;object-fit:cover;border-bottom:1px solid var(--line);background:var(--paper2);display:block}',
+'.kw-fc div{padding:.55rem .7rem .65rem}',
+'.kw-fc b{font:700 13px var(--serif);display:block}',
+'.kw-fc i{font:400 10px var(--mono);font-style:normal;color:var(--ink2)}',
+'.kw-empty{font:400 12px var(--mono);color:var(--ink2);padding:1rem 0;grid-column:1/-1}',
+'@media(max-width:860px){.kw-feat{grid-template-columns:repeat(2,1fr)}}'].join('');
+document.head.appendChild(st);}
+
+/* C) 缩略图兜底：png 加载失败自动换试 jpg，再失败才隐藏 */
+function bindImgFallback(root){
+(root||document).querySelectorAll('img[data-jpg]').forEach(function(im){
+  if(im.dataset.kwFb)return;im.dataset.kwFb='1';
+  im.addEventListener('error',function(){
+    var j=im.getAttribute('data-jpg');
+    if(j){im.removeAttribute('data-jpg');im.src=j}
+    else im.remove();
+  });
+});
+}
+
+/* D) 在线可用性检测：页面真实存在才亮「在线打开」（防止点了落到首页） */
+var LVOK={};try{LVOK=JSON.parse(sessionStorage.getItem('kwLv')||'{}')}catch(e){}
+function saveLv(){try{sessionStorage.setItem('kwLv',JSON.stringify(LVOK))}catch(e){}}
+function checkLv(){
+  var uniq={};
+  document.querySelectorAll('#kwPage [data-lv]').forEach(function(b){uniq[b.getAttribute('data-lv')]=1});
+  Object.keys(uniq).forEach(function(u){
+    if(LVOK[u]===1)return;
+    fetch(u,{method:'HEAD',cache:'no-store'}).then(function(r){
+      if(r.ok&&!r.redirected){LVOK[u]=1;saveLv()}else kill(u);
+    }).catch(function(){kill(u)});
+  });
+  function kill(u){document.querySelectorAll('#kwPage [data-lv]').forEach(function(b){if(b.getAttribute('data-lv')===u)b.remove()})}
+}
+
+/* E) 互动网页页整体重绘（精选/筛选/两标签） */
+var S={tab:'web',g:'',ty:'',c:''};
+var cont=document.getElementById('kwPage');
+function pool(){return (S.tab==='web')?WEB_ITEMS:TOOLS}
+function filtered(except){return pool().filter(function(o){
+  if(S.g&&except!=='g'&&(o.g||'')!==S.g)return false;
+  if(S.ty&&except!=='ty'&&(o.ty||'')!==S.ty)return false;
+  if(S.c&&except!=='c'&&(o.c||'')!==S.c)return false;return true})}
+function uniq(key){var seen=[],m={};pool().forEach(function(o){var v=(o[key]||'');if(v&&!m[v]){m[v]=1;seen.push(v)}});return seen}
+function chips(label,key){var h='<div class="kw-frow"><span class="kw-flab">'+label+'</span>';
+  h+='<button class="kw-chip'+(S[key]?'':' on')+'" data-k="'+key+'" data-v="">全部</button>';
+  uniq(key).forEach(function(v){
+    var n=pool().filter(function(o){return (o[key]||'')===v}).length;
+    h+='<button class="kw-chip'+(S[key]===v?' on':'')+'" data-k="'+key+'" data-v="'+E(v)+'">'+E(v)+'<i>'+n+'</i></button>'});
+  return h+'</div>'}
+function featHtml(){
+  var all=WEB_ITEMS.concat(TOOLS);
+  var cards=FEAT.map(function(id){var o=all.filter(function(x){return x.id===id})[0];if(!o)return '';
+    return '<a class="kw-fc" data-fid="'+o.id+'"'+(o.lv?' data-flv="'+E(o.lv)+'"':'')+'>'
+      +(o.sh?'<img loading="lazy" src="'+E(o.sh)+'" data-jpg="'+E(o.sh.replace(/\.png$/,'.jpg'))+'" alt="'+E(o.t)+'">':'')
+      +'<div><b>'+E(o.t)+'</b><i>'+(o.ty||'')+'</i></div></a>'}).join('');
+  return '<p class="kw-sub" style="margin-top:1.4rem">教学网页精选 · '+FEAT.length+'</p><div class="kw-feat">'+cards+'</div>'}
+function lcard(o){
+  var tags=[o.g,o.ty].filter(Boolean).map(function(v){return '<span class="ktag">'+E(v)+'</span>'}).join('');
+  var b='';
+  if(o.lv)b+='<button class="kbtn" data-lv="'+E(o.lv)+'">▶ 在线打开</button>';
+  if(o.lk&&!IT(o.lk))b+='<button class="kbtn ghost" data-dl="'+E(o.lk)+'" data-name="'+E(o.t)+'">⬇ 下载资源</button>';
+  if(o.pp)b+='<span class="kbtn ghost" data-pp="'+E(o.pp)+'" style="cursor:pointer">✦ 关联提示词</span>';
+  return '<div class="kw-lc" id="item-'+o.id+'">'
+    +(o.sh?'<img class="kw-cover" loading="lazy" src="'+E(o.sh)+'" data-jpg="'+E(o.sh.replace(/\.png$/,'.jpg'))+'" alt="'+E(o.t)+'">':'')
+    +'<div class="kw-lb"><h3>'+E(o.t)+'</h3><div class="ktags">'+tags+'</div>'
+    +'<p class="kdesc">'+E(o.d||'')+'</p>'
+    +(o.u?'<p class="kw-meta">'+E(o.u)+(o.ls?' · '+E(o.ls):'')+'</p>':'')
+    +'<div class="kw-btns">'+(b||'<span class="ksoon">整理中</span>')+'</div></div></div>'}
+function renderLabs(keepScroll){
+  if((location.hash||'').indexOf('#/labs')!==0)return;
+  if(window.FL&&window.FL.tab)S.tab=(window.FL.tab==='tools')?'tools':'web';
+  var hr=document.getElementById('homeRoot'),pg=document.getElementById('pageRoot');
+  var y=window.scrollY;
+  if(hr)hr.style.display='none';if(pg)pg.hidden=true;
+  document.querySelectorAll('nav a[data-route],nav a[data-kwroute]').forEach(function(a){a.classList.remove('active')});
+  var na=document.querySelector('nav a[href="#/labs"]');if(na)na.classList.add('active');
+  var isWeb=S.tab==='web';
+  var h='<section><div class="sec-head" style="margin-top:2.6rem"><span class="sec-no">01 — LABS</span><h2>互动网页</h2><p>点击「在线打开」直接全屏使用，投屏即用；「下载资源」经下载码获取源文件。</p></div>';
+  h+='<div class="kw-tabs"><button class="kw-tab'+(isWeb?' on':'')+'" data-tab="web">教学网页 · '+WEB_ITEMS.length+'</button><button class="kw-tab'+(!isWeb?' on':'')+'" data-tab="tools">课堂工具 · '+TOOLS.length+'</button></div>';
+  if(isWeb)h+=featHtml();
+  h+=chips('年级','g')+chips('类型','ty')+(isWeb?chips('学科核心概念','c'):'');
+  h+='<div class="kw-lg">';
+  var list=filtered(null);
+  if(!list.length)h+='<p class="kw-empty">该组合下暂时没有资源，换个筛选条件试试。</p>';
+  list.forEach(function(o){h+=lcard(o)});
+  h+='</div></section>';
+  cont.hidden=false;cont.innerHTML=h;
+  bindImgFallback(cont);
+  if(keepScroll)window.scrollTo(0,y);else window.scrollTo(0,0);
+  checkLv();
+  setTimeout(function(){if((location.hash||'').indexOf('#/labs')===0){var p2=document.getElementById('pageRoot');if(p2)p2.hidden=true}},350);
+  if(window.pending){var t=document.getElementById('item-'+window.pending);window.pending=null;
+    if(t){t.scrollIntoView({behavior:'smooth',block:'center'});t.style.borderColor='var(--accent)';
+      setTimeout(function(){t.style.borderColor=''},1800)}}
+}
+if(cont&&!cont.dataset.kw14){cont.dataset.kw14='1';
+cont.addEventListener('click',function(e){
+  var lv=e.target.closest('[data-lv]');if(lv){window.open(lv.getAttribute('data-lv'),'_blank');return}
+  var dl=e.target.closest('[data-dl]');if(dl){var n=dl.getAttribute('data-name'),l=dl.getAttribute('data-dl');
+    if(window.kwGate)kwGate(n,l);else window.open(l,'_blank');return}
+  var pp=e.target.closest('[data-pp]');if(pp){window.pending=pp.getAttribute('data-pp');
+    if(location.hash==='#/prompts'){if(window.route)route()}else location.hash='#/prompts';return}
+  var fc=e.target.closest('.kw-fc');if(fc){var flv=fc.getAttribute('data-flv');
+    if(flv&&LVOK[flv]===1){window.open(flv,'_blank');return}
+    var t=document.getElementById('item-'+fc.getAttribute('data-fid'));
+    if(t){t.scrollIntoView({behavior:'smooth',block:'center'});t.style.borderColor='var(--accent)';
+      setTimeout(function(){t.style.borderColor=''},1600)}return}
+  var ch=e.target.closest('.kw-chip');if(ch){S[ch.getAttribute('data-k')]=ch.getAttribute('data-v');renderLabs(true);return}
+  var tb=e.target.closest('.kw-tab');if(tb){S.tab=tb.getAttribute('data-tab');S.g=S.ty=S.c='';renderLabs();return}
+});}
+window.addEventListener('hashchange',function(){setTimeout(renderLabs,60)});
+setTimeout(function(){renderLabs()},400);setTimeout(function(){renderLabs()},900);
+});
+})();
 
