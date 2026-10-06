@@ -1234,14 +1234,17 @@ var o=document.getElementById('kwAdmin');
 if(e.key==='Escape'&&o&&o.classList.contains('on'))location.hash='';
 });
 })();
-/* ---------- 追加补丁 v15：在线打开+缩略图(jpg直连) + 精选区(含寻找彩虹) + 标签切换修复 ---------- */
+/* ---------- 追加补丁 v16：修复"搜索后回退原生界面" ----------
+   原因：搜索跳转在已处于互动网页页时直接调用原生 route() 重绘（不触发
+   hashchange），v15 的钩子接不到。方案：MutationObserver 常驻监听，原生重绘
+   后 0.1 秒内接管；并在捕获阶段截获搜索点击，接管后自动定位+高亮目标卡片。 */
 (function(){
 function ready(fn){document.readyState!=='loading'?fn():document.addEventListener('DOMContentLoaded',fn)}
 ready(function(){
 var E=window.esc||function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})};
 var IT=window.isTodo||function(v){return !v||String(v).indexOf('TODO')>-1};
 
-/* A) 命名映射：jxwy_1~31 / ktgj_1~17；缩略图直接指向 jpg（线上已核实） */
+/* A) 命名映射：jxwy_1~31 / ktgj_1~17；缩略图 jpg（线上已核实） */
 var F={};
 for(var i=1;i<=31;i++)F['w'+(i<10?'0'+i:i)]='jxwy_'+i;
 for(i=1;i<=17;i++)F['t'+(i<10?'0'+i:i)]='ktgj_'+i;
@@ -1251,8 +1254,8 @@ try{apply(TOOLS)}catch(e){}
 var FEAT=['w05','w06','w10','w17','w08'];
 
 /* B) 样式 */
-if(!document.getElementById('kwPatch15')){
-var st=document.createElement('style');st.id='kwPatch15';
+if(!document.getElementById('kwPatch16')){
+var st=document.createElement('style');st.id='kwPatch16';
 st.textContent=['.kw-tabs{display:flex;gap:.4rem;margin:1.2rem 0 .2rem}',
 '.kw-tab{background:none;border:1px solid var(--line);padding:.55em 1.3em;font:500 13px var(--sans);color:var(--ink2);cursor:pointer}',
 '.kw-tab.on{border-color:var(--ink);color:var(--ink);background:var(--paper2)}',
@@ -1281,7 +1284,7 @@ st.textContent=['.kw-tabs{display:flex;gap:.4rem;margin:1.2rem 0 .2rem}',
 '@media(max-width:860px){.kw-feat{grid-template-columns:repeat(2,1fr)}}'].join('');
 document.head.appendChild(st);}
 
-/* C) 在线可用性检测：页面真实存在才保留「在线打开」按钮 */
+/* C) 在线可用性检测 */
 var LVOK={};try{LVOK=JSON.parse(sessionStorage.getItem('kwLv')||'{}')}catch(e){}
 function saveLv(){try{sessionStorage.setItem('kwLv',JSON.stringify(LVOK))}catch(e){}}
 function checkLv(){
@@ -1296,8 +1299,9 @@ function checkLv(){
   function kill(u){document.querySelectorAll('#kwPage [data-lv]').forEach(function(b){if(b.getAttribute('data-lv')===u)b.remove()})}
 }
 
-/* D) 互动网页页重绘（精选/筛选/两标签） */
+/* D) 状态与渲染 */
 var S={tab:'web',g:'',ty:'',c:''};
+var kwTarget=null;   /* 搜索点击暂存（v16 新增） */
 var lastHash='';
 var cont=document.getElementById('kwPage');
 function pool(){return (S.tab==='web')?WEB_ITEMS:TOOLS}
@@ -1333,10 +1337,9 @@ function lcard(o){
     +'<div class="kw-btns">'+(b||'<span class="ksoon">整理中</span>')+'</div></div></div>'}
 function renderLabs(keepScroll){
   if((location.hash||'').indexOf('#/labs')!==0)return;
-  /* 只在真正导航进入本页时同步原生筛选状态，点击标签后不再被覆盖（v14 的 bug 在此） */
   if(location.hash!==lastHash){
     lastHash=location.hash;
-    if(window.FL&&window.FL.tab)S.tab=(window.FL.tab==='tools')?'tools':'web';
+    if(!kwTarget&&window.FL&&window.FL.tab)S.tab=(window.FL.tab==='tools')?'tools':'web';
   }
   var hr=document.getElementById('homeRoot'),pg=document.getElementById('pageRoot');
   var y=window.scrollY;
@@ -1357,11 +1360,12 @@ function renderLabs(keepScroll){
   if(keepScroll)window.scrollTo(0,y);else window.scrollTo(0,0);
   checkLv();
   setTimeout(function(){if((location.hash||'').indexOf('#/labs')===0){var p2=document.getElementById('pageRoot');if(p2)p2.hidden=true}},350);
-  if(window.pending){var t=document.getElementById('item-'+window.pending);window.pending=null;
+  var pid=kwTarget||window.pending;kwTarget=null;if(pid)window.pending=null;
+  if(pid){var t=document.getElementById('item-'+pid);
     if(t){t.scrollIntoView({behavior:'smooth',block:'center'});t.style.borderColor='var(--accent)';
       setTimeout(function(){t.style.borderColor=''},1800)}}
 }
-if(cont&&!cont.dataset.kw15){cont.dataset.kw15='1';
+if(cont&&!cont.dataset.kw16){cont.dataset.kw16='1';
 cont.addEventListener('click',function(e){
   var lv=e.target.closest('[data-lv]');if(lv){window.open(lv.getAttribute('data-lv'),'_blank');return}
   var dl=e.target.closest('[data-dl]');if(dl){var n=dl.getAttribute('data-name'),l=dl.getAttribute('data-dl');
@@ -1376,7 +1380,29 @@ cont.addEventListener('click',function(e){
   var ch=e.target.closest('.kw-chip');if(ch){S[ch.getAttribute('data-k')]=ch.getAttribute('data-v');renderLabs(true);return}
   var tb=e.target.closest('.kw-tab');if(tb){S.tab=tb.getAttribute('data-tab');S.g=S.ty=S.c='';renderLabs(true);return}
 });}
+
+/* E) ★核心修复1：捕获阶段截获搜索结果点击，记住目标（先于原生 jump 执行） */
+document.addEventListener('click',function(e){
+  var b=e.target.closest?e.target.closest('.s-item'):null;
+  if(!b)return;
+  var k=b.getAttribute('data-k'),id=b.getAttribute('data-id');
+  if((k==='w'||k==='t')&&id){kwTarget=id;S.tab=(k==='t')?'tools':'web'}
+},true);
+
+/* F) ★核心修复2：MutationObserver —— 原生重绘互动网页页时，v16 立即接管 */
+var obsT=null;
+new MutationObserver(function(){
+  if((location.hash||'').indexOf('#/labs')!==0)return;
+  if(!cont||cont.hidden)return;
+  if(cont.querySelector('.kw-lg'))return;
+  if(obsT)return;
+  obsT=setTimeout(function(){obsT=null;
+    if((location.hash||'').indexOf('#/labs')===0&&!cont.querySelector('.kw-lg'))renderLabs(true);
+  },80);
+}).observe(cont,{childList:true,attributes:true,attributeFilter:['hidden']});
+
 window.addEventListener('hashchange',function(){setTimeout(renderLabs,60)});
 setTimeout(function(){renderLabs()},400);setTimeout(function(){renderLabs()},900);
 });
 })();
+
