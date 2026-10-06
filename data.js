@@ -1246,7 +1246,8 @@ var F={};
 for(var i=1;i<=31;i++)F['w'+(i<10?'0'+i:i)]='jxwy_'+i;
 for(i=1;i<=17;i++)F['t'+(i<10?'0'+i:i)]='ktgj_'+i;
 function apply(arr){(arr||[]).forEach(function(o){if(F[o.id]){o.lv='/r/'+F[o.id]+'/';o.sh='assets/'+F[o.id]+'.jpg'}})}
-apply(window.WEB_ITEMS);apply(window.TOOLS);
+try{apply(WEB_ITEMS)}catch(e){}
+try{apply(TOOLS)}catch(e){}
 var FEAT=['w05','w06','w10','w17','w08'];
 
 /* B) 样式 */
