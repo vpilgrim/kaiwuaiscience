@@ -1,0 +1,445 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🫁 呼吸系统大探索 - 小组血氧榜</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap');
+
+        body {
+            font-family: 'Nunito', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #e0f2fe;
+            min-height: 100vh;
+            overflow: hidden; /* 保证一屏完整显示，禁止滚动条 */
+            position: relative;
+        }
+
+        /* 丰富背景：动态柔和光晕 */
+        .ambient-bg {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: -2; pointer-events: none; overflow: hidden;
+        }
+        .blob {
+            position: absolute; filter: blur(90px); opacity: 0.6;
+            animation: drift 20s infinite alternate ease-in-out;
+        }
+        .blob-1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: #bae6fd; animation-duration: 25s; }
+        .blob-2 { bottom: -20%; right: -10%; width: 60vw; height: 60vw; background: #7dd3fc; animation-delay: -5s; }
+        .blob-3 { top: 30%; left: 40%; width: 40vw; height: 40vw; background: #a5f3fc; animation-duration: 30s; }
+
+        @keyframes drift {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(5%, 10%) scale(1.1); }
+            100% { transform: translate(-5%, -5%) scale(0.9); }
+        }
+
+        /* 呼吸动画：模拟肺部扩张和收缩 */
+        @keyframes breathe {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+        .breathe-effect { animation: breathe 4s infinite ease-in-out; }
+
+        /* 分数跳动动画 */
+        @keyframes pop {
+            0% { transform: scale(1); color: #0ea5e9; }
+            50% { transform: scale(1.3); color: #10b981; }
+            100% { transform: scale(1); }
+        }
+        .pop-anim { animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+
+        /* 减分动画 */
+        @keyframes shrink {
+            0% { transform: scale(1); color: #0ea5e9; }
+            50% { transform: scale(0.8); color: #ef4444; }
+            100% { transform: scale(1); }
+        }
+        .shrink-anim { animation: shrink 0.4s ease-in-out; }
+
+        /* ======== 100% 血氧饱和度专属特效 ======== */
+        .full-health-card {
+            border-color: #34d399 !important; /* 翡翠绿边框 */
+            box-shadow: 0 0 25px rgba(52, 211, 153, 0.5) !important;
+            transform: translateY(-4px);
+        }
+        .full-health-circle {
+            background: linear-gradient(135deg, #d1fae5, #6ee7b7) !important;
+            border-color: #10b981 !important;
+            animation: heartbeat 1.2s infinite;
+        }
+        .full-health-text { color: #064e3b !important; }
+        
+        /* 心跳律动动画 */
+        @keyframes heartbeat {
+            0%, 100% { transform: scale(1); }
+            15% { transform: scale(1.15); }
+            30% { transform: scale(1); }
+            45% { transform: scale(1.15); }
+        }
+
+        /* 喷射粒子特效 */
+        .particle {
+            position: absolute; pointer-events: none; opacity: 1;
+            animation: flyOut 1.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+        @keyframes flyOut {
+            0% { transform: translate(0, 0) scale(0.5) rotate(0deg); opacity: 1; }
+            100% { transform: translate(var(--tx), var(--ty)) scale(1.5) rotate(var(--rot)); opacity: 0; }
+        }
+
+        /* 动态气泡 */
+        .bubbles-container { position: fixed; width: 100%; height: 100%; z-index: -1; top: 0; left: 0; pointer-events: none; }
+        .bubble {
+            position: absolute; bottom: -100px;
+            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.9), rgba(186, 230, 253, 0.3));
+            border-radius: 50%; box-shadow: 0 0 12px rgba(255, 255, 255, 0.5);
+            animation: floatUp 15s infinite ease-in;
+        }
+        .bubble:nth-child(1) { left: 15%; width: 60px; height: 60px; animation-duration: 16s; }
+        .bubble:nth-child(2) { left: 30%; width: 30px; height: 30px; animation-duration: 12s; animation-delay: 2s; }
+        .bubble:nth-child(3) { left: 45%; width: 50px; height: 50px; animation-duration: 18s; animation-delay: 4s; }
+        .bubble:nth-child(4) { left: 60%; width: 70px; height: 70px; animation-duration: 14s; animation-delay: 1s; }
+        .bubble:nth-child(5) { left: 75%; width: 40px; height: 40px; animation-duration: 19s; animation-delay: 5s; }
+        .bubble:nth-child(6) { left: 85%; width: 55px; height: 55px; animation-duration: 15s; animation-delay: 3s; }
+
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(0.8); opacity: 0; }
+            20% { opacity: 0.8; }
+            100% { transform: translateY(-120vh) scale(1.2); opacity: 0; }
+        }
+    </style>
+</head>
+<body class="p-2 md:p-4 flex flex-col items-center relative box-border">
+
+    <div class="ambient-bg">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <div class="bubbles-container">
+        <div class="bubble"></div><div class="bubble"></div><div class="bubble"></div>
+        <div class="bubble"></div><div class="bubble"></div><div class="bubble"></div>
+    </div>
+
+    <!-- 顶部标题栏 -->
+    <header class="w-full max-w-7xl flex flex-col justify-center items-center bg-white/70 backdrop-blur-xl p-3 md:p-4 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.05)] border border-white mb-4 z-10 relative breathe-effect">
+        <div class="flex items-center space-x-3 mb-1">
+            <span class="text-4xl md:text-5xl drop-shadow-md">🫁</span>
+            <h1 class="text-2xl md:text-4xl font-black text-cyan-800 tracking-wide m-0 drop-shadow-sm" id="mainTitle">呼吸系统大探索</h1>
+        </div>
+        <p class="text-sm md:text-base font-bold text-rose-500 tracking-widest drop-shadow-sm">✨ 提升血氧饱和度，让生命充满活力 ✨</p>
+    </header>
+
+    <!-- 卡片网格区域 -->
+    <div id="board" class="w-full max-w-7xl grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-4 pb-2 z-10">
+        <!-- 卡片将动态生成 -->
+    </div>
+
+    <script>
+        const initialGroupsData = [
+            { name: "💨 氧气组", icon: "💨", theme: "cyan" },
+            { name: "🫧 肺泡组", icon: "🫧", theme: "pink" },
+            { name: "🩸 红细胞组", icon: "🩸", theme: "red" },
+            { name: "👃 鼻腔组", icon: "👃", theme: "amber" }, 
+            { name: "🌬️ 气管组", icon: "🌬️", theme: "teal" },
+            { name: "🌿 支气管组", icon: "🌿", theme: "green" },
+            { name: "💪 膈肌组", icon: "💪", theme: "purple" },
+            { name: "🍃 净化组", icon: "🍃", theme: "emerald" },
+            { name: "🗣️ 咽喉组", icon: "🗣️", theme: "indigo" },
+            { name: "🔋 能量组", icon: "⚡", theme: "yellow" }
+        ];
+
+        const colorStyles = {
+            cyan: { bg: 'bg-cyan-50', border: 'border-cyan-100', text: 'text-cyan-600', btnFrom: 'from-cyan-400', btnTo: 'to-sky-500' },
+            pink: { bg: 'bg-pink-50', border: 'border-pink-100', text: 'text-pink-600', btnFrom: 'from-pink-400', btnTo: 'to-rose-400' },
+            red: { bg: 'bg-red-50', border: 'border-red-100', text: 'text-red-600', btnFrom: 'from-red-400', btnTo: 'to-rose-500' },
+            amber: { bg: 'bg-amber-50', border: 'border-amber-100', text: 'text-amber-600', btnFrom: 'from-amber-400', btnTo: 'to-orange-400' },
+            teal: { bg: 'bg-teal-50', border: 'border-teal-100', text: 'text-teal-600', btnFrom: 'from-teal-400', btnTo: 'to-emerald-400' },
+            green: { bg: 'bg-green-50', border: 'border-green-100', text: 'text-green-600', btnFrom: 'from-green-400', btnTo: 'to-emerald-500' },
+            purple: { bg: 'bg-purple-50', border: 'border-purple-100', text: 'text-purple-600', btnFrom: 'from-purple-400', btnTo: 'to-fuchsia-400' },
+            emerald: { bg: 'bg-emerald-50', border: 'border-emerald-100', text: 'text-emerald-600', btnFrom: 'from-emerald-400', btnTo: 'to-green-400' },
+            indigo: { bg: 'bg-indigo-50', border: 'border-indigo-100', text: 'text-indigo-600', btnFrom: 'from-indigo-400', btnTo: 'to-blue-500' },
+            yellow: { bg: 'bg-yellow-50', border: 'border-yellow-100', text: 'text-yellow-600', btnFrom: 'from-yellow-400', btnTo: 'to-amber-500' }
+        };
+
+        // score 代表加分的次数，最大为 5（即 100%）
+        let groups = initialGroupsData.map((g, i) => ({
+            id: i,
+            name: g.name,
+            icon: g.icon,
+            theme: g.theme,
+            score: 0 
+        }));
+
+        const boardElement = document.getElementById('board');
+
+        function initBoard() {
+            boardElement.innerHTML = '';
+            
+            groups.forEach((group, index) => {
+                const colors = colorStyles[group.theme];
+                const card = document.createElement('div');
+                card.id = `card-${index}`;
+                card.className = "bg-white/90 backdrop-blur-sm rounded-3xl p-3 flex flex-col items-center shadow-[0_8px_30px_rgb(0,0,0,0.06)] border-[3px] border-white hover:border-cyan-200 transition-all duration-300 relative overflow-hidden group";
+                
+                card.innerHTML = `
+                    <div class="absolute -right-2 -top-2 text-6xl opacity-10 pointer-events-none transform group-hover:scale-110 transition-transform duration-500 drop-shadow-md">
+                        ${group.icon}
+                    </div>
+                    
+                    <input type="text" 
+                        class="w-full text-center text-base md:text-lg font-bold text-slate-700 bg-transparent border-b-2 border-transparent hover:border-slate-200 focus:border-slate-400 outline-none transition-colors mb-1 px-1 z-10" 
+                        value="${group.name}"
+                        onchange="updateName(${index}, this.value)"
+                        onfocus="this.select()">
+                    
+                    <!-- 血氧饱和度标签 -->
+                    <div class="text-[11px] md:text-xs font-black text-rose-500/80 mb-1 z-10 flex items-center gap-1">
+                        <span>❤️</span> 血氧饱和度 SpO₂
+                    </div>
+                    
+                    <!-- 积分环变血氧环 -->
+                    <div id="circle-${index}" class="relative w-16 h-16 md:w-20 md:h-20 flex items-center justify-center rounded-full ${colors.bg} border-[4px] ${colors.border} mb-3 shadow-inner transition-all duration-500 z-10">
+                        <span id="score-${index}" class="text-2xl md:text-3xl font-black ${colors.text} tracking-tighter drop-shadow-sm transition-colors duration-500">
+                            0%
+                        </span>
+                    </div>
+
+                    <!-- 按钮区域 -->
+                    <div class="flex items-center justify-center gap-1 md:gap-2 w-full z-10">
+                        <button onclick="changeScore(${index}, -1)" class="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center rounded-full bg-slate-100/80 text-slate-500 text-xs md:text-sm font-black hover:bg-rose-100 hover:text-rose-600 transition-colors shadow-sm active:scale-90">
+                            -20%
+                        </button>
+                        <button onclick="changeScore(${index}, 1)" class="h-10 md:h-12 px-3 md:px-4 flex items-center justify-center rounded-full bg-gradient-to-r ${colors.btnFrom} ${colors.btnTo} text-white text-sm md:text-base font-black shadow-md transition-all transform hover:scale-105 active:scale-95">
+                            +20%
+                        </button>
+                        <button onclick="changeScore(${index}, 5)" class="h-8 md:h-10 px-2 md:px-3 flex items-center justify-center rounded-full bg-amber-50 border border-amber-200 text-amber-600 text-[10px] md:text-xs font-black hover:bg-amber-100 transition-colors shadow-sm active:scale-90">
+                            MAX ⚡
+                        </button>
+                    </div>
+                `;
+                boardElement.appendChild(card);
+            });
+        }
+
+        function updateName(index, newName) {
+            groups[index].name = newName;
+        }
+
+        // 触发满血喷射爱心特效
+        function triggerCelebration(index) {
+            const card = document.getElementById(`card-${index}`);
+            const emojis = ['❤️', '🌟', '💯', '✨', '🩸'];
+            
+            for (let i = 0; i < 8; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle z-50 text-xl md:text-2xl';
+                particle.innerText = emojis[Math.floor(Math.random() * emojis.length)];
+                
+                // 随机飞出方向
+                const angle = Math.random() * Math.PI * 2;
+                const distance = 60 + Math.random() * 60; // 飞出距离
+                const tx = Math.cos(angle) * distance + 'px';
+                const ty = Math.sin(angle) * distance + 'px';
+                const rot = (Math.random() - 0.5) * 360 + 'deg';
+                
+                particle.style.setProperty('--tx', tx);
+                particle.style.setProperty('--ty', ty);
+                particle.style.setProperty('--rot', rot);
+                
+                // 初始位置在卡片正中心
+                particle.style.left = '45%';
+                particle.style.top = '40%';
+                
+                card.appendChild(particle);
+                
+                // 动画结束后移除 DOM
+                setTimeout(() => {
+                    if(card.contains(particle)) card.removeChild(particle);
+                }, 1500);
+            }
+        }
+
+        function changeScore(index, delta) {
+            let oldScore = groups[index].score;
+            let newScore = oldScore + delta;
+            
+            // 限制次数在 0 到 5 之间 (对应 0% 到 100%)
+            if (newScore < 0) newScore = 0; 
+            if (newScore > 5) newScore = 5;
+            
+            groups[index].score = newScore;
+            
+            const scoreEl = document.getElementById(`score-${index}`);
+            const cardEl = document.getElementById(`card-${index}`);
+            const circleEl = document.getElementById(`circle-${index}`);
+            
+            // 显示百分比 (1分=20%)
+            scoreEl.innerText = (newScore * 20) + "%";
+
+            // 数字跳动动画
+            scoreEl.classList.remove('pop-anim', 'shrink-anim');
+            void scoreEl.offsetWidth; 
+            if (delta > 0) scoreEl.classList.add('pop-anim');
+            else scoreEl.classList.add('shrink-anim');
+
+            // 判断是否达到 100% 触发特效
+            if (newScore === 5) {
+                cardEl.classList.add('full-health-card');
+                circleEl.classList.add('full-health-circle');
+                scoreEl.classList.add('full-health-text');
+                
+                // 如果是刚刚达到100%（而不是已经在100%还点MAX），则喷发一次粒子
+                if (oldScore < 5) {
+                    triggerCelebration(index);
+                }
+            } else {
+                // 没到100% 或 被扣分跌落100%，移除特效
+                cardEl.classList.remove('full-health-card');
+                circleEl.classList.remove('full-health-circle');
+                scoreEl.classList.remove('full-health-text');
+            }
+        }
+
+        window.onload = initBoard;
+    </script>
+
+
+<!-- ================= 开物AI科学 · 版权模块（单击显示 / 双击打开官网） ================= -->
+<style id="kaiming-copyright-style">
+  #kaiming-copyright {
+    position: fixed;
+    bottom: 26px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    pointer-events: none;
+    z-index: 999999;
+    transition: opacity 0.45s ease;
+    opacity: 0;
+    display: none;
+  }
+  #kaiming-copyright .inner {
+    display: inline-block;
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #eafaf2;
+    padding: 9px 26px;
+    border-radius: 60px;
+    /* 原稿为 14px；此处改为 16px 以符合本机 verify_html.py 的「字号不得小于 16px」硬规则 */
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.6px;
+    border: 1px solid rgba(255, 245, 210, 0.3);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+    font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+    white-space: nowrap;
+  }
+</style>
+
+<div id="kaiming-copyright">
+  <div class="inner">© 2026 开物AI科学 ｜ AI 赋能 · 教育公平</div>
+</div>
+
+<script id="kaiming-copyright-script">
+(function () {
+  "use strict";
+
+  /* 目标：单击标题 → 显示版权 3.5 秒；双击标题 → 打开 www.kaiwuaiscience.com */
+
+  const HOMEPAGE = "https://www.kaiwuaiscience.com";
+  const SHOW_MS = 3500;      // 版权显示时长
+  const DBL_WINDOW = 280;    // 双击判定的时间窗（毫秒）
+  const FADE_MS = 450;       // 淡出时长，与 CSS transition 一致
+
+  function bindCopyright() {
+    // 首选 #mainTitle（注入脚本会保证它存在）；后三个选择器是手写粘贴时的兜底
+    const title = document.getElementById("mainTitle") ||
+                  document.querySelector("h1, .title, .page-title, .main-title");
+    const box = document.getElementById("kaiming-copyright");
+    if (!title || !box) return;
+
+    title.style.cursor = "pointer";
+    title.style.userSelect = "none";
+    title.style.webkitUserSelect = "none";
+
+    let clickTimer = null;
+    let hideTimer = null;
+    let seq = 0;   // 每次显示/隐藏都 +1，用来作废在飞的定时器
+
+    function showCopyright() {
+      const my = ++seq;
+      if (hideTimer) clearTimeout(hideTimer);
+      box.style.display = "block";
+      /* 强制重绘，让 0 → 1 的淡入真的发生。
+         这里刻意不用 requestAnimationFrame：rAF 在页面不产生新帧时（后台标签页、
+         无头渲染、大屏久置）不保证触发——一旦它晚于下方的隐藏定时器回调，
+         就会把 opacity 又设成 1，导致版权条永久停在屏幕上。 */
+      void box.offsetHeight;
+      box.style.opacity = "1";
+      hideTimer = setTimeout(function () {
+        if (my !== seq) return;      // 期间又被点过，交给新的那一次收尾
+        box.style.opacity = "0";
+        setTimeout(function () {
+          if (my === seq) box.style.display = "none";
+        }, FADE_MS);
+      }, SHOW_MS);
+    }
+
+    function hideCopyright() {
+      const my = ++seq;              // 作废所有在飞的定时器，避免"淡出到一半又被点亮"卡住
+      if (hideTimer) clearTimeout(hideTimer);
+      if (box.style.display !== "block") return;
+      box.style.opacity = "0";
+      setTimeout(function () {
+        if (my === seq) box.style.display = "none";
+      }, FADE_MS);
+    }
+
+    function openHomepage() {
+      // 双击时隐藏版权，并跳转官网
+      hideCopyright();
+      window.open(HOMEPAGE, "_blank", "noopener,noreferrer");
+    }
+
+    title.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (clickTimer) return;   // 已在等待双击窗口，忽略这次单击
+      clickTimer = setTimeout(function () {
+        clickTimer = null;
+        showCopyright();        // 确认是单击
+      }, DBL_WINDOW);
+    });
+
+    title.addEventListener("dblclick", function (e) {
+      e.stopPropagation();
+      if (clickTimer) {         // 取消挂起的单击
+        clearTimeout(clickTimer);
+        clickTimer = null;
+      }
+      openHomepage();
+    });
+
+    // 点击页面其它地方，立即隐藏版权
+    document.addEventListener("click", function (e) {
+      if (e.target === title) return;
+      hideCopyright();
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bindCopyright);
+  } else {
+    bindCopyright();
+  }
+})();
+</script>
+<!-- ================= 开物AI科学 · 版权模块 结束 ================= -->
+
+</body>
+</html>

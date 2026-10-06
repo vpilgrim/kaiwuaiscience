@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>杠杆 · 杠杆尺平衡实验</title>
+<style>
+/* ============================================================
+   杠杆 · 杠杆尺平衡实验（五年级上册 第一单元）
+   物质科学 → 科技实验风：深灰 / 金属蓝 / 橙
+   大屏白板适配：正文 20px、读数 30px、按钮 56px、无滚动、无键盘、无下拉
+   ============================================================ */
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#e9eef3; --card:#fff; --line:#d3dde6; --ink:#1d2a36; --muted:#63758a;
+  --blue:#2f6fb5; --blue2:#e9f2fc; --orange:#ef8a24; --orange2:#fff3e4;
+  --green:#1f9d63; --green2:#e6f7ef; --red:#d0453f; --red2:#fdeceb;
+  --steel:#3f5567;
+}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);
+  font-family:"Microsoft YaHei","PingFang SC","Segoe UI",Arial,sans-serif;font-size:20px}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+
+/* ===== 布局：左装置 58% / 右记录 42%，全部固定高度不出滚动 ===== */
+.app{height:100vh;display:grid;grid-template-columns:58% 42%;gap:12px;padding:12px}
+.left-col{min-width:0;min-height:0;display:grid;grid-template-rows:64px minmax(0,1fr);gap:10px}
+.left-main{min-width:0;min-height:0;display:grid;grid-template-rows:minmax(0,1fr) auto;gap:10px}
+.right-col{min-width:0;min-height:0;display:grid;grid-template-rows:auto minmax(0,1fr);gap:10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;
+  box-shadow:0 4px 16px rgba(35,65,85,.08);overflow:hidden}
+
+/* ===== 标题栏 ===== */
+.left-header{display:flex;align-items:center;gap:14px;padding:0 16px;
+  background:linear-gradient(135deg,#2b3c4e,#425a70);border-radius:14px;
+  box-shadow:0 4px 16px rgba(35,65,85,.18)}
+.left-header .accent{width:8px;height:34px;border-radius:4px;background:var(--orange);flex:none}
+.left-header h1{margin:0;font-size:26px;font-weight:900;color:#fff;letter-spacing:.5px;white-space:nowrap}
+.hd-actions{margin-left:auto;display:flex;gap:10px}
+.hd-actions button{height:48px;padding:0 20px;border-radius:11px;font-size:19px;font-weight:900;
+  background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);color:#fff}
+.hd-actions button:active{transform:scale(.97);background:rgba(255,255,255,.26)}
+
+/* ===== 装置舞台 ===== */
+.stage{position:relative;min-height:0;background:
+  radial-gradient(circle at 50% 12%,#fdfefe,#eef4f8 62%,#e3ebf2)}
+#stage{width:100%;height:100%;display:block;touch-action:none}
+.status{position:absolute;left:14px;top:13px;max-width:calc(100% - 400px);background:#fffdf6;
+  border:1px solid #eedfb6;border-radius:11px;padding:10px 15px;font-size:19px;font-weight:900;
+  color:#7a5a12;line-height:1.42;display:none}
+.status.ok{background:var(--green2);border-color:#a9e0c6;color:#126b45}
+.status.no{background:var(--red2);border-color:#f2c3c0;color:#9c3730}
+/* 实时读数卡：平时在右栏"实验记录"上方；实验区全屏时浮到实验区右上角。
+   只呈现"距离"和"钩码个数"两组原始数据，不出现任何超纲概念，也不显示省力/费力结论 */
+.reading{background:#22374a;border:1px solid #16283a;border-radius:14px;
+  padding:13px 20px 14px;display:grid;grid-template-columns:auto 1fr 1fr;gap:6px 18px;
+  align-items:center;box-shadow:0 4px 16px rgba(35,65,85,.18);max-width:640px}
+body.fs-active .reading{position:absolute;right:14px;top:13px;z-index:30;min-width:330px}
+.reading .rdh{font-size:18px;font-weight:900;color:#a9bfd3;text-align:center;padding-bottom:2px}
+.reading .rdl{font-size:20px;font-weight:900;color:#e3edf6;white-space:nowrap}
+.reading .rdv{font-size:30px;font-weight:900;color:#ffd166;text-align:center;line-height:1.1}
+.reading .rdv small{font-size:18px;font-weight:800;color:#a9bfd3;margin-left:3px}
+
+/* ===== 实验区全屏按钮（实验台右下角） ===== */
+.fs-btn{position:absolute;right:12px;bottom:12px;z-index:20;display:flex;align-items:center;
+  justify-content:center;gap:6px;height:48px;padding:0 18px;border:1px solid #c3d1dd;
+  border-radius:11px;background:rgba(255,255,255,.95);color:#2f6fb5;font-weight:900;
+  font-size:19px;box-shadow:0 4px 12px rgba(35,65,85,.16)}
+.fs-btn:active{transform:scale(.97);background:#eaf4ff}
+
+/* ===== 控制栏 ===== */
+.controls{display:flex;align-items:center;gap:14px;padding:12px;flex-wrap:wrap}
+.controls .btn{height:56px;padding:0 22px;border-radius:12px;font-size:20px;font-weight:900;
+  border:1px solid var(--line);background:#f6f9fc;color:var(--steel);display:inline-flex;
+  align-items:center;gap:8px}
+.controls .btn:active{transform:scale(.98)}
+.controls .btn.primary{background:var(--green);border-color:var(--green);color:#fff;
+  box-shadow:0 4px 12px rgba(31,157,99,.3)}
+.controls .btn.blue{background:var(--blue);border-color:var(--blue);color:#fff;
+  box-shadow:0 4px 12px rgba(47,111,181,.3)}
+.controls .btn.warn{background:var(--orange2);border-color:#f3cfa1;color:#a35f10}
+.controls .btn.reset{background:var(--red2);border-color:#efc4c1;color:#a83e38}
+
+/* ===== 记录面板 ===== */
+.phead{display:flex;align-items:center;gap:10px;padding:14px 16px 11px;border-bottom:1px solid var(--line)}
+.phead h2{margin:0;font-size:22px;font-weight:900;color:#2f4a61;display:flex;align-items:center}
+.phead .cnt{margin-left:auto;font-size:19px;font-weight:800;color:var(--muted)}
+.record-panel{display:flex;flex-direction:column;min-height:0}
+.table-wrap{flex:1;min-height:0;overflow:hidden}
+table{width:100%;border-collapse:collapse;table-layout:fixed}
+thead th{background:var(--blue2);color:#2b5b85;font-size:19px;font-weight:900;padding:13px 6px;
+  border-bottom:2px solid #c8ddf0;white-space:nowrap}
+tbody td{font-size:20px;font-weight:800;color:#31506c;text-align:center;padding:14px 6px;
+  border-bottom:1px solid #eaf0f5;white-space:nowrap}
+tbody tr:nth-child(odd){background:#fbfdff}
+tbody td.ok{color:var(--green)}
+tbody td.warn{color:#b4580f}
+tbody td.no{color:#98a8b6}
+.rec-empty{padding:26px 18px;font-size:22px;font-weight:800;color:#8c9dab;line-height:1.5}
+
+/* ===== 面板全屏（记录表） ===== */
+.panel-fs{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;
+  margin-left:10px;padding:0;border:1px solid #c3d1dd;border-radius:10px;background:#f6f9fc;
+  color:#2f6fb5;font-size:19px;line-height:1;font-weight:900;vertical-align:middle}
+.panel-fs:active{transform:scale(.94);background:#eaf4ff}
+.panel-exit{display:none;position:absolute;right:22px;bottom:20px;z-index:9800;
+  align-items:center;justify-content:center;gap:8px;height:54px;padding:0 24px;
+  border:1px solid #c3d1dd;border-radius:12px;background:#fff;color:#2f6fb5;font-weight:900;
+  font-size:20px;box-shadow:0 6px 18px rgba(35,65,85,.22)}
+.panel-fullscreen .panel-exit{display:flex}
+.panel-fullscreen{position:fixed!important;inset:0;width:100vw;height:100vh;z-index:9700;
+  border:0;border-radius:0;display:flex;flex-direction:column;padding:18px 22px 20px;overflow:hidden}
+.panel-fullscreen h2{font-size:30px}
+.panel-fullscreen .phead{padding:6px 4px 16px}
+.panel-fullscreen .cnt{font-size:24px}
+.panel-fullscreen .panel-fs{display:none}
+.panel-fullscreen .table-wrap{padding-bottom:76px}
+.panel-fullscreen table{max-width:1240px;margin:0 auto}
+.panel-fullscreen thead th{font-size:26px;padding:18px 10px}
+.panel-fullscreen tbody td{font-size:26px;padding:20px 10px}
+.panel-fullscreen .rec-empty{font-size:28px;padding:60px 20px;text-align:center}
+
+/* ===== 实验区全屏布局 ===== */
+body.fs-active .left-main{display:block;position:relative;height:100vh;padding:0;gap:0;
+  background:#edf4f8;border-radius:0}
+body.fs-pseudo .left-main{position:fixed;left:0;top:0;right:0;bottom:0;z-index:9000}
+body.fs-active .stage{position:absolute;inset:0;border:0;border-radius:0}
+body.fs-active .controls{position:absolute;right:22px;bottom:22px;z-index:20;
+  display:flex;flex-direction:column;flex-wrap:nowrap;align-items:stretch;width:230px;
+  padding:12px;gap:10px;background:rgba(255,255,255,.97);border:1px solid var(--line);
+  border-radius:14px;box-shadow:0 10px 26px rgba(35,65,85,.24);
+  max-height:calc(100vh - 44px);overflow:hidden}
+body.fs-active .controls > button{width:100%;height:54px;padding:0 10px;font-size:19px;
+  justify-content:center}
+body.fs-active #fsBtn{position:static;right:auto;bottom:auto;width:100%;height:54px;
+  padding:0 10px;border-radius:12px;font-size:19px;background:#eaf4ff;
+  border:1px solid #c3d1dd;color:#2f6fb5;box-shadow:none}
+
+/* ===== 拖拽幽灵（一个钩码） ===== */
+.ghost{position:fixed;left:0;top:0;width:50px;height:54px;z-index:99999;display:none;
+  pointer-events:none;transform:translate(-50%,-50%)}
+.ghost div{position:absolute;left:1px;top:13px;width:46px;height:31px;border-radius:8px;
+  background:linear-gradient(#ffd79a,#e8931f);border:2px solid #b96a18;
+  box-shadow:0 6px 14px rgba(160,90,10,.4)}
+.ghost::after{content:"";position:absolute;left:50%;top:1px;width:18px;height:18px;
+  margin-left:-9px;border:3px solid #8b9aa9;border-bottom:none;border-radius:10px 10px 0 0}
+
+/* ===== 弹窗 ===== */
+.mask{position:fixed;inset:0;background:rgba(18,32,45,.55);display:none;align-items:center;
+  justify-content:center;z-index:99000;padding:20px}
+.mask.show{display:flex}
+.modal{background:#fff;border-radius:18px;width:min(900px,94vw);max-height:88vh;display:flex;
+  flex-direction:column;overflow:hidden;box-shadow:0 24px 60px rgba(10,25,40,.4)}
+.mhead{display:flex;align-items:center;gap:12px;padding:16px 22px;background:linear-gradient(135deg,#2b3c4e,#425a70)}
+.mhead h3{margin:0;font-size:24px;font-weight:900;color:#fff}
+.mhead button{margin-left:auto;width:48px;height:48px;border-radius:11px;font-size:22px;
+  background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.28)}
+.mbody{padding:20px 24px;font-size:19px;line-height:1.6;color:#26384a;overflow:hidden}
+.mbody h4{margin:14px 0 6px;font-size:21px;color:#1f4d7a}
+.mbody h4:first-child{margin-top:0}
+.mbody p{margin:4px 0}
+.mbody b{color:#b4580f}
+.mbody .eq{display:block;text-align:center;font-size:24px;font-weight:900;color:#1f6b45;
+  background:#eafaf1;border:1px dashed #9ad7bb;border-radius:12px;padding:12px;margin:10px 0}
+.mbody .three{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:8px}
+.mbody .box{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#f8fbfe}
+.mbody .box h5{margin:0 0 4px;font-size:18px;color:#2b5b85}
+.mbody .box p{margin:2px 0;font-size:17px;color:#41566a;line-height:1.45}
+.mfoot{padding:12px 22px 18px;text-align:right}
+.mfoot button{height:54px;padding:0 30px;border-radius:12px;font-size:20px;font-weight:900;
+  background:var(--blue);color:#fff}
+
+/* ===== 轻提示（贴在实验台底部中间，不压读数卡、控制栏与全屏按钮） ===== */
+.toast{position:absolute;left:50%;bottom:14px;transform:translate(-50%,16px);background:#223444;
+  color:#fff;font-size:18px;font-weight:800;padding:12px 20px;border-radius:12px;opacity:0;
+  pointer-events:none;transition:.22s;z-index:60;max-width:46%;text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.holehit{cursor:pointer}
+.wt{cursor:pointer}
+.trayw{cursor:grab}
+.hl{transition:opacity .12s}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- ================= 左：装置 ================= -->
+  <section class="left-col">
+    <div class="left-header">
+      <div class="accent"></div>
+      <h1 id="mainTitle">杠杆 · 杠杆尺平衡实验</h1>
+      <div class="hd-actions">
+        <button id="sciBtn">📖 科学原理</button>
+      </div>
+    </div>
+
+    <div class="left-main" id="fsWrapper">
+      <div class="card stage" id="stageWrap">
+        <svg id="stage" viewBox="0 0 1000 780" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <linearGradient id="barGrad" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0" stop-color="#f2f6fa"/><stop offset="52%" stop-color="#cfdae4"/>
+              <stop offset="100%" stop-color="#aebccb"/>
+            </linearGradient>
+            <linearGradient id="wtGrad" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0" stop-color="#ffd79a"/><stop offset="100%" stop-color="#e8931f"/>
+            </linearGradient>
+            <linearGradient id="standGrad" x1="0" x2="1">
+              <stop offset="0" stop-color="#8a9aab"/><stop offset="45%" stop-color="#c3cfda"/>
+              <stop offset="100%" stop-color="#8393a4"/>
+            </linearGradient>
+          </defs>
+
+          <!-- 桌面阴影与台面 -->
+          <ellipse cx="500" cy="700" rx="462" ry="34" fill="#c9d6e1" opacity=".55"/>
+          <rect x="38" y="676" width="924" height="14" rx="7" fill="#dbe4ec"/>
+
+          <!-- 支架（后层）：立柱 + 底座 -->
+          <g id="standBack">
+            <rect x="486" y="322" width="28" height="322" rx="8" fill="url(#standGrad)"/>
+            <rect x="424" y="644" width="152" height="22" rx="10" fill="url(#standGrad)" stroke="#7f8f9f" stroke-width="1.5"/>
+            <rect x="404" y="662" width="192" height="18" rx="9" fill="#93a3b3"/>
+          </g>
+
+          <!-- 杠杆尺（可旋转）：尺身 + 孔位 + 钩码 -->
+          <g id="barGroup">
+            <g id="weights"></g>
+          </g>
+
+          <!-- 支架（前层）：支点三角 -->
+          <g id="standFront">
+            <path d="M500 268 L540 330 L460 330 Z" fill="#6d7f90" stroke="#5a6b7c" stroke-width="1.5"/>
+            <circle cx="500" cy="300" r="10" fill="#43566a"/>
+          </g>
+
+          <!-- 钩码盒 -->
+          <g id="trayGroup">
+            <rect x="14" y="636" width="196" height="114" rx="14" fill="#f4f8fb"
+                  stroke="#c3d1dd" stroke-width="2"/>
+            <rect x="14" y="636" width="196" height="34" rx="14" fill="#dde8f1"/>
+            <text x="112" y="661" text-anchor="middle" font-size="20" font-weight="900"
+                  fill="#3f5468" font-family="Microsoft YaHei">钩码盒</text>
+            <g id="trayWeights"></g>
+          </g>
+          <rect id="trayHit" class="trayw" x="14" y="636" width="196" height="114" rx="14" fill="transparent"/>
+
+          <!-- 两个点的标注（放在杠杆尺上方，避开钩码盒） -->
+          <text x="184" y="238" text-anchor="middle" font-size="22" font-weight="900" fill="#3f5468"
+                font-family="Microsoft YaHei">阻力点（左边）</text>
+          <text x="816" y="238" text-anchor="middle" font-size="22" font-weight="900" fill="#3f5468"
+                font-family="Microsoft YaHei">动力点（右边）</text>
+          <text x="500" y="244" text-anchor="middle" font-size="22" font-weight="900" fill="#b4580f"
+                font-family="Microsoft YaHei">支点</text>
+        </svg>
+
+        <div class="status" id="status"></div>
+        <button class="fs-btn" id="fsBtn">⛶ 全屏</button>
+        <div class="toast" id="toast"></div>
+      </div>
+
+      <div class="card controls" id="controlsBar">
+        <button class="btn primary" id="testBtn">🔓 松手检验</button>
+        <button class="btn blue" id="resultBtn">🔍 显示结果</button>
+        <button class="btn warn" id="clearBtn">↩ 取下全部钩码</button>
+        <button class="btn reset" id="resetBtn">🔄 重置</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 右：实时读数 + 记录 ================= -->
+  <aside class="right-col" id="rightCol">
+    <div class="reading" id="reading">
+      <div class="rdh"></div><div class="rdh">距离</div><div class="rdh">钩码</div>
+      <div class="rdl">阻力点</div>
+      <div class="rdv"><span id="rdLk">—</span><small>格</small></div>
+      <div class="rdv"><span id="rdLn">—</span><small>个</small></div>
+      <div class="rdl">动力点</div>
+      <div class="rdv"><span id="rdRk">—</span><small>格</small></div>
+      <div class="rdv"><span id="rdRn">—</span><small>个</small></div>
+    </div>
+
+    <div class="card record-panel" id="recordPanel">
+      <div class="phead">
+        <h2>📋 实验记录<button class="panel-fs" id="recordFs" title="全屏显示记录表">⛶</button></h2>
+        <span class="cnt" id="recCnt">0 次</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th style="width:8%">次数</th><th style="width:26%">阻力点（左边）</th>
+                <th style="width:26%">动力点（右边）</th><th style="width:40%">结果</th></tr>
+          </thead>
+          <tbody id="recBody"></tbody>
+        </table>
+        <div class="rec-empty" id="recEmpty">杠杆尺还没有检验</div>
+      </div>
+      <button class="panel-exit" id="recordExit">⤡ 退出全屏</button>
+    </div>
+  </aside>
+</div>
+
+<div class="ghost" id="ghost"><div></div></div>
+
+<!-- 弹窗 -->
+<div class="mask" id="mask">
+  <div class="modal">
+    <div class="mhead"><h3 id="mTitle">科学原理</h3><button id="mClose">✕</button></div>
+    <div class="mbody" id="mBody"></div>
+    <div class="mfoot"><button id="mOk">我知道了</button></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ================================================================
+   杠杆尺平衡实验 —— 核心逻辑
+   装置：杠杆尺 + 钩码
+   两个点：左边＝阻力点，右边＝动力点（课本术语，不使用"力矩""力臂"）
+   平衡判定：格数 × 钩码个数，两边相等时杠杆尺保持水平
+             ——这个算式只在程序内部使用，页面上不出现，由学生自己从数据里发现
+   结论判定：按课本原话比较"支点到动力点的距离"与"支点到阻力点的距离"
+   ================================================================ */
+const NS = "http://www.w3.org/2000/svg";
+const PIV = { x: 500, y: 300 };   // 支点坐标
+const SP  = 80;                   // 相邻孔位间距（1 格）
+const PITCH = 46;                 // 钩码纵向叠放间距（钩码的钩挂在下面一个钩码上）
+const MAXSTACK = 6;               // 一个点上最多挂几个钩码
+const MAXROW = 10;                // 记录表最多保留条数
+const WTOP = 302;                 // 第一个钩码的顶端 y（它的钩正好穿过孔位）
+
+const $ = id => document.getElementById(id);
+const svg = $("stage");
+const barGroup = $("barGroup");
+const weightsG = $("weights");
+const trayWeights = $("trayWeights");
+const ghost = $("ghost");
+
+/* ---------------- 状态 ---------------- */
+const S = {
+  Lk: 2, Ln: 0,          // 阻力点：距离（格）/ 钩码（个）
+  Rk: 4, Rn: 0,          // 动力点：距离（格）/ 钩码（个）
+  angle: 0,              // 当前倾角（度）
+  target: 0,             // 目标倾角
+  testing: false,        // 是否已松手
+  settled: false,        // 是否已稳定
+  result: null,          // 检验结论：{text,cls}，未检验时为 null
+  records: [],           // 记录：[{Lk,Ln,Rk,Rn,ok}]
+  drag: null             // 拖拽状态
+};
+
+/* ---------------- 工具 ---------------- */
+function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+function el(tag,attrs){ const e=document.createElementNS(NS,tag);
+  for(const k in attrs) e.setAttribute(k,attrs[k]); return e; }
+
+/* ---------------- 音效（Web Audio 合成，无外部音频） ---------------- */
+let AC = null;
+function ac(){ if(!AC){ try{ AC = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } return AC; }
+function tone(freq,type,dur,vol,delay){
+  const c = ac(); if(!c) return;
+  const t0 = c.currentTime + (delay||0);
+  const o = c.createOscillator(), g = c.createGain();
+  o.type = type||"sine"; o.frequency.setValueAtTime(freq,t0);
+  g.gain.setValueAtTime(vol||0.14,t0);
+  g.gain.exponentialRampToValueAtTime(0.001,t0+(dur||0.12));
+  o.connect(g); g.connect(c.destination); o.start(t0); o.stop(t0+(dur||0.12)+0.02);
+}
+const sfx = {
+  click(){ tone(660,"triangle",0.06,0.09); },
+  drop(){ tone(420,"sine",0.1,0.14); },
+  off(){ tone(300,"sine",0.09,0.1); },
+  ok(){ [523.25,659.25,783.99].forEach((f,i)=>tone(f,"sine",0.16,0.13,i*0.09)); },
+  bad(){ tone(240,"square",0.16,0.08,0); tone(170,"square",0.2,0.07,0.14); }
+};
+
+/* ---------------- 轻提示 ---------------- */
+let toastTimer = null;
+function toast(msg){
+  const t = $("toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer); toastTimer = setTimeout(()=>t.classList.remove("show"),1800);
+}
+
+/* ---------------- 弹窗 ---------------- */
+function openModal(title,html){
+  $("mTitle").textContent = title; $("mBody").innerHTML = html; $("mask").classList.add("show");
+}
+function closeModal(){ $("mask").classList.remove("show"); }
+
+const SCI_HTML = `
+  <h4>1. 杠杆上的三个点</h4>
+  <p>跷跷板是一种简单机械——<b>杠杆</b>。杠杆上有三个点：起支撑作用的固定点叫<b>支点</b>，试图压下杠杆的用力点叫<b>动力点</b>，阻碍杠杆被翘起的用力点叫<b>阻力点</b>。</p>
+  <h4>2. 杠杆尺实验</h4>
+  <p>用<b>杠杆尺和钩码</b>做实验：杠杆尺模拟跷跷板，<b>杠杆尺的格数表示距离</b>，左边钩码的个数表示<b>阻力</b>大小，右边钩码的个数表示<b>动力</b>大小。杠杆尺保持水平，就表示刚好能翘起重物。</p>
+  <h4>3. 我们的发现</h4>
+  <span class="eq">支点到动力点的距离 ＞ 支点到阻力点的距离 → 省力</span>
+  <p>使用杠杆工作时，如果支点到动力点的距离<b>大于</b>支点到阻力点的距离，所用的动力会<b>小于</b>阻力，也就是<b>省力</b>；反之，<b>费力</b>。两边距离相等时，<b>既不省力也不费力</b>。</p>
+  <h4>4. 三类杠杆</h4>
+  <div class="three">
+    <div class="box"><h5>省力杠杆</h5><p>支点到动力点的距离 ＞ 支点到阻力点的距离<br>例：撬棒、开瓶器、剪刀</p></div>
+    <div class="box"><h5>费力杠杆</h5><p>支点到动力点的距离 ＜ 支点到阻力点的距离<br>例：筷子、镊子、钓鱼竿</p></div>
+    <div class="box"><h5>既不省力也不费力</h5><p>两边距离相等<br>例：天平、跷跷板</p></div>
+  </div>`;
+
+/* ================================================================
+   一、构建杠杆尺（尺身 + 10 个孔位 + 格数标签 + 点击热区）
+   ================================================================ */
+const holes = [];   // {side:'L'|'R', k:1..5, x, hl}
+
+function buildBar(){
+  // 尺身
+  barGroup.insertBefore(el("rect",{x:100,y:286,width:800,height:28,rx:11,
+    fill:"url(#barGrad)",stroke:"#8b9aa9","stroke-width":2}), weightsG);
+
+  ["L","R"].forEach(side=>{
+    const dir = side==="L" ? -1 : 1;
+    for(let k=1;k<=5;k++){
+      const x = PIV.x + dir*k*SP;
+
+      // 格数标签（尺身上方）
+      barGroup.insertBefore(el("text",{x:x,y:274,"text-anchor":"middle","font-size":19,
+        fill:"#63758a","font-family":"Microsoft YaHei","font-weight":800}), weightsG);
+
+      // 待放高亮圈（拖拽时出现）
+      const hl = el("circle",{cx:x,cy:PIV.y,r:36,fill:"none",stroke:"#ef8a24",
+        "stroke-width":3,"stroke-dasharray":"8 6",opacity:0});
+      hl.classList.add("hl"); barGroup.insertBefore(hl,weightsG);
+
+      // 孔
+      barGroup.insertBefore(el("circle",{cx:x,cy:PIV.y,r:6,fill:"#fff",
+        stroke:"#7d8fa1","stroke-width":2}), weightsG);
+
+      // 点击热区（点击 +1）
+      const hit = el("circle",{cx:x,cy:PIV.y,r:27,fill:"transparent","pointer-events":"all"});
+      hit.classList.add("holehit"); hit.dataset.side = side; hit.dataset.k = k;
+      barGroup.insertBefore(hit,weightsG);
+
+      holes.push({side,k,x,hl});
+    }
+  });
+}
+
+/* 钩码图形（以 x 为中线，y 为顶边）：顶部挂钩 + 金属块 + 底部挂钩
+   底部挂钩伸出一小段，正好可以让下一个钩码的顶部挂钩挂上去 */
+function weightShape(x,y){
+  const g = el("g",{});
+  g.appendChild(el("path",{d:"M "+(x-9)+" "+(y+13)+" a 9 9 0 0 1 18 0",
+    fill:"none",stroke:"#8b9aa9","stroke-width":3.6,"stroke-linecap":"round"}));
+  g.appendChild(el("rect",{x:x-23,y:y+11,width:46,height:31,rx:8,
+    fill:"url(#wtGrad)",stroke:"#b96a18","stroke-width":1.8}));
+  g.appendChild(el("rect",{x:x-16,y:y+17,width:32,height:7,rx:3.5,
+    fill:"rgba(255,255,255,.5)"}));
+  g.appendChild(el("path",{d:"M "+x+" "+(y+42)+" v6",
+    fill:"none",stroke:"#8b9aa9","stroke-width":3.6,"stroke-linecap":"round"}));
+  return g;
+}
+
+/* ================================================================
+   二、渲染钩码 + 读数 + 状态
+   ================================================================ */
+function kN(side){ return side==="L" ? S.Ln : S.Rn; }        // 该点的钩码个数
+function kK(side){ return side==="L" ? S.Lk : S.Rk; }        // 该点的距离（格）
+function isBalanced(){ return S.Lk*S.Ln === S.Rk*S.Rn; }
+/* 结论：按课本原话比较两个距离（只在杠杆尺保持水平时才成立） */
+function relation(){
+  const c = S.Rk > S.Lk ? "＞" : (S.Rk < S.Lk ? "＜" : "＝");
+  return "动力点距离 " + S.Rk + " 格 " + c + " 阻力点距离 " + S.Lk + " 格";
+}
+function verdictOf(){
+  if(S.Rk > S.Lk) return {text:"省力", cls:"ok"};
+  if(S.Rk < S.Lk) return {text:"费力", cls:"warn"};
+  return {text:"既不省力也不费力", cls:""};
+}
+
+function renderWeights(){
+  weightsG.innerHTML = "";
+  ["L","R"].forEach(side=>{
+    const dir = side==="L" ? -1 : 1;
+    const n = kN(side), k = kK(side);
+    if(!n) return;
+    const x = PIV.x + dir*k*SP;
+    for(let i=0;i<n;i++){
+      const g = weightShape(x, WTOP + i*PITCH);
+      g.classList.add("wt"); g.dataset.side = side;
+      weightsG.appendChild(g);
+    }
+  });
+}
+
+function renderReading(){
+  $("rdLk").textContent = S.Ln ? S.Lk : "—";
+  $("rdLn").textContent = S.Ln ? S.Ln : "—";
+  $("rdRk").textContent = S.Rn ? S.Rk : "—";
+  $("rdRn").textContent = S.Rn ? S.Rn : "—";
+}
+
+function setStatus(text,type){
+  const s = $("status");
+  if(!text){ s.style.display = "none"; s.className = "status"; s.textContent = ""; return; }
+  s.style.display = "block";
+  s.className = "status" + (type ? (" " + type) : "");
+  s.textContent = text;
+}
+
+function refresh(){
+  renderWeights(); renderReading();
+  if(!S.testing) setStatus("", "");
+}
+
+/* ================================================================
+   三、增删钩码
+   ================================================================ */
+function stopTesting(){ S.testing = false; S.settled = false; S.target = 0; S.result = null; }
+
+/* 每个点只有一处悬挂位置：换孔位＝把这一摞钩码移过去；点同一个孔位或已有钩码＝再加一个 */
+function addWeight(side,k){
+  if(side==="L"){
+    if(S.Lk !== k){ S.Lk = k; if(!S.Ln) S.Ln = 1; }
+    else {
+      if(S.Ln >= MAXSTACK){ toast("一个点最多挂 " + MAXSTACK + " 个钩码"); return; }
+      S.Ln++;
+    }
+  }else{
+    if(S.Rk !== k){ S.Rk = k; if(!S.Rn) S.Rn = 1; }
+    else {
+      if(S.Rn >= MAXSTACK){ toast("一个点最多挂 " + MAXSTACK + " 个钩码"); return; }
+      S.Rn++;
+    }
+  }
+  stopTesting(); sfx.drop(); refresh();
+}
+function removeWeight(side){
+  if(side==="L"){ if(!S.Ln) return; S.Ln--; }
+  else { if(!S.Rn) return; S.Rn--; }
+  stopTesting(); sfx.off(); refresh();
+}
+function clearAll(){
+  S.Ln = 0; S.Rn = 0; stopTesting(); refresh(); sfx.click(); toast("已取下全部钩码");
+}
+
+/* ================================================================
+   四、松手检验：杠杆尺向"格数 × 钩码个数"大的一边沉下去
+   ================================================================ */
+function doTest(){
+  if(!S.Ln || !S.Rn){ toast("两边都要挂上钩码"); sfx.bad(); return; }
+  S.testing = true; S.settled = false; S.result = null;
+  const L = S.Lk*S.Ln, R = S.Rk*S.Rn;
+  // 沉得更多的一边往下转：右边大 → 顺时针（正角度）
+  S.target = clamp((R-L)*1.8, -13, 13);
+  setStatus("", "");
+  sfx.click();
+}
+
+/* 松手检验：杠杆尺只做动画，不出文字结论；结论等学生点「显示结果」再看 */
+function onSettled(){
+  const ok = isBalanced();
+  S.result = ok ? verdictOf() : null;
+  if(ok) sfx.ok(); else sfx.bad();
+  renderReading();
+  addRecord(ok);
+}
+
+/* 显示结果：把当前数据的结论摆到左上角
+   平衡＝课本句式（🎉 杠杆尺保持水平了！动力点距离 2 格 ＜ 阻力点距离 4 格，费力。）
+   不平衡＝现象描述（沉下去的是…没有保持水平） */
+function showResult(){
+  if(!S.Ln || !S.Rn){ toast("两边都要挂上钩码"); sfx.bad(); return; }
+  if(isBalanced()){
+    S.result = verdictOf();
+    setStatus("🎉 杠杆尺保持水平了！" + relation() + "，" + S.result.text + "。", "ok");
+    sfx.ok();
+  }else{
+    S.result = null;
+    setStatus("沉下去的是" + (S.Lk*S.Ln > S.Rk*S.Rn ? "左边（阻力点）" : "右边（动力点）")
+      + "，杠杆尺没有保持水平。", "no");
+    sfx.bad();
+  }
+}
+
+/* ================================================================
+   五、记录表
+   ================================================================ */
+function addRecord(ok){
+  S.records.push({ Lk:S.Lk, Ln:S.Ln, Rk:S.Rk, Rn:S.Rn, ok });
+  if(S.records.length > MAXROW) S.records.shift();
+  renderRecords();
+}
+/* 结果列：平衡 + 省力/费力，全部按课本口径表述 */
+function resultLabel(r){
+  if(!r.ok) return { t:"✘ 没有平衡", cls:"no" };
+  if(r.Rk > r.Lk) return { t:"✔ 平衡，省力", cls:"ok" };
+  if(r.Rk < r.Lk) return { t:"✔ 平衡，费力", cls:"warn" };
+  return { t:"✔ 平衡，既不省力也不费力", cls:"" };
+}
+function renderRecords(){
+  const body = $("recBody");
+  body.innerHTML = "";
+  $("recCnt").textContent = S.records.length + " 次";
+  $("recEmpty").style.display = S.records.length ? "none" : "block";
+  S.records.forEach((r,i)=>{
+    const lb = resultLabel(r);
+    const tr = document.createElement("tr");
+    tr.innerHTML = "<td>"+(i+1)+"</td>"
+      + "<td>"+r.Lk+" 格 "+r.Ln+" 个</td>"
+      + "<td>"+r.Rk+" 格 "+r.Rn+" 个</td>"
+      + '<td class="'+lb.cls+'">'+lb.t+"</td>";
+    body.appendChild(tr);
+  });
+}
+
+/* ================================================================
+   六、拖拽（从钩码盒拖到孔位，或拖到已挂的钩码上）
+   ================================================================ */
+function moveGhost(cx,cy){ ghost.style.left = cx+"px"; ghost.style.top = cy+"px"; }
+/* 命中判定：先看孔位附近；再看是否落在已挂的钩码上（挂在钩码上＝在那个点再加一个） */
+function nearestHole(cx,cy){
+  let best = null, bd = 66;   // 66 屏幕像素内视为命中孔位
+  holes.forEach(h=>{
+    const r = h.hl.getBoundingClientRect();
+    const d = Math.hypot(cx-(r.left+r.width/2), cy-(r.top+r.height/2));
+    if(d < bd){ bd = d; best = h; }
+  });
+  if(best) return best;
+  let hitSide = null;
+  weightsG.querySelectorAll(".wt").forEach(w=>{
+    const r = w.getBoundingClientRect();
+    if(cx>=r.left-6 && cx<=r.right+6 && cy>=r.top-6 && cy<=r.bottom+6) hitSide = w.dataset.side;
+  });
+  if(hitSide){
+    const k = hitSide==="L" ? S.Lk : S.Rk;
+    return holes.find(h=>h.side===hitSide && h.k===k) || null;
+  }
+  return null;
+}
+function clearHl(){ holes.forEach(h=>h.hl.setAttribute("opacity",0)); }
+
+function setupDrag(){
+  svg.addEventListener("pointerdown", e=>{
+    const t = e.target;
+    if(!(t.closest && t.closest("#trayHit"))) return;
+    e.preventDefault();
+    S.drag = { id:e.pointerId };
+    ghost.style.display = "block"; moveGhost(e.clientX, e.clientY);
+    try{ svg.setPointerCapture(e.pointerId); }catch(err){}
+  });
+  svg.addEventListener("pointermove", e=>{
+    if(!S.drag) return;
+    e.preventDefault();
+    moveGhost(e.clientX, e.clientY);
+    const near = nearestHole(e.clientX, e.clientY);
+    holes.forEach(h=>h.hl.setAttribute("opacity",
+      (near && near.side===h.side && near.k===h.k) ? 1 : 0));
+  });
+  const endDrag = e=>{
+    if(!S.drag) return;
+    const near = nearestHole(e.clientX, e.clientY);
+    if(near) addWeight(near.side, near.k);
+    else toast("把钩码拖到孔位或钩码上");
+    clearHl(); ghost.style.display = "none"; S.drag = null;
+  };
+  svg.addEventListener("pointerup", endDrag);
+  svg.addEventListener("pointercancel", ()=>{
+    clearHl(); ghost.style.display = "none"; S.drag = null;
+  });
+}
+
+/* 点击孔位＝把钩码挂到该点（或在同一点再加一个）；点击钩码＝取下一个 */
+function setupClicks(){
+  barGroup.addEventListener("click", e=>{
+    const hit = e.target.closest && e.target.closest(".holehit");
+    if(hit){ addWeight(hit.dataset.side, +hit.dataset.k); return; }
+    const w = e.target.closest && e.target.closest(".wt");
+    if(w){ removeWeight(w.dataset.side); }
+  });
+}
+
+/* ================================================================
+   七、钩码盒图形
+   ================================================================ */
+function buildTray(){
+  trayWeights.innerHTML = "";
+  [80,154].forEach(x=>{
+    const g = weightShape(x, 680);
+    g.classList.add("trayw");
+    trayWeights.appendChild(g);
+  });
+}
+
+/* ================================================================
+   八、动画主循环
+   ================================================================ */
+function loop(){
+  const tgt = S.testing ? S.target : 0;
+  S.angle += (tgt - S.angle) * 0.13;
+  if(Math.abs(tgt - S.angle) < 0.05) S.angle = tgt;
+  barGroup.setAttribute("transform","rotate("+S.angle.toFixed(2)+" 500 300)");
+
+  if(S.testing && !S.settled && Math.abs(S.angle - S.target) < 0.2){
+    S.settled = true;
+    onSettled();
+  }
+  requestAnimationFrame(loop);
+}
+
+/* ================================================================
+   九、全屏（实验区全屏 + 记录表全屏）
+   ================================================================ */
+const fsWrapper = $("fsWrapper");
+const stageWrap = $("stageWrap");
+const controlsBar = $("controlsBar");
+const fsBtn = $("fsBtn");
+const readingEl = $("reading");
+const rightCol = $("rightCol");
+const recordPanel = $("recordPanel");
+let fsState = false, pseudoFs = false;
+
+function applyStageFs(on){
+  if(on){
+    document.body.classList.add("fs-active");
+    document.body.classList.toggle("fs-pseudo", pseudoFs);
+    if(fsBtn.parentNode !== controlsBar) controlsBar.appendChild(fsBtn);
+    // 实时读数卡跟着进实验区，浮到右上角
+    if(readingEl.parentNode !== stageWrap) stageWrap.appendChild(readingEl);
+    fsBtn.textContent = "⤡ 退出全屏";
+  }else{
+    document.body.classList.remove("fs-active","fs-pseudo");
+    if(fsBtn.parentNode !== stageWrap) stageWrap.appendChild(fsBtn);
+    // 读数卡回到右栏"实验记录"上方
+    if(readingEl.parentNode !== rightCol) rightCol.insertBefore(readingEl, recordPanel);
+    fsBtn.textContent = "⛶ 全屏";
+  }
+}
+function enterStageFs(){
+  if(fsState) return;
+  if(fullPanel) closePanelFs();
+  const begin = pseudo=>{
+    if(fsState) return;
+    fsState = true; pseudoFs = pseudo;
+    if(pseudo){
+      document.documentElement.style.overflow = "hidden";
+      document.body.style.overflow = "hidden";
+    }
+    applyStageFs(true);
+  };
+  const req = fsWrapper.requestFullscreen || fsWrapper.webkitRequestFullscreen;
+  if(!req){ begin(true); return; }
+  try{
+    const p = req.call(fsWrapper);
+    if(p && typeof p.then === "function") p.then(()=>begin(false)).catch(()=>begin(true));
+    else begin(false);
+  }catch(err){ begin(true); }
+}
+function exitStageFs(){
+  if(!fsState) return;
+  const wasPseudo = pseudoFs;
+  fsState = false; pseudoFs = false;
+  if(wasPseudo){
+    document.documentElement.style.overflow = "";
+    document.body.style.overflow = "";
+    applyStageFs(false);
+  }else{
+    const exit = document.exitFullscreen || document.webkitExitFullscreen;
+    if(exit){
+      try{
+        const p = exit.call(document);
+        if(p && typeof p.then === "function") p.then(()=>applyStageFs(false)).catch(()=>applyStageFs(false));
+        else applyStageFs(false);
+      }catch(e){ applyStageFs(false); }
+    }else{
+      applyStageFs(false);
+    }
+  }
+}
+fsBtn.addEventListener("click", ()=>{ fsState ? exitStageFs() : enterStageFs(); });
+
+let fullPanel = null;
+function closePanelFs(){
+  if(!fullPanel) return;
+  fullPanel.classList.remove("panel-fullscreen");
+  fullPanel = null;
+}
+function togglePanelFs(panel){
+  if(fullPanel === panel){ closePanelFs(); return; }
+  const doOpen = ()=>{
+    if(fullPanel) fullPanel.classList.remove("panel-fullscreen");
+    fullPanel = panel;
+    panel.classList.add("panel-fullscreen");
+  };
+  if(fsState){ exitStageFs(); setTimeout(doOpen,180); }
+  else doOpen();
+}
+$("recordFs").addEventListener("click", e=>{ e.stopPropagation(); togglePanelFs($("recordPanel")); });
+$("recordExit").addEventListener("click", e=>{ e.stopPropagation(); closePanelFs(); });
+
+document.addEventListener("fullscreenchange", onFsChange);
+document.addEventListener("webkitfullscreenchange", onFsChange);
+function onFsChange(){
+  const el = document.fullscreenElement || document.webkitFullscreenElement;
+  if(el === fsWrapper){
+    if(!fsState){ fsState = true; pseudoFs = false; applyStageFs(true); }
+  }else{
+    if(fsState && !pseudoFs){ fsState = false; applyStageFs(false); }
+  }
+}
+
+/* Esc 退出 */
+window.addEventListener("keydown", e=>{
+  if(e.key === "Escape" || e.keyCode === 27){
+    if(fullPanel) closePanelFs();
+    if(fsState && pseudoFs) exitStageFs();
+  }
+});
+
+/* ================================================================
+   十、初始化
+   ================================================================ */
+function init(){
+  buildBar();
+  buildTray();
+  setupDrag();
+  setupClicks();
+
+  $("testBtn").addEventListener("click", doTest);
+  $("resultBtn").addEventListener("click", showResult);
+  $("clearBtn").addEventListener("click", clearAll);
+  $("resetBtn").addEventListener("click", ()=>{
+    S.Lk = 2; S.Rk = 4;            // 两个点回到初始位置
+    S.records = [];
+    clearAll(); renderRecords();
+    sfx.click(); toast("已重置");
+  });
+  $("sciBtn").addEventListener("click", ()=>openModal("科学原理 · 杠杆", SCI_HTML));
+  $("mClose").addEventListener("click", closeModal);
+  $("mOk").addEventListener("click", closeModal);
+  $("mask").addEventListener("click", e=>{ if(e.target === $("mask")) closeModal(); });
+
+  refresh(); renderRecords(); loop();
+}
+init();
+</script>
+
+
+
+
+<!-- ================= 开物AI科学 · 版权模块（单击显示 / 双击打开官网） ================= -->
+<style id="kaiming-copyright-style">
+  #kaiming-copyright {
+    position: fixed;
+    bottom: 175px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    pointer-events: none;
+    z-index: 999999;
+    transition: opacity 0.45s ease;
+    opacity: 0;
+    display: none;
+  }
+  #kaiming-copyright .inner {
+    display: inline-block;
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #eafaf2;
+    padding: 9px 26px;
+    border-radius: 60px;
+    /* 原稿为 14px；此处改为 16px 以符合本机 verify_html.py 的「字号不得小于 16px」硬规则 */
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.6px;
+    border: 1px solid rgba(255, 245, 210, 0.3);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+    font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+    white-space: nowrap;
+  }
+</style>
+
+<div id="kaiming-copyright">
+  <div class="inner">© 2026 开物AI科学 ｜ AI 赋能 · 教育公平</div>
+</div>
+
+<script id="kaiming-copyright-script">
+(function () {
+  "use strict";
+
+  /* 目标：单击标题 → 显示版权 3.5 秒；双击标题 → 打开 www.kaiwuaiscience.com */
+
+  const HOMEPAGE = "https://www.kaiwuaiscience.com";
+  const SHOW_MS = 3500;      // 版权显示时长
+  const DBL_WINDOW = 280;    // 双击判定的时间窗（毫秒）
+  const FADE_MS = 450;       // 淡出时长，与 CSS transition 一致
+
+  function bindCopyright() {
+    // 首选 #mainTitle（注入脚本会保证它存在）；后三个选择器是手写粘贴时的兜底
+    const title = document.getElementById("mainTitle") ||
+                  document.querySelector("h1, .title, .page-title, .main-title");
+    const box = document.getElementById("kaiming-copyright");
+    if (!title || !box) return;
+
+    title.style.cursor = "pointer";
+    title.style.userSelect = "none";
+    title.style.webkitUserSelect = "none";
+
+    let clickTimer = null;
+    let hideTimer = null;
+    let seq = 0;   // 每次显示/隐藏都 +1，用来作废在飞的定时器
+
+    function showCopyright() {
+      const my = ++seq;
+      if (hideTimer) clearTimeout(hideTimer);
+      box.style.display = "block";
+      /* 强制重绘，让 0 → 1 的淡入真的发生。
+         这里刻意不用 requestAnimationFrame：rAF 在页面不产生新帧时（后台标签页、
+         无头渲染、大屏久置）不保证触发——一旦它晚于下方的隐藏定时器回调，
+         就会把 opacity 又设成 1，导致版权条永久停在屏幕上。 */
+      void box.offsetHeight;
+      box.style.opacity = "1";
+      hideTimer = setTimeout(function () {
+        if (my !== seq) return;      // 期间又被点过，交给新的那一次收尾
+        box.style.opacity = "0";
+        setTimeout(function () {
+          if (my === seq) box.style.display = "none";
+        }, FADE_MS);
+      }, SHOW_MS);
+    }
+
+    function hideCopyright() {
+      const my = ++seq;              // 作废所有在飞的定时器，避免"淡出到一半又被点亮"卡住
+      if (hideTimer) clearTimeout(hideTimer);
+      if (box.style.display !== "block") return;
+      box.style.opacity = "0";
+      setTimeout(function () {
+        if (my === seq) box.style.display = "none";
+      }, FADE_MS);
+    }
+
+    function openHomepage() {
+      // 双击时隐藏版权，并跳转官网
+      hideCopyright();
+      window.open(HOMEPAGE, "_blank", "noopener,noreferrer");
+    }
+
+    title.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (clickTimer) return;   // 已在等待双击窗口，忽略这次单击
+      clickTimer = setTimeout(function () {
+        clickTimer = null;
+        showCopyright();        // 确认是单击
+      }, DBL_WINDOW);
+    });
+
+    title.addEventListener("dblclick", function (e) {
+      e.stopPropagation();
+      if (clickTimer) {         // 取消挂起的单击
+        clearTimeout(clickTimer);
+        clickTimer = null;
+      }
+      openHomepage();
+    });
+
+    // 点击页面其它地方，立即隐藏版权
+    document.addEventListener("click", function (e) {
+      if (e.target === title) return;
+      hideCopyright();
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bindCopyright);
+  } else {
+    bindCopyright();
+  }
+})();
+</script>
+<!-- ================= 开物AI科学 · 版权模块 结束 ================= -->
+
+</body>
+</html>

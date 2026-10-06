@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>滑轮 · 三种提重物方式</title>
+<style>
+/* ============================================================
+   滑轮 · 直接提起 / 定滑轮 / 动滑轮
+   ============================================================ */
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#e9eef3; --card:#fff; --line:#d3dde6; --ink:#1d2a36; --muted:#63758a;
+  --blue:#2f6fb5; --blue2:#e9f2fc; --orange:#ef8a24; --orange2:#fff3e4;
+  --green:#1f9d63; --green2:#e6f7ef; --red:#d0453f; --red2:#fdeceb; --steel:#44586b;
+}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);
+  font-family:"Microsoft YaHei","PingFang SC","Segoe UI",Arial,sans-serif;font-size:20px}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+
+.app{height:100vh;display:grid;grid-template-columns:58% 42%;gap:12px;padding:12px}
+.left-col{min-width:0;min-height:0;display:grid;grid-template-rows:64px minmax(0,1fr);gap:10px}
+.left-main{min-width:0;min-height:0;display:grid;grid-template-rows:minmax(0,1fr) auto;gap:10px}
+.right-col{min-width:0;min-height:0;display:grid;grid-template-rows:auto minmax(0,1fr);gap:10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;
+  box-shadow:0 4px 16px rgba(35,65,85,.08);overflow:hidden}
+
+.left-header{display:flex;align-items:center;gap:14px;padding:0 16px;
+  background:linear-gradient(135deg,#2b3c4e,#425a70);border-radius:14px;
+  box-shadow:0 4px 16px rgba(35,65,85,.18)}
+.left-header .accent{width:8px;height:34px;border-radius:4px;background:var(--orange);flex:none}
+.left-header h1{margin:0;font-size:26px;font-weight:900;color:#fff;letter-spacing:.5px;white-space:nowrap}
+.hd-actions{margin-left:auto;display:flex;gap:10px}
+.hd-actions button{height:44px;padding:0 16px;border-radius:11px;font-size:17px;font-weight:900;
+  background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);color:#fff}
+.hd-actions button:active{transform:scale(.97);background:rgba(255,255,255,.26)}
+
+.stage{position:relative;min-height:0;background:
+  radial-gradient(circle at 50% 10%,#fdfefe,#eef4f8 62%,#e3ebf2)}
+#stage{width:100%;height:100%;display:block;touch-action:none}
+
+/* ---------- 底部按钮区 ---------- */
+.controls{display:flex;align-items:center;gap:8px;padding:10px 12px;flex-wrap:wrap}
+.ctl-label{font-size:17px;font-weight:900;color:#4a6076}
+.controls .step{height:54px;width:50px;border-radius:12px;font-size:26px;font-weight:900;line-height:1;
+  border:1px solid var(--line);background:#f6f9fc;color:var(--steel)}
+.controls .step:active{transform:scale(.95);background:#e6eef6}
+.controls .nval{min-width:38px;text-align:center;font-size:24px;font-weight:900;color:var(--ink)}
+.wbtns{display:flex;gap:6px}
+.wbtns button{height:54px;padding:0 11px;border-radius:12px;font-size:16px;font-weight:900;
+  border:1px solid var(--line);background:#f6f9fc;color:var(--steel);white-space:nowrap}
+.wbtns button.active{background:var(--blue);border-color:var(--blue);color:#fff;
+  box-shadow:0 4px 12px rgba(47,111,181,.3)}
+.wbtns button.active[data-mode="p1"]{background:#44586b;border-color:#44586b;
+  box-shadow:0 4px 12px rgba(68,88,107,.3)}
+.wbtns button.active[data-mode="p3"]{background:var(--orange);border-color:var(--orange);
+  box-shadow:0 4px 12px rgba(239,138,36,.3)}
+.controls .btn{height:54px;padding:0 13px;border-radius:12px;font-size:16px;font-weight:900;white-space:nowrap;
+  border:1px solid var(--line);background:#f6f9fc;color:var(--steel);display:inline-flex;align-items:center;gap:5px}
+.controls .btn:active{transform:scale(.98)}
+.controls .btn.primary{background:var(--orange);border-color:var(--orange);color:#fff;
+  box-shadow:0 4px 12px rgba(239,138,36,.3)}
+.controls .btn.blue{background:var(--blue);border-color:var(--blue);color:#fff}
+.controls .btn.reset{background:var(--red2);border-color:#efc4c1;color:#a83e38}
+.controls .spacer{margin-left:auto}
+
+/* ---------- 右侧面板 ---------- */
+.phead{display:flex;align-items:center;gap:10px;padding:11px 14px 8px;border-bottom:1px solid var(--line)}
+.phead h2{margin:0;font-size:20px;font-weight:900;color:#2f4a61}
+.phead .cnt{margin-left:auto;font-size:18px;font-weight:800;color:var(--muted)}
+.phead .lg{font-size:17px;font-weight:800;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap}
+.phead .lg i{display:inline-block;width:13px;height:13px;border-radius:4px;margin-right:4px;vertical-align:-2px}
+.record-panel{display:flex;flex-direction:column}
+table{width:100%;border-collapse:collapse;table-layout:fixed}
+thead th{background:var(--blue2);color:#2b5b85;font-size:17px;font-weight:900;padding:8px 3px;
+  border-bottom:2px solid #c8ddf0;white-space:nowrap}
+tbody td{font-size:17px;font-weight:800;color:#31506c;text-align:center;padding:7px 3px;
+  border-bottom:1px solid #eaf0f5;white-space:nowrap}
+tbody tr:nth-child(odd){background:#fbfdff}
+.rec-empty{padding:16px 14px;font-size:17px;font-weight:700;color:#8c9dab;line-height:1.5}
+.chart-panel{display:flex;flex-direction:column;min-height:0}
+.chart-wrap{flex:1;min-height:0;position:relative;padding:6px 8px 8px}
+#chart{display:block;width:100%;height:100%;touch-action:none}
+
+/* ---------- 弹窗 ---------- */
+.mask{position:fixed;inset:0;background:rgba(18,32,45,.55);display:none;align-items:center;
+  justify-content:center;z-index:99000;padding:20px}
+.mask.show{display:flex}
+.modal{background:#fff;border-radius:18px;width:min(880px,94vw);max-height:88vh;display:flex;
+  flex-direction:column;overflow:hidden;box-shadow:0 24px 60px rgba(10,25,40,.4)}
+.mhead{display:flex;align-items:center;gap:12px;padding:16px 22px;background:linear-gradient(135deg,#2b3c4e,#425a70)}
+.mhead h3{margin:0;font-size:24px;font-weight:900;color:#fff}
+.mhead button{margin-left:auto;width:44px;height:44px;border-radius:11px;font-size:22px;
+  background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.28)}
+.mbody{padding:20px 24px;font-size:19px;line-height:1.62;color:#26384a;overflow:hidden}
+.mbody h4{margin:14px 0 6px;font-size:20px;color:#1f4d7a}
+.mbody h4:first-child{margin-top:0}
+.mbody ul{margin:6px 0;padding-left:26px}
+.mbody li{margin:5px 0}
+.mbody b{color:#b4580f}
+.mbody .two{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}
+.mbody .box{border:1px solid var(--line);border-radius:12px;padding:10px 14px;background:#f8fbfe}
+.mbody .box h5{margin:0 0 4px;font-size:18px;color:#2b5b85}
+.mbody .box p{margin:2px 0;font-size:17px;color:#41566a;line-height:1.5}
+.mfoot{padding:12px 22px 18px;text-align:right}
+.mfoot button{height:52px;padding:0 28px;border-radius:12px;font-size:19px;font-weight:900;
+  background:var(--blue);color:#fff}
+
+.toast{position:fixed;right:22px;bottom:58px;transform:translateY(16px);background:#223444;
+  color:#fff;font-size:17px;font-weight:800;padding:11px 18px;border-radius:12px;opacity:0;
+  pointer-events:none;transition:.22s;z-index:99998;max-width:34vw;text-align:center}
+.toast.show{opacity:1;transform:translateY(0)}
+
+/* ===== 全屏按钮 ===== */
+.fs-btn{position:absolute;right:12px;bottom:12px;z-index:20;display:flex;align-items:center;
+  justify-content:center;gap:6px;height:48px;padding:0 18px;border:1px solid #c3d1dd;
+  border-radius:11px;background:rgba(255,255,255,.95);color:#2f6fb5;font-weight:900;
+  font-size:18px;box-shadow:0 4px 12px rgba(35,65,85,.16)}
+.fs-btn:active{transform:scale(.97);background:#eaf4ff}
+.panel-fs{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;
+  margin-left:10px;padding:0;border:1px solid #c3d1dd;border-radius:10px;background:#f6f9fc;
+  color:#2f6fb5;font-size:18px;line-height:1;font-weight:900;vertical-align:middle}
+.panel-fs:active{transform:scale(.94);background:#eaf4ff}
+.panel-exit{display:none;position:absolute;right:22px;bottom:20px;z-index:9800;
+  align-items:center;justify-content:center;gap:8px;height:52px;padding:0 24px;
+  border:1px solid #c3d1dd;border-radius:12px;background:#fff;color:#2f6fb5;font-weight:900;
+  font-size:19px;box-shadow:0 6px 18px rgba(35,65,85,.22)}
+.panel-fullscreen .panel-exit{display:flex}
+.panel-fullscreen{position:fixed!important;inset:0;width:100vw;height:100vh;z-index:9700;
+  border:0;border-radius:0;display:flex;flex-direction:column;padding:18px 22px 20px;overflow:hidden}
+.panel-fullscreen h2{font-size:30px}
+.panel-fullscreen .phead{padding:6px 4px 14px}
+.panel-fullscreen .cnt{font-size:24px}
+.panel-fullscreen .lg{font-size:22px}
+.panel-fullscreen .panel-fs{display:none}
+.panel-fullscreen table{max-width:1240px;margin:0 auto}
+.panel-fullscreen thead th{font-size:25px;padding:16px 10px}
+.panel-fullscreen tbody td{font-size:25px;padding:18px 10px}
+.panel-fullscreen .rec-empty{font-size:26px;padding:56px 20px;text-align:center}
+.panel-fullscreen .chart-wrap{padding-bottom:72px}
+
+/* ===== 实验区全屏布局 ===== */
+body.fs-active .left-main{display:block;position:relative;height:100vh;padding:0;gap:0;
+  background:#edf4f8;border-radius:0}
+body.fs-pseudo .left-main{position:fixed;left:0;top:0;right:0;bottom:0;z-index:9000}
+body.fs-active .stage{position:absolute;inset:0;border:0;border-radius:0}
+body.fs-active .controls{position:absolute;right:22px;bottom:22px;z-index:20;
+  display:flex;flex-direction:column;flex-wrap:nowrap;align-items:stretch;width:300px;
+  padding:12px;gap:10px;background:rgba(255,255,255,.97);border:1px solid var(--line);
+  border-radius:14px;box-shadow:0 10px 26px rgba(35,65,85,.24);
+  max-height:calc(100vh - 44px);overflow:hidden}
+body.fs-active .controls .crow{display:flex;flex-direction:row;flex-wrap:wrap;
+  align-items:center;gap:8px;width:100%}
+body.fs-active .controls > button,
+body.fs-active .controls .crow > button{flex:1 1 auto;min-width:96px;height:50px;
+  padding:0 8px;font-size:17px;justify-content:center}
+body.fs-active .controls .wbtns{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;
+  width:100%;flex:1 1 100%}
+body.fs-active .controls .wbtns button{width:100%;height:46px;font-size:16px}
+body.fs-active .controls .ctl-label{width:100%;font-size:17px;margin-left:0!important}
+body.fs-active .controls .spacer{display:none}
+body.fs-active #fsBtn{position:static;right:auto;bottom:auto;width:100%;height:50px;
+  padding:0 8px;border-radius:12px;font-size:18px;background:#eaf4ff;
+  border:1px solid #c3d1dd;color:#2f6fb5;box-shadow:none}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <section class="left-col">
+    <div class="left-header">
+      <div class="accent"></div>
+      <h1 id="mainTitle">滑轮 · 三种提重物方式</h1>
+      <div class="hd-actions">
+        <button id="sciBtn">📖 科学原理</button>
+      </div>
+    </div>
+
+    <div class="left-main" id="fsWrapper">
+      <div class="card stage" id="stageWrap">
+        <button class="fs-btn" id="fsBtn">⛶ 全屏</button>
+        <div class="toast" id="toast"></div>
+
+        <svg id="stage" viewBox="0 0 360 830" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <linearGradient id="scaleGrad" x1="0" x2="1">
+              <stop offset="0" stop-color="#eef3f8"/><stop offset="48%" stop-color="#ffffff"/>
+              <stop offset="100%" stop-color="#dbe4ec"/>
+            </linearGradient>
+            <linearGradient id="blockGrad" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0" stop-color="#9fb0c0"/><stop offset="55%" stop-color="#6f8398"/>
+              <stop offset="100%" stop-color="#4e6274"/>
+            </linearGradient>
+            <linearGradient id="pulleyGrad" x1="0" x2="1">
+              <stop offset="0" stop-color="#cfd9e3"/><stop offset="45%" stop-color="#f6f9fc"/>
+              <stop offset="100%" stop-color="#aebccb"/>
+            </linearGradient>
+            <linearGradient id="beamGrad" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0" stop-color="#8d9dad"/><stop offset="100%" stop-color="#63768a"/>
+            </linearGradient>
+          </defs>
+
+          <!-- ================= ① 直接提起 ================= -->
+          <g id="p1">
+            <text x="24" y="66" font-size="32" font-weight="900" fill="#2f4a61"
+                  font-family="Microsoft YaHei">① 直接提起</text>
+            <text x="336" y="66" text-anchor="end" font-size="26" font-weight="900" fill="#1f9d63"
+                  font-family="Microsoft YaHei">用力向上 ↑</text>
+
+            <g id="p1move">
+              <g id="p1scale" transform="translate(180,230)">
+                <circle cx="0" cy="0" r="13" fill="none" stroke="#6b7d8e" stroke-width="4"/>
+                <rect x="-42" y="14" width="84" height="200" rx="10"
+                      fill="url(#scaleGrad)" stroke="#6b7d8e" stroke-width="2.5"/>
+                <rect x="-30" y="29" width="60" height="170" rx="4"
+                      fill="#fff" stroke="#cfd9e2" stroke-width="1.5"/>
+                <g id="p1ticks"></g>
+                <line id="p1ptr" x1="-30" y1="29" x2="30" y2="29"
+                      stroke="#d0453f" stroke-width="5" stroke-linecap="round"/>
+                <line x1="0" y1="214" x2="0" y2="236" stroke="#6b7d8e" stroke-width="4"/>
+                <circle cx="0" cy="242" r="7" fill="none" stroke="#6b7d8e" stroke-width="3"/>
+              </g>
+              <line x1="180" y1="485" x2="180" y2="500" stroke="#7b8d9d" stroke-width="4"/>
+              <rect x="112" y="500" width="136" height="86" rx="8"
+                    fill="url(#blockGrad)" stroke="#40566a" stroke-width="2.5"/>
+              <rect x="126" y="512" width="108" height="14" rx="5" fill="rgba(255,255,255,.35)"/>
+              <text x="180" y="628" text-anchor="middle" font-size="26" font-weight="800"
+                    fill="#63758a" font-family="Microsoft YaHei" id="p1glabel">重物 0.5 牛</text>
+            </g>
+
+            <rect x="40" y="700" width="280" height="100" rx="16"
+                  fill="#fdeceb" stroke="#efc4c1" stroke-width="2"/>
+            <text x="180" y="738" text-anchor="middle" font-size="22" font-weight="800"
+                  fill="#a83e38" font-family="Microsoft YaHei">弹簧测力计示数</text>
+            <text x="180" y="784" text-anchor="middle" font-size="38" font-weight="900"
+                  fill="#d0453f" font-family="Microsoft YaHei" id="p1read">0.5 牛</text>
+          </g>
+
+          <!-- ================= ② 定滑轮 ================= -->
+          <g id="p2" style="display:none">
+            <text x="24" y="66" font-size="32" font-weight="900" fill="#2f4a61"
+                  font-family="Microsoft YaHei">② 定滑轮</text>
+            <text x="336" y="66" text-anchor="end" font-size="26" font-weight="900" fill="#1f9d63"
+                  font-family="Microsoft YaHei">用力向下 ↓</text>
+
+            <text x="180" y="106" text-anchor="middle" font-size="24" font-weight="800"
+                  fill="#7b8d9d" font-family="Microsoft YaHei">横梁（固定）</text>
+            <rect x="30" y="116" width="300" height="22" rx="8" fill="url(#beamGrad)"/>
+            <line x1="180" y1="138" x2="180" y2="157" stroke="#63768a" stroke-width="7"/>
+
+            <circle cx="180" cy="207" r="50" fill="url(#pulleyGrad)" stroke="#63768a" stroke-width="4"/>
+            <circle cx="180" cy="207" r="11" fill="#63768a"/>
+
+            <text x="180" y="292" text-anchor="middle" font-size="24" font-weight="800"
+                  fill="#2f6fb5" font-family="Microsoft YaHei">轴固定不动</text>
+
+            <path id="p2rope" d="" fill="none" stroke="#8a6a3f" stroke-width="5" stroke-linecap="round"/>
+
+            <g id="p2load">
+              <rect x="82" y="355" width="96" height="76" rx="8"
+                    fill="url(#blockGrad)" stroke="#40566a" stroke-width="2.5"/>
+              <rect x="93" y="366" width="74" height="12" rx="5" fill="rgba(255,255,255,.35)"/>
+            </g>
+
+            <g id="p2scale" transform="translate(230,355)">
+              <circle cx="0" cy="0" r="13" fill="none" stroke="#6b7d8e" stroke-width="4"/>
+              <rect x="-42" y="14" width="84" height="200" rx="10"
+                    fill="url(#scaleGrad)" stroke="#6b7d8e" stroke-width="2.5"/>
+              <rect x="-30" y="29" width="60" height="170" rx="4"
+                    fill="#fff" stroke="#cfd9e2" stroke-width="1.5"/>
+              <g id="p2ticks"></g>
+              <line id="p2ptr" x1="-30" y1="29" x2="30" y2="29"
+                    stroke="#d0453f" stroke-width="5" stroke-linecap="round"/>
+              <line x1="0" y1="214" x2="0" y2="236" stroke="#6b7d8e" stroke-width="4"/>
+              <circle cx="0" cy="242" r="7" fill="none" stroke="#6b7d8e" stroke-width="3"/>
+            </g>
+
+            <rect x="40" y="700" width="280" height="100" rx="16"
+                  fill="#e9f2fc" stroke="#c8ddf0" stroke-width="2"/>
+            <text x="180" y="738" text-anchor="middle" font-size="22" font-weight="800"
+                  fill="#2b5b85" font-family="Microsoft YaHei">弹簧测力计示数</text>
+            <text x="180" y="784" text-anchor="middle" font-size="38" font-weight="900"
+                  fill="#2f6fb5" font-family="Microsoft YaHei" id="p2read">0.5 牛</text>
+          </g>
+
+          <!-- ================= ③ 动滑轮 ================= -->
+          <g id="p3" style="display:none">
+            <text x="24" y="66" font-size="32" font-weight="900" fill="#2f4a61"
+                  font-family="Microsoft YaHei">③ 动滑轮</text>
+            <text x="336" y="66" text-anchor="end" font-size="26" font-weight="900" fill="#1f9d63"
+                  font-family="Microsoft YaHei">用力向上 ↑</text>
+
+            <text x="150" y="106" text-anchor="middle" font-size="24" font-weight="800"
+                  fill="#7b8d9d" font-family="Microsoft YaHei">横梁（固定）</text>
+            <rect x="40" y="116" width="220" height="22" rx="8" fill="url(#beamGrad)"/>
+            <rect x="82" y="138" width="16" height="16" rx="4" fill="#63768a"/>
+
+            <path id="p3rope" d="" fill="none" stroke="#8a6a3f" stroke-width="5" stroke-linecap="round"/>
+
+            <g id="p3move">
+              <circle cx="150" cy="420" r="60" fill="url(#pulleyGrad)" stroke="#63768a" stroke-width="4"/>
+              <circle cx="150" cy="420" r="12" fill="#63768a"/>
+              <line x1="150" y1="480" x2="150" y2="494" stroke="#63768a" stroke-width="6"/>
+              <rect x="105" y="494" width="90" height="76" rx="8"
+                    fill="url(#blockGrad)" stroke="#40566a" stroke-width="2.5"/>
+              <rect x="116" y="505" width="68" height="12" rx="5" fill="rgba(255,255,255,.35)"/>
+              <text x="150" y="618" text-anchor="middle" font-size="26" font-weight="800"
+                    fill="#63758a" font-family="Microsoft YaHei" id="p3glabel">重物 0.5 牛</text>
+            </g>
+
+            <g id="p3scale" transform="translate(210,250)">
+              <circle cx="0" cy="0" r="13" fill="none" stroke="#6b7d8e" stroke-width="4"/>
+              <rect x="-42" y="14" width="84" height="200" rx="10"
+                    fill="url(#scaleGrad)" stroke="#6b7d8e" stroke-width="2.5"/>
+              <rect x="-30" y="29" width="60" height="170" rx="4"
+                    fill="#fff" stroke="#cfd9e2" stroke-width="1.5"/>
+              <g id="p3ticks"></g>
+              <line id="p3ptr" x1="-30" y1="29" x2="30" y2="29"
+                    stroke="#d0453f" stroke-width="5" stroke-linecap="round"/>
+              <line x1="0" y1="214" x2="0" y2="236" stroke="#6b7d8e" stroke-width="4"/>
+              <circle cx="0" cy="242" r="7" fill="none" stroke="#6b7d8e" stroke-width="3"/>
+            </g>
+
+            <rect x="40" y="700" width="280" height="100" rx="16"
+                  fill="#fff3e4" stroke="#f4d3ac" stroke-width="2"/>
+            <text x="180" y="738" text-anchor="middle" font-size="22" font-weight="800"
+                  fill="#a35c12" font-family="Microsoft YaHei">弹簧测力计示数</text>
+            <text x="180" y="784" text-anchor="middle" font-size="38" font-weight="900"
+                  fill="#ef8a24" font-family="Microsoft YaHei" id="p3read">0.25 牛</text>
+          </g>
+
+          <text id="emptyHint" x="180" y="420" text-anchor="middle" font-size="28" font-weight="800"
+                fill="#9aabb9" font-family="Microsoft YaHei" style="display:none">请选择一种提重方式</text>
+        </svg>
+      </div>
+
+      <div class="card controls" id="controlsBar">
+        <span class="ctl-label">钩码</span>
+        <button class="step" id="minusBtn">−</button>
+        <span class="nval" id="nDisp">1</span>
+        <button class="step" id="plusBtn">＋</button>
+
+        <div class="wbtns" id="modeBtns">
+          <button data-mode="p1" class="active">① 直接提起</button>
+          <button data-mode="p2">② 定滑轮</button>
+          <button data-mode="p3">③ 动滑轮</button>
+        </div>
+
+        <button class="btn primary" id="liftBtn">⬆ 提升重物</button>
+        <button class="btn blue" id="recBtn">📌 记录数据</button>
+        <div class="spacer"></div>
+        <button class="btn reset" id="resetBtn">🔄 重置</button>
+      </div>
+    </div>
+  </section>
+
+  <aside class="right-col">
+    <div class="card panel record-panel" id="recordPanel">
+      <div class="phead"><h2>📋 实验记录<button class="panel-fs" id="recordFs" title="全屏显示记录表">⛶</button></h2><span class="cnt" id="recCnt">0 次</span></div>
+      <table>
+        <thead>
+          <tr><th style="width:10%">次数</th><th style="width:12%">钩码(个)</th>
+              <th style="width:26%">直接提起<br>(向上)</th><th style="width:26%">定滑轮<br>(向下)</th><th style="width:26%">动滑轮<br>(向上)</th></tr>
+        </thead>
+        <tbody id="recBody"></tbody>
+      </table>
+      <div class="rec-empty" id="recEmpty">还没有数据。</div>
+      <button class="panel-exit" id="recordExit" title="退出全屏">⤡ 退出全屏</button>
+    </div>
+
+    <div class="card panel chart-panel" id="chartPanel">
+      <div class="phead">
+        <h2>📊 读数对比<button class="panel-fs" id="chartFs" title="全屏显示统计图">⛶</button></h2>
+        <span class="lg">
+          <span><i style="background:#44586b"></i>直接提起</span>
+          <span><i style="background:#2f6fb5"></i>定滑轮</span>
+          <span><i style="background:#ef8a24"></i>动滑轮</span>
+        </span>
+      </div>
+      <div class="chart-wrap"><canvas id="chart"></canvas></div>
+      <button class="panel-exit" id="chartExit" title="退出全屏">⤡ 退出全屏</button>
+    </div>
+  </aside>
+</div>
+
+<div class="mask" id="mask">
+  <div class="modal">
+    <div class="mhead"><h3 id="mTitle">科学原理</h3><button id="mClose">✕</button></div>
+    <div class="mbody" id="mBody"></div>
+    <div class="mfoot"><button id="mOk">我知道了</button></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ================================================================
+   滑轮 · 三种提重物方式
+   弹簧测力计 0~3 牛
+     直接提起    拉力 = 钩码重量
+     定滑轮      拉力 = 钩码重量（改变用力方向，不改变力的大小）
+     动滑轮      拉力 = 钩码重量的一半（省力，不改变用力方向）
+   ================================================================ */
+const $ = id => document.getElementById(id);
+const MAXROW = 7;
+const MAXN = 3;            // 量程 0~3 牛
+const PER = 0.5;           // 每个钩码 0.5 牛
+const MIN_HANG = 1, MAX_HANG = 6;
+
+/* 弹簧测力计窗口（相对吊环圆心的局部坐标） */
+const WIN_TOP = 29, WIN_H = 170;
+function ptrLocalY(v){ return WIN_TOP + WIN_H*(v/MAXN); }
+
+const ORDER = ["p1","p2","p3"];
+const UNIT_W = 360, UNIT_H = 830;
+
+const S = {
+  n:1,
+  shown:{ p1:true, p2:false, p3:false },
+  lifting:false, lift:0,
+  records:[]
+};
+
+function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+function fmtNum(v){ return String(Math.round(v*100)/100); }
+function visibleModes(){ return ORDER.filter(k=>S.shown[k]); }
+
+/* ---------------- 音效 ---------------- */
+let AC = null;
+function ac(){ if(!AC){ try{ AC = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } return AC; }
+function tone(freq,type,dur,vol,delay){
+  const c = ac(); if(!c) return;
+  const t0 = c.currentTime + (delay||0);
+  const o = c.createOscillator(), g = c.createGain();
+  o.type = type||"sine"; o.frequency.setValueAtTime(freq,t0);
+  g.gain.setValueAtTime(vol||0.13,t0);
+  g.gain.exponentialRampToValueAtTime(0.001,t0+(dur||0.12));
+  o.connect(g); g.connect(c.destination); o.start(t0); o.stop(t0+(dur||0.12)+0.02);
+}
+const sfx = {
+  click(){ tone(660,"triangle",0.06,0.09); },
+  up(){ tone(300,"sine",0.5,0.09); tone(420,"sine",0.5,0.07,0.06); },
+  down(){ tone(360,"sine",0.4,0.08); },
+  rec(){ tone(880,"triangle",0.08,0.11); tone(1170,"triangle",0.09,0.09,0.07); }
+};
+
+/* ---------------- 提示与弹窗 ---------------- */
+let toastTimer = null;
+function toast(msg){
+  const t = $("toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer); toastTimer = setTimeout(()=>t.classList.remove("show"),1800);
+}
+function openModal(title,html){
+  $("mTitle").textContent = title; $("mBody").innerHTML = html; $("mask").classList.add("show");
+}
+function closeModal(){ $("mask").classList.remove("show"); }
+
+const SCI_HTML = `
+  <h4>1. 什么是滑轮</h4>
+  <p>边缘有槽、可绕轴转动的轮子是一种简单机械，叫<b>滑轮</b>。像起重机顶端的滑轮那样，被固定在一个地方的滑轮叫<b>定滑轮</b>；能够与重物一起移动的滑轮叫<b>动滑轮</b>。它们本身的结构完全一样，只是<b>安装方式不同</b>。</p>
+  <h4>2. 我们的发现</h4>
+  <div class="two">
+    <div class="box"><h5>定滑轮</h5><p>轴被固定在一个地方<br>可以<b>改变用力方向</b>：向下拉也能把重物提上去<br>但不改变力的大小<br>例：旗杆顶端</p></div>
+    <div class="box"><h5>动滑轮</h5><p>与重物一起移动<br>可以<b>省力</b><br>但不改变用力方向<br>例：起重机吊钩</p></div>
+  </div>
+  <p style="margin-top:10px">用数据说话：重物 1 牛时，直接提起要 <b>1 牛</b>；用定滑轮提起还是 <b>1 牛</b>，但可以向下拉；用动滑轮提起只要 <b>0.5 牛</b>。</p>
+  <h4>3. 为什么动滑轮能省力</h4>
+  <p>看动滑轮：重物其实是被<b>两段绳子</b>一起托住的，每段绳只承担一半的重量，所以弹簧测力计的示数大约是重物的一半。</p>
+  <h4>4. 本课用到了控制变量</h4>
+  <p>三次提起的都是<b>相同的钩码</b>，只改变“怎样提起”这一个因素——这样才能比出定滑轮和动滑轮的不同作用。</p>
+  <h4>5. 单元任务</h4>
+  <p>选用两种或两种以上的简单机械组合成一个装置，用最小的力把重物提起来。定滑轮和动滑轮配合使用，就是最常见的做法。</p>`;
+
+/* ================================================================
+   一、刻度
+   ================================================================ */
+function buildTicks(){
+  const NS = "http://www.w3.org/2000/svg";
+  ORDER.forEach(k=>{
+    const g = $(k+"ticks");
+    g.innerHTML = "";
+    for(let i=0;i<=6;i++){
+      const v = i*0.5;
+      const y = ptrLocalY(v);
+      const major = (i%2===0);
+      const line = document.createElementNS(NS,"line");
+      line.setAttribute("x1", -30);
+      line.setAttribute("x2", major ? -9 : -19);
+      line.setAttribute("y1", y); line.setAttribute("y2", y);
+      line.setAttribute("stroke", major ? "#7b8d9d" : "#a8b6c3");
+      line.setAttribute("stroke-width", major ? 1.8 : 1.2);
+      g.appendChild(line);
+
+      const t = document.createElementNS(NS,"text");
+      t.setAttribute("x", -5);
+      t.setAttribute("y", y+6);
+      t.setAttribute("font-size", major ? 17 : 15);
+      t.setAttribute("font-weight", major ? "800" : "700");
+      t.setAttribute("fill", major ? "#5a6d7e" : "#98a8b6");
+      t.setAttribute("font-family","Microsoft YaHei, sans-serif");
+      t.textContent = (v===0) ? "0" : v.toFixed(1);
+      g.appendChild(t);
+    }
+    const zero = document.createElementNS(NS,"line");
+    zero.setAttribute("x1",-30); zero.setAttribute("y1",WIN_TOP);
+    zero.setAttribute("x2",30);  zero.setAttribute("y2",WIN_TOP);
+    zero.setAttribute("stroke","#c9453f"); zero.setAttribute("stroke-width",2.6);
+    g.appendChild(zero);
+  });
+}
+
+/* ================================================================
+   二、读数
+   ================================================================ */
+function G(){ return S.n*PER; }
+function readings(){
+  const g = G();
+  return { p1:g, p2:g, p3:g/2 };
+}
+function setPtr(id, v){
+  const y = ptrLocalY(v);
+  const el = $(id);
+  el.setAttribute("y1", y); el.setAttribute("y2", y);
+}
+function refresh(){
+  const r = readings();
+  $("p1read").textContent = fmtNum(r.p1)+" 牛";
+  $("p2read").textContent = fmtNum(r.p2)+" 牛";
+  $("p3read").textContent = fmtNum(r.p3)+" 牛";
+  $("p1glabel").textContent = "重物 "+fmtNum(G())+" 牛";
+  $("p3glabel").textContent = "重物 "+fmtNum(G())+" 牛";
+  setPtr("p1ptr", r.p1);
+  setPtr("p2ptr", r.p2);
+  setPtr("p3ptr", r.p3);
+  $("nDisp").textContent = S.n;
+}
+
+/* ================================================================
+   三、布局
+   ================================================================ */
+function layoutStage(){
+  const vis = visibleModes();
+  ORDER.forEach(k=>{
+    const g = $(k);
+    const idx = vis.indexOf(k);
+    if(idx < 0){
+      g.style.display = "none";
+    }else{
+      g.style.display = "";
+      g.setAttribute("transform","translate("+(idx*UNIT_W)+",0)");
+    }
+  });
+  const w = Math.max(1, vis.length)*UNIT_W;
+  $("stage").setAttribute("viewBox","0 0 "+w+" "+UNIT_H);
+  $("emptyHint").style.display = vis.length ? "none" : "";
+}
+
+/* ================================================================
+   四、提升动画
+   ================================================================ */
+function applyLift(p){
+  // ① 直接提起：整体上移
+  const d1 = 70;
+  $("p1move").setAttribute("transform","translate(0,"+(-d1*p).toFixed(1)+")");
+
+  // ② 定滑轮：重物上移、测力计下移（绳长守恒，位移相等）
+  const d2 = 50;
+  const yTop2 = 355 - d2*p;
+  const cy2 = 355 + d2*p;
+  $("p2load").setAttribute("transform","translate(0,"+(-d2*p).toFixed(1)+")");
+  $("p2scale").setAttribute("transform","translate(230,"+cy2.toFixed(1)+")");
+  const yR2 = cy2 - 13;
+  $("p2rope").setAttribute("d",
+    "M130 "+yTop2.toFixed(1)+" L130 207 A50,50 0 0 1 230 207 L230 "+yR2.toFixed(1));
+
+  // ③ 动滑轮：绳长守恒 → 自由端位移 = 2 × 动滑轮位移
+  const d3 = 32;
+  const yp = 420 - d3*p;
+  const yh = 250 - 2*d3*p;
+  $("p3move").setAttribute("transform","translate(0,"+(-d3*p).toFixed(1)+")");
+  $("p3scale").setAttribute("transform","translate(210,"+yh.toFixed(1)+")");
+  const yR3 = yh - 13;
+  $("p3rope").setAttribute("d",
+    "M90 154 L90 "+yp.toFixed(1)+
+    " A60,60 0 0 0 210 "+yp.toFixed(1)+
+    " L210 "+yR3.toFixed(1));
+}
+
+let liftRAF = null;
+function startLift(){
+  if(S.lifting) return;
+  S.lifting = true; sfx.up();
+  const dur = 900; const t0 = performance.now();
+  const up = S.lift < 0.5;
+  const from = S.lift, to = up ? 1 : 0;
+  if(liftRAF) cancelAnimationFrame(liftRAF);
+  const step = now=>{
+    const k = clamp((now-t0)/dur,0,1);
+    const e = k<0.5 ? 2*k*k : 1-Math.pow(-2*k+2,2)/2;
+    S.lift = from + (to-from)*e;
+    applyLift(S.lift);
+    if(k<1) liftRAF = requestAnimationFrame(step);
+    else { S.lifting = false; S.lift = to; if(!up) sfx.down(); }
+  };
+  liftRAF = requestAnimationFrame(step);
+}
+
+/* ================================================================
+   五、切换提重方式（点击出现 / 再点击消失）
+   ================================================================ */
+function toggleMode(m){
+  S.shown[m] = !S.shown[m];
+  layoutStage();
+  syncModeBtns();
+  S.lift = 0; applyLift(0);
+  sfx.click();
+}
+function syncModeBtns(){
+  document.querySelectorAll("#modeBtns button").forEach(b=>{
+    b.classList.toggle("active", !!S.shown[b.dataset.mode]);
+  });
+}
+
+/* ================================================================
+   六、钩码加减
+   ================================================================ */
+function setHang(n){
+  const v = clamp(n, MIN_HANG, MAX_HANG);
+  if(v === S.n) return;
+  S.n = v; sfx.click(); refresh();
+}
+
+/* ================================================================
+   七、记录表（只记录当前显示的提重方式）
+   ================================================================ */
+function addRecord(){
+  const vis = visibleModes();
+  if(!vis.length){ toast("请先选择一种提重方式"); return; }
+  const r = readings();
+  const rec = { n:S.n, mode:vis.slice(), values:{} };
+  vis.forEach(k=>{ rec.values[k] = r[k]; });
+  S.records.push(rec);
+  if(S.records.length > MAXROW) S.records.shift();
+  renderRecords(); drawChart(); sfx.rec();
+  toast("已记录：" + vis.map(k=>MODE_NAME[k]).join(" + ") + "（钩码 "+S.n+" 个）");
+}
+const MODE_NAME = { p1:"直接提起", p2:"定滑轮", p3:"动滑轮" };
+
+function cellText(rec, key){
+  if(rec.mode.indexOf(key) < 0) return "—";
+  return fmtNum(rec.values[key]) + " 牛";
+}
+function renderRecords(){
+  const body = $("recBody"); body.innerHTML = "";
+  $("recCnt").textContent = S.records.length + " 次";
+  $("recEmpty").style.display = S.records.length ? "none" : "block";
+  S.records.forEach((r,i)=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = "<td>"+(i+1)+"</td><td>"+r.n+"</td>"
+      + "<td>"+cellText(r,"p1")+"</td>"
+      + "<td>"+cellText(r,"p2")+"</td>"
+      + "<td>"+cellText(r,"p3")+"</td>";
+    body.appendChild(tr);
+  });
+}
+
+/* ================================================================
+   八、图表
+   ================================================================ */
+const COL = { p1:"#44586b", p2:"#2f6fb5", p3:"#ef8a24" };
+function roundRect(ctx,x,y,w,h,r){
+  r = Math.min(r, Math.abs(w)/2, Math.abs(h)/2);
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h); ctx.lineTo(x,y+h); ctx.lineTo(x,y+r);
+  ctx.quadraticCurveTo(x,y,x+r,y); ctx.closePath();
+}
+function niceScale(v){
+  const target = v/4;
+  const cands = [0.1,0.2,0.25,0.5,1,2,5];
+  let step = cands[cands.length-1];
+  for(let i=0;i<cands.length;i++){ if(cands[i] >= target){ step = cands[i]; break; } }
+  return { step:step, max:Math.max(step, Math.ceil(v/step)*step) };
+}
+function drawChart(){
+  const cv = $("chart");
+  const box = cv.parentElement.getBoundingClientRect();
+  const W = Math.max(80, box.width-16), H = Math.max(60, box.height-14);
+  const dpr = window.devicePixelRatio||1;
+  cv.width = W*dpr; cv.height = H*dpr; cv.style.width = W+"px"; cv.style.height = H+"px";
+  const ctx = cv.getContext("2d");
+  ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,W,H);
+
+  const pad = { l:56, r:14, t:42, b:34 };
+  const iw = W-pad.l-pad.r, ih = H-pad.t-pad.b;
+  if(iw<=10||ih<=10) return;
+
+  let maxV = 1;
+  S.records.forEach(r=>{ r.mode.forEach(k=>{ maxV = Math.max(maxV, r.values[k]); }); });
+  const sc = niceScale(maxV*1.1);
+  const yMax = sc.max, yStep = sc.step, nY = Math.round(yMax/yStep);
+
+  ctx.font = '600 17px "Microsoft YaHei",sans-serif';
+  for(let i=0;i<=nY;i++){
+    const v = yStep*i, y = pad.t + ih*(1 - v/yMax);
+    ctx.strokeStyle="#e3eaf1"; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(W-pad.r,y); ctx.stroke();
+    ctx.fillStyle="#8496a6"; ctx.textAlign="right"; ctx.textBaseline="middle";
+    ctx.fillText(yStep<1 ? v.toFixed(2).replace(/0$/,'') : String(v), pad.l-8, y);
+  }
+  ctx.strokeStyle="#bcc9d6"; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(pad.l,pad.t-6); ctx.lineTo(pad.l,pad.t+ih); ctx.lineTo(W-pad.r,pad.t+ih); ctx.stroke();
+  ctx.fillStyle="#4a6076"; ctx.textAlign="left"; ctx.textBaseline="top";
+  ctx.font='800 17px "Microsoft YaHei",sans-serif'; ctx.fillText("读数 / 牛", 6, 2);
+
+  if(!S.records.length){
+    ctx.fillStyle="#9aabb9"; ctx.textAlign="center"; ctx.textBaseline="middle";
+    ctx.font='700 19px "Microsoft YaHei",sans-serif';
+    ctx.fillText("还没有数据", W/2, pad.t+ih/2);
+    return;
+  }
+
+  const n = S.records.length, gw = iw/n;
+  S.records.forEach((r,i)=>{
+    const cx = pad.l + gw*(i+0.5);
+    const m = r.mode.length;
+    const bw = Math.min(26, gw*0.24);
+    const gap = 10;
+    const totalW = m*bw + (m-1)*gap;
+    r.mode.forEach((k,t)=>{
+      const v = r.values[k];
+      const h = ih*(v/yMax);
+      const x = cx - totalW/2 + t*(bw+gap);
+      ctx.fillStyle = COL[k];
+      roundRect(ctx, x, pad.t+ih-h, bw, Math.max(h,1), 4); ctx.fill();
+      ctx.fillStyle = COL[k]; ctx.textAlign="center"; ctx.textBaseline="bottom";
+      ctx.font='800 16px "Microsoft YaHei",sans-serif';
+      ctx.fillText(fmtNum(v), x+bw/2, pad.t+ih-h-4);
+    });
+    ctx.fillStyle="#8496a6"; ctx.textAlign="center"; ctx.textBaseline="top";
+    ctx.font='700 17px "Microsoft YaHei",sans-serif';
+    ctx.fillText("第"+(i+1)+"次", cx, pad.t+ih+7);
+  });
+}
+
+/* ================================================================
+   九、全屏
+   ================================================================ */
+const fsWrapper=$("fsWrapper"), stageWrap=$("stageWrap"), controlsBar=$("controlsBar"), fsBtn=$("fsBtn");
+let fsState=false, pseudoFs=false, fullPanel=null;
+function redraw(){ try{ drawChart(); }catch(e){} }
+function applyStageFs(on){
+  if(on){
+    document.body.classList.add("fs-active");
+    document.body.classList.toggle("fs-pseudo", pseudoFs);
+    if(fsBtn.parentNode!==controlsBar) controlsBar.appendChild(fsBtn);
+    fsBtn.textContent="⤡ 退出全屏";
+  }else{
+    document.body.classList.remove("fs-active","fs-pseudo");
+    if(fsBtn.parentNode!==stageWrap) stageWrap.appendChild(fsBtn);
+    fsBtn.textContent="⛶ 全屏";
+  }
+  setTimeout(redraw,60); setTimeout(redraw,240);
+}
+function enterStageFs(){
+  if(fsState) return;
+  if(fullPanel) closePanelFs();
+  const begin=pseudo=>{
+    if(fsState) return;
+    fsState=true; pseudoFs=pseudo;
+    if(pseudo){ document.documentElement.style.overflow="hidden"; document.body.style.overflow="hidden"; }
+    applyStageFs(true);
+  };
+  const req=fsWrapper.requestFullscreen||fsWrapper.webkitRequestFullscreen;
+  if(!req){ begin(true); return; }
+  try{
+    const pr=req.call(fsWrapper);
+    if(pr&&typeof pr.then==="function") pr.then(()=>begin(false)).catch(()=>begin(true));
+    else begin(false);
+  }catch(e){ begin(true); }
+}
+function exitStageFs(){
+  if(!fsState) return;
+  const wasPseudo=pseudoFs; fsState=false; pseudoFs=false;
+  if(wasPseudo){
+    document.documentElement.style.overflow=""; document.body.style.overflow="";
+    applyStageFs(false);
+  }else{
+    const exit=document.exitFullscreen||document.webkitExitFullscreen;
+    if(exit){
+      try{
+        const pr=exit.call(document);
+        if(pr&&typeof pr.then==="function") pr.then(()=>applyStageFs(false)).catch(()=>applyStageFs(false));
+        else applyStageFs(false);
+      }catch(e){ applyStageFs(false); }
+    }else applyStageFs(false);
+  }
+}
+function closePanelFs(){
+  if(!fullPanel) return;
+  fullPanel.classList.remove("panel-fullscreen"); fullPanel=null;
+  setTimeout(redraw,80);
+}
+function togglePanelFs(panel){
+  if(fullPanel===panel){ closePanelFs(); return; }
+  const doOpen=()=>{
+    if(fullPanel) fullPanel.classList.remove("panel-fullscreen");
+    fullPanel=panel; panel.classList.add("panel-fullscreen");
+    setTimeout(redraw,80); setTimeout(redraw,260);
+  };
+  if(fsState){ exitStageFs(); setTimeout(doOpen,180); } else doOpen();
+}
+function onFsChange(){
+  const el=document.fullscreenElement||document.webkitFullscreenElement;
+  if(el===fsWrapper){ if(!fsState){ fsState=true; pseudoFs=false; applyStageFs(true); } }
+  else if(fsState && !pseudoFs){ fsState=false; applyStageFs(false); }
+}
+document.addEventListener("fullscreenchange",onFsChange);
+document.addEventListener("webkitfullscreenchange",onFsChange);
+window.addEventListener("keydown",e=>{
+  if(e.key==="Escape"||e.keyCode===27){
+    if(fullPanel) closePanelFs();
+    if(fsState&&pseudoFs) exitStageFs();
+  }
+});
+
+/* ================================================================
+   十、初始化
+   ================================================================ */
+function init(){
+  buildTicks();
+  layoutStage();
+  syncModeBtns();
+  refresh();
+  applyLift(0);
+
+  $("liftBtn").addEventListener("click", startLift);
+  $("recBtn").addEventListener("click", addRecord);
+
+  $("minusBtn").addEventListener("click", ()=>setHang(S.n-1));
+  $("plusBtn").addEventListener("click", ()=>setHang(S.n+1));
+
+  $("modeBtns").addEventListener("click", e=>{
+    const b = e.target.closest("button[data-mode]");
+    if(!b) return;
+    toggleMode(b.dataset.mode);
+  });
+
+  $("resetBtn").addEventListener("click", ()=>{
+    S.records = []; S.lift = 0; S.n = 1;
+    S.shown = { p1:true, p2:false, p3:false };
+    layoutStage(); syncModeBtns();
+    applyLift(0); refresh(); renderRecords(); drawChart();
+    sfx.click(); toast("已重置");
+  });
+
+  fsBtn.addEventListener("click", ()=>{ fsState ? exitStageFs() : enterStageFs(); });
+  $("recordFs").addEventListener("click", e=>{ e.stopPropagation(); togglePanelFs($("recordPanel")); });
+  $("chartFs").addEventListener("click", e=>{ e.stopPropagation(); togglePanelFs($("chartPanel")); });
+  $("recordExit").addEventListener("click", e=>{ e.stopPropagation(); closePanelFs(); });
+  $("chartExit").addEventListener("click", e=>{ e.stopPropagation(); closePanelFs(); });
+  $("sciBtn").addEventListener("click", ()=>openModal("科学原理 · 滑轮", SCI_HTML));
+  $("mClose").addEventListener("click", closeModal);
+  $("mOk").addEventListener("click", closeModal);
+  $("mask").addEventListener("click", e=>{ if(e.target===$("mask")) closeModal(); });
+
+  if(window.ResizeObserver) new ResizeObserver(()=>drawChart()).observe($("chart").parentElement);
+  window.addEventListener("resize", drawChart);
+
+  renderRecords(); drawChart();
+}
+init();
+</script>
+
+
+
+
+<!-- ================= 开物AI科学 · 版权模块（单击显示 / 双击打开官网） ================= -->
+<style id="kaiming-copyright-style">
+  #kaiming-copyright {
+    position: fixed;
+    bottom: 169px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    pointer-events: none;
+    z-index: 999999;
+    transition: opacity 0.45s ease;
+    opacity: 0;
+    display: none;
+  }
+  #kaiming-copyright .inner {
+    display: inline-block;
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #eafaf2;
+    padding: 9px 26px;
+    border-radius: 60px;
+    /* 原稿为 14px；此处改为 16px 以符合本机 verify_html.py 的「字号不得小于 16px」硬规则 */
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.6px;
+    border: 1px solid rgba(255, 245, 210, 0.3);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+    font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+    white-space: nowrap;
+  }
+</style>
+
+<div id="kaiming-copyright">
+  <div class="inner">© 2026 开物AI科学 ｜ AI 赋能 · 教育公平</div>
+</div>
+
+<script id="kaiming-copyright-script">
+(function () {
+  "use strict";
+
+  /* 目标：单击标题 → 显示版权 3.5 秒；双击标题 → 打开 www.kaiwuaiscience.com */
+
+  const HOMEPAGE = "https://www.kaiwuaiscience.com";
+  const SHOW_MS = 3500;      // 版权显示时长
+  const DBL_WINDOW = 280;    // 双击判定的时间窗（毫秒）
+  const FADE_MS = 450;       // 淡出时长，与 CSS transition 一致
+
+  function bindCopyright() {
+    // 首选 #mainTitle（注入脚本会保证它存在）；后三个选择器是手写粘贴时的兜底
+    const title = document.getElementById("mainTitle") ||
+                  document.querySelector("h1, .title, .page-title, .main-title");
+    const box = document.getElementById("kaiming-copyright");
+    if (!title || !box) return;
+
+    title.style.cursor = "pointer";
+    title.style.userSelect = "none";
+    title.style.webkitUserSelect = "none";
+
+    let clickTimer = null;
+    let hideTimer = null;
+    let seq = 0;   // 每次显示/隐藏都 +1，用来作废在飞的定时器
+
+    function showCopyright() {
+      const my = ++seq;
+      if (hideTimer) clearTimeout(hideTimer);
+      box.style.display = "block";
+      /* 强制重绘，让 0 → 1 的淡入真的发生。
+         这里刻意不用 requestAnimationFrame：rAF 在页面不产生新帧时（后台标签页、
+         无头渲染、大屏久置）不保证触发——一旦它晚于下方的隐藏定时器回调，
+         就会把 opacity 又设成 1，导致版权条永久停在屏幕上。 */
+      void box.offsetHeight;
+      box.style.opacity = "1";
+      hideTimer = setTimeout(function () {
+        if (my !== seq) return;      // 期间又被点过，交给新的那一次收尾
+        box.style.opacity = "0";
+        setTimeout(function () {
+          if (my === seq) box.style.display = "none";
+        }, FADE_MS);
+      }, SHOW_MS);
+    }
+
+    function hideCopyright() {
+      const my = ++seq;              // 作废所有在飞的定时器，避免"淡出到一半又被点亮"卡住
+      if (hideTimer) clearTimeout(hideTimer);
+      if (box.style.display !== "block") return;
+      box.style.opacity = "0";
+      setTimeout(function () {
+        if (my === seq) box.style.display = "none";
+      }, FADE_MS);
+    }
+
+    function openHomepage() {
+      // 双击时隐藏版权，并跳转官网
+      hideCopyright();
+      window.open(HOMEPAGE, "_blank", "noopener,noreferrer");
+    }
+
+    title.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (clickTimer) return;   // 已在等待双击窗口，忽略这次单击
+      clickTimer = setTimeout(function () {
+        clickTimer = null;
+        showCopyright();        // 确认是单击
+      }, DBL_WINDOW);
+    });
+
+    title.addEventListener("dblclick", function (e) {
+      e.stopPropagation();
+      if (clickTimer) {         // 取消挂起的单击
+        clearTimeout(clickTimer);
+        clickTimer = null;
+      }
+      openHomepage();
+    });
+
+    // 点击页面其它地方，立即隐藏版权
+    document.addEventListener("click", function (e) {
+      if (e.target === title) return;
+      hideCopyright();
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bindCopyright);
+  } else {
+    bindCopyright();
+  }
+})();
+</script>
+<!-- ================= 开物AI科学 · 版权模块 结束 ================= -->
+
+</body>
+</html>

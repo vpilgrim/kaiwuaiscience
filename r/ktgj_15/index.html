@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <title>课堂计时器 · 开物AI科学</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #f5f5f7;
+            font-family: -apple-system, 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+        }
+
+        .dashboard {
+            max-width: 700px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(20px);
+            border-radius: 36px;
+            padding: 28px 24px;
+            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08), 0 0 0 0.5px rgba(0, 0, 0, 0.02);
+            border: 0.5px solid rgba(224, 224, 230, 0.6);
+            width: 100%;
+            transition: all 0.2s;
+        }
+
+        /* 可点击的标题样式 */
+        .card-title {
+            font-size: 1.7rem;
+            font-weight: 590;
+            text-align: center;
+            margin-bottom: 1.2rem;
+            color: #1c1c1e;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            user-select: none;
+        }
+        .card-title:active {
+            opacity: 0.7;
+        }
+
+        .display {
+            background: #e9e9ef;
+            border-radius: 28px;
+            padding: 22px 12px;
+            text-align: center;
+            font-family: 'SF Mono', 'Courier New', monospace;
+            font-size: 3.6rem;
+            font-weight: 600;
+            letter-spacing: 6px;
+            color: #1c1c1e;
+            margin: 20px 0;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+            border: 0.5px solid rgba(0,0,0,0.04);
+            transition: all 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+        }
+
+        .display.running {
+            font-size: 5rem !important;
+            padding: 32px 12px;
+            letter-spacing: 8px;
+        }
+
+        @media (max-width: 550px) {
+            .display.running {
+                font-size: 3.5rem !important;
+                letter-spacing: 4px;
+            }
+        }
+
+        .time-setter {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin: 16px 0 12px;
+        }
+
+        .time-unit {
+            background: #f2f2f5;
+            border-radius: 24px;
+            padding: 10px 16px;
+            text-align: center;
+            min-width: 120px;
+        }
+
+        .time-unit label {
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            color: #8e8e93;
+        }
+
+        .input-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .time-unit input {
+            width: 85px;
+            padding: 12px 0;
+            text-align: center;
+            font-size: 1.8rem;
+            font-weight: 600;
+            background: #ffffff;
+            border: 1px solid #c6c6c8;
+            border-radius: 18px;
+            color: #1c1c1e;
+            font-family: 'SF Mono', monospace;
+        }
+
+        .time-unit input:focus {
+            outline: none;
+            border-color: #007aff;
+            box-shadow: 0 0 0 3px rgba(0,122,255,0.2);
+        }
+
+        .spin-btn {
+            background: #fff;
+            border: 1px solid #c6c6c8;
+            width: 42px;
+            height: 42px;
+            border-radius: 30px;
+            font-size: 1.5rem;
+            font-weight: 500;
+            cursor: pointer;
+            color: #007aff;
+            transition: 0.1s;
+        }
+
+        .spin-btn:hover {
+            background: #e5e5ea;
+        }
+
+        .spin-btn:active {
+            transform: scale(0.96);
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            margin: 20px 0 0;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            font-size: 1rem;
+            font-weight: 510;
+            border: none;
+            border-radius: 44px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #e5e5ea;
+            color: #007aff;
+            transition: 0.15s;
+        }
+
+        .btn-primary {
+            background: #007aff;
+            color: white;
+            box-shadow: 0 2px 8px rgba(0,122,255,0.3);
+        }
+
+        .btn-secondary {
+            background: #ff9f0a;
+            color: white;
+        }
+
+        .btn-reset {
+            background: #8e8e93;
+            color: white;
+        }
+
+        .btn-toggle {
+            background: #636366;
+            color: white;
+        }
+
+        .btn:active {
+            transform: scale(0.96);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .sound-selector {
+            background: #e5e5ea;
+            border-radius: 44px;
+            padding: 10px 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            border: none;
+            font-size: 1rem;
+            font-weight: 510;
+            color: #1c1c1e;
+        }
+
+        .sound-selector select {
+            background: transparent;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #007aff;
+            cursor: pointer;
+            outline: none;
+            font-family: inherit;
+        }
+
+        .alert-area {
+            background: #ffd8d4;
+            border-radius: 44px;
+            padding: 8px 16px;
+            text-align: center;
+            font-size: 0.9rem;
+            margin-top: 16px;
+            display: none;
+            color: #bf4800;
+            font-weight: 500;
+        }
+
+        .alert-show {
+            display: block;
+            animation: subtlePulse 0.8s infinite;
+        }
+
+        @keyframes subtlePulse {
+            0% { background: #ffd8d4; }
+            100% { background: #ffbcb0; }
+        }
+
+        /* 品牌版权栏 */
+        .brand-footer {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 0.8rem;
+            color: #8e8e93;
+            letter-spacing: 0.5px;
+            opacity: 0.8;
+            transition: all 0.2s;
+            pointer-events: none;  /* 避免干扰点击 */
+        }
+        .brand-footer p {
+            background: rgba(0,0,0,0.03);
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 40px;
+            backdrop-filter: blur(4px);
+        }
+
+        @media (max-width: 550px) {
+            .controls {
+                gap: 8px;
+            }
+            .btn, .sound-selector {
+                padding: 8px 14px;
+                font-size: 0.85rem;
+            }
+            .time-unit input {
+                width: 70px;
+                font-size: 1.4rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="dashboard">
+    <!-- 倒计时卡片 -->
+    <div class="card" id="countdownCard">
+        <div class="card-title" id="countdownTitle">
+            <span>⏳ 倒计时器</span>
+        </div>
+        <div class="time-setter">
+            <div class="time-unit">
+                <label>分钟</label>
+                <div class="input-wrapper">
+                    <button class="spin-btn" id="minDown">−</button>
+                    <input type="number" id="minutes" min="0" max="359" value="3">
+                    <button class="spin-btn" id="minUp">+</button>
+                </div>
+            </div>
+            <div class="time-unit">
+                <label>秒钟</label>
+                <div class="input-wrapper">
+                    <button class="spin-btn" id="secDown">−</button>
+                    <input type="number" id="seconds" min="0" max="59" value="0">
+                    <button class="spin-btn" id="secUp">+</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="display" id="countdownDisplay">03:00:00</div>
+
+        <div class="controls">
+            <button class="btn btn-primary" id="cdStart">▶ 开始</button>
+            <button class="btn btn-secondary" id="cdPause" disabled>⏸ 暂停</button>
+            <button class="btn btn-reset" id="cdReset">↺ 重置</button>
+            <button class="btn btn-toggle" id="showTimerBtn">⏱ 计时器</button>
+            <div class="sound-selector">
+                🔔 <select id="alertThreshold">
+                    <option value="3" selected>最后3秒</option>
+                    <option value="5">最后5秒</option>
+                    <option value="10">最后10秒</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="cdAlert" class="alert-area"><span id="alertMsg"></span></div>
+    </div>
+
+    <!-- 计时器卡片 (初始隐藏) -->
+    <div class="card" id="timerCard" style="display: none;">
+        <div class="card-title">
+            <span>⏱ 计时器</span>
+        </div>
+        <div class="display" id="timerDisplay">00:00:00</div>
+        <div class="controls">
+            <button class="btn btn-primary" id="tmStart">▶ 开始</button>
+            <button class="btn btn-secondary" id="tmPause" disabled>⏸ 暂停</button>
+            <button class="btn btn-reset" id="tmReset">↺ 重置</button>
+            <button class="btn btn-toggle" id="showCountdownBtn">⏳ 倒计时器</button>
+        </div>
+    </div>
+</div>
+
+<!-- 品牌版权栏（初始隐藏） -->
+<div class="brand-footer" id="brandFooter" style="display: none;">
+    <p>© 2026 开物AI科学 ｜ AI 赋能 · 教育公平</p>
+</div>
+
+<script>
+    // ---------- Web Audio 蜂鸣器 ----------
+    let audioCtx = null;
+    function getAudioContext() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        return audioCtx;
+    }
+
+    function playBeep(freq = 880, duration = 0.2, volume = 0.35) {
+        try {
+            const ctx = getAudioContext();
+            const play = () => {
+                const now = ctx.currentTime;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.frequency.value = freq;
+                gain.gain.setValueAtTime(volume, now);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+                osc.start();
+                osc.stop(now + duration);
+            };
+            if (ctx.state === 'suspended') {
+                ctx.resume().then(play).catch(e => console.log);
+            } else {
+                play();
+            }
+        } catch(e) { console.warn(e); }
+    }
+
+    function endBeepDouble() {
+        playBeep(880, 0.15, 0.4);
+        setTimeout(() => playBeep(660, 0.2, 0.4), 150);
+    }
+
+    // ---------- 正向计时器 ----------
+    let timerInterval = null, timerRunning = false, timerSeconds = 0;
+    const timerDisplay = document.getElementById('timerDisplay');
+    const tmStart = document.getElementById('tmStart');
+    const tmPause = document.getElementById('tmPause');
+    const tmReset = document.getElementById('tmReset');
+
+    function formatTime(sec) {
+        const h = Math.floor(sec / 3600);
+        const m = Math.floor((sec % 3600) / 60);
+        const s = sec % 60;
+        return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+    }
+    function updateTimerUI() { timerDisplay.innerText = formatTime(timerSeconds); }
+    function setTimerRunningStyle(isRunning) {
+        if (isRunning) timerDisplay.classList.add('running');
+        else timerDisplay.classList.remove('running');
+    }
+
+    function startTimer() {
+        if (timerRunning) return;
+        timerRunning = true;
+        tmStart.disabled = true;
+        tmPause.disabled = false;
+        tmReset.disabled = false;
+        setTimerRunningStyle(true);
+        const startStamp = Date.now() - timerSeconds * 1000;
+        timerInterval = setInterval(() => {
+            timerSeconds = Math.floor((Date.now() - startStamp) / 1000);
+            updateTimerUI();
+        }, 1000);
+    }
+    function pauseTimer() {
+        if (!timerRunning) return;
+        clearInterval(timerInterval);
+        timerRunning = false;
+        tmStart.disabled = false;
+        tmPause.disabled = true;
+        setTimerRunningStyle(false);
+    }
+    function resetTimer() {
+        clearInterval(timerInterval);
+        timerRunning = false;
+        timerSeconds = 0;
+        updateTimerUI();
+        tmStart.disabled = false;
+        tmPause.disabled = true;
+        tmReset.disabled = false;
+        setTimerRunningStyle(false);
+    }
+    tmStart.addEventListener('click', startTimer);
+    tmPause.addEventListener('click', pauseTimer);
+    tmReset.addEventListener('click', resetTimer);
+
+    // ---------- 倒计时器 ----------
+    let cdInterval = null, cdRunning = false, currentSeconds = 180, initialSeconds = 180;
+    let lastAlertSecond = -1;
+    const minutesInp = document.getElementById('minutes');
+    const secondsInp = document.getElementById('seconds');
+    const cdDisplay = document.getElementById('countdownDisplay');
+    const cdStart = document.getElementById('cdStart');
+    const cdPause = document.getElementById('cdPause');
+    const cdReset = document.getElementById('cdReset');
+    const cdAlertDiv = document.getElementById('cdAlert');
+    const alertMsgSpan = document.getElementById('alertMsg');
+    const alertThresholdSelect = document.getElementById('alertThreshold');
+
+    function getAlertThreshold() {
+        return parseInt(alertThresholdSelect.value) || 3;
+    }
+
+    function getTotalFromInputs() {
+        let mins = parseInt(minutesInp.value) || 0;
+        let secs = parseInt(secondsInp.value) || 0;
+        if (mins < 0) mins = 0;
+        if (secs < 0) secs = 0;
+        if (secs > 59) secs = 59;
+        if (mins > 359) mins = 359;
+        return mins * 60 + secs;
+    }
+
+    function updateDisplayFromSeconds(seconds) {
+        const minsTotal = Math.floor(seconds / 60);
+        const secsRemain = seconds % 60;
+        const hrs = Math.floor(minsTotal / 60);
+        const mins = minsTotal % 60;
+        cdDisplay.innerText = `${hrs.toString().padStart(2,'0')}:${mins.toString().padStart(2,'0')}:${secsRemain.toString().padStart(2,'0')}`;
+        if (seconds <= 3 && seconds > 0) {
+            cdDisplay.style.color = '#bf4800';
+            cdDisplay.style.backgroundColor = '#fff0e8';
+        } else {
+            cdDisplay.style.color = '#1c1c1e';
+            cdDisplay.style.backgroundColor = '#e9e9ef';
+        }
+    }
+
+    function setAlert(message, show) {
+        alertMsgSpan.innerText = message;
+        if (show && message) cdAlertDiv.classList.add('alert-show');
+        else cdAlertDiv.classList.remove('alert-show');
+    }
+
+    function enableInputs(enable) {
+        minutesInp.disabled = !enable;
+        secondsInp.disabled = !enable;
+    }
+
+    function setCountdownRunningStyle(isRunning) {
+        if (isRunning) cdDisplay.classList.add('running');
+        else cdDisplay.classList.remove('running');
+    }
+
+    function tick() {
+        if (currentSeconds <= 0) {
+            if (cdInterval) clearInterval(cdInterval);
+            cdRunning = false;
+            cdStart.disabled = false;
+            cdPause.disabled = true;
+            enableInputs(true);
+            setCountdownRunningStyle(false);
+            setAlert("⏰ 时间到！", true);
+            endBeepDouble();
+            return;
+        }
+        currentSeconds--;
+        updateDisplayFromSeconds(currentSeconds);
+        const threshold = getAlertThreshold();
+        if (currentSeconds <= threshold && currentSeconds > 0) {
+            if (currentSeconds !== lastAlertSecond) {
+                playBeep(1000, 0.2, 0.45);
+                lastAlertSecond = currentSeconds;
+            }
+            setAlert(`⚠️ 最后 ${currentSeconds} 秒！`, true);
+        } else {
+            if (currentSeconds > threshold) setAlert("", false);
+            else if (currentSeconds <= threshold && currentSeconds > 0) setAlert(`最后 ${currentSeconds} 秒`, true);
+        }
+        if (currentSeconds === 0) {
+            if (cdInterval) clearInterval(cdInterval);
+            cdRunning = false;
+            cdStart.disabled = false;
+            cdPause.disabled = true;
+            enableInputs(true);
+            setCountdownRunningStyle(false);
+            endBeepDouble();
+            updateDisplayFromSeconds(0);
+        }
+    }
+
+    function startCountdown() {
+        if (cdRunning) return;
+        let total = getTotalFromInputs();
+        if (total <= 0) { alert("请设置大于0的时间"); return; }
+        currentSeconds = total;
+        initialSeconds = total;
+        updateDisplayFromSeconds(currentSeconds);
+        cdRunning = true;
+        cdStart.disabled = true;
+        cdPause.disabled = false;
+        cdReset.disabled = false;
+        enableInputs(false);
+        lastAlertSecond = -1;
+        setAlert("", false);
+        setCountdownRunningStyle(true);
+        if (cdInterval) clearInterval(cdInterval);
+        cdInterval = setInterval(tick, 1000);
+    }
+
+    function pauseCountdown() {
+        if (!cdRunning) return;
+        clearInterval(cdInterval);
+        cdRunning = false;
+        cdStart.disabled = false;
+        cdPause.disabled = true;
+        setCountdownRunningStyle(false);
+    }
+
+    function resetCountdown() {
+        clearInterval(cdInterval);
+        cdRunning = false;
+        let total = getTotalFromInputs();
+        currentSeconds = total;
+        initialSeconds = total;
+        updateDisplayFromSeconds(currentSeconds);
+        cdStart.disabled = false;
+        cdPause.disabled = true;
+        cdReset.disabled = false;
+        enableInputs(true);
+        setAlert("", false);
+        setCountdownRunningStyle(false);
+        lastAlertSecond = -1;
+    }
+
+    cdStart.addEventListener('click', startCountdown);
+    cdPause.addEventListener('click', pauseCountdown);
+    cdReset.addEventListener('click', resetCountdown);
+
+    function adjustInput(input, delta, minV, maxV) {
+        let val = parseInt(input.value) || 0;
+        val += delta;
+        if (val < minV) val = minV;
+        if (val > maxV) val = maxV;
+        input.value = val;
+        if (!cdRunning) resetCountdown();
+    }
+    document.getElementById('minUp').onclick = () => adjustInput(minutesInp, 1, 0, 359);
+    document.getElementById('minDown').onclick = () => adjustInput(minutesInp, -1, 0, 359);
+    document.getElementById('secUp').onclick = () => adjustInput(secondsInp, 1, 0, 59);
+    document.getElementById('secDown').onclick = () => adjustInput(secondsInp, -1, 0, 59);
+    minutesInp.addEventListener('change', () => { if(!cdRunning) resetCountdown(); });
+    secondsInp.addEventListener('change', () => { if(!cdRunning) resetCountdown(); });
+
+    // ---------- 卡片切换 ----------
+    const countdownCard = document.getElementById('countdownCard');
+    const timerCard = document.getElementById('timerCard');
+    const showTimerBtn = document.getElementById('showTimerBtn');
+    const showCountdownBtn = document.getElementById('showCountdownBtn');
+
+    function showCountdown() {
+        countdownCard.style.display = 'block';
+        timerCard.style.display = 'none';
+    }
+    function showTimer() {
+        countdownCard.style.display = 'none';
+        timerCard.style.display = 'block';
+    }
+    showTimerBtn.addEventListener('click', showTimer);
+    showCountdownBtn.addEventListener('click', showCountdown);
+
+    // ---------- 品牌彩蛋：点击倒计时器标题显示/隐藏版权 ----------
+    const brandFooter = document.getElementById('brandFooter');
+    const countdownTitle = document.getElementById('countdownTitle');
+
+    function toggleBrand() {
+        if (brandFooter.style.display === 'none') {
+            brandFooter.style.display = 'block';
+        } else {
+            brandFooter.style.display = 'none';
+        }
+    }
+    countdownTitle.addEventListener('click', toggleBrand);
+
+    // ---------- 初始化 ----------
+    (function init() {
+        let initVal = getTotalFromInputs();
+        currentSeconds = initVal;
+        initialSeconds = initVal;
+        updateDisplayFromSeconds(currentSeconds);
+        resetTimer();
+        // 初始隐藏版权栏
+        brandFooter.style.display = 'none';
+        const activateAudio = () => {
+            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+            document.removeEventListener('click', activateAudio);
+        };
+        document.addEventListener('click', activateAudio);
+    })();
+</script>
+
+
+<!-- ================= 开物AI科学 · 版权模块（单击显示 / 双击打开官网） ================= -->
+<style id="kaiming-copyright-style">
+  #kaiming-copyright {
+    position: fixed;
+    bottom: 26px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    pointer-events: none;
+    z-index: 999999;
+    transition: opacity 0.45s ease;
+    opacity: 0;
+    display: none;
+  }
+  #kaiming-copyright .inner {
+    display: inline-block;
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #eafaf2;
+    padding: 9px 26px;
+    border-radius: 60px;
+    /* 原稿为 14px；此处改为 16px 以符合本机 verify_html.py 的「字号不得小于 16px」硬规则 */
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.6px;
+    border: 1px solid rgba(255, 245, 210, 0.3);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+    font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+    white-space: nowrap;
+  }
+</style>
+
+<div id="kaiming-copyright">
+  <div class="inner">© 2026 开物AI科学 ｜ AI 赋能 · 教育公平</div>
+</div>
+
+<script id="kaiming-copyright-script">
+(function () {
+  "use strict";
+
+  /* 目标：单击标题 → 显示版权 3.5 秒；双击标题 → 打开 www.kaiwuaiscience.com */
+
+  const HOMEPAGE = "https://www.kaiwuaiscience.com";
+  const SHOW_MS = 3500;      // 版权显示时长
+  const DBL_WINDOW = 280;    // 双击判定的时间窗（毫秒）
+  const FADE_MS = 450;       // 淡出时长，与 CSS transition 一致
+
+  function bindCopyright() {
+    // 首选 #mainTitle（注入脚本会保证它存在）；后三个选择器是手写粘贴时的兜底
+    const title = document.getElementById("countdownTitle") ||
+                  document.querySelector("h1, .title, .page-title, .main-title");
+    const box = document.getElementById("kaiming-copyright");
+    if (!title || !box) return;
+
+    title.style.cursor = "pointer";
+    title.style.userSelect = "none";
+    title.style.webkitUserSelect = "none";
+
+    let clickTimer = null;
+    let hideTimer = null;
+    let seq = 0;   // 每次显示/隐藏都 +1，用来作废在飞的定时器
+
+    function showCopyright() {
+      const my = ++seq;
+      if (hideTimer) clearTimeout(hideTimer);
+      box.style.display = "block";
+      /* 强制重绘，让 0 → 1 的淡入真的发生。
+         这里刻意不用 requestAnimationFrame：rAF 在页面不产生新帧时（后台标签页、
+         无头渲染、大屏久置）不保证触发——一旦它晚于下方的隐藏定时器回调，
+         就会把 opacity 又设成 1，导致版权条永久停在屏幕上。 */
+      void box.offsetHeight;
+      box.style.opacity = "1";
+      hideTimer = setTimeout(function () {
+        if (my !== seq) return;      // 期间又被点过，交给新的那一次收尾
+        box.style.opacity = "0";
+        setTimeout(function () {
+          if (my === seq) box.style.display = "none";
+        }, FADE_MS);
+      }, SHOW_MS);
+    }
+
+    function hideCopyright() {
+      const my = ++seq;              // 作废所有在飞的定时器，避免"淡出到一半又被点亮"卡住
+      if (hideTimer) clearTimeout(hideTimer);
+      if (box.style.display !== "block") return;
+      box.style.opacity = "0";
+      setTimeout(function () {
+        if (my === seq) box.style.display = "none";
+      }, FADE_MS);
+    }
+
+    function openHomepage() {
+      // 双击时隐藏版权，并跳转官网
+      hideCopyright();
+      window.open(HOMEPAGE, "_blank", "noopener,noreferrer");
+    }
+
+    title.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (clickTimer) return;   // 已在等待双击窗口，忽略这次单击
+      clickTimer = setTimeout(function () {
+        clickTimer = null;
+        showCopyright();        // 确认是单击
+      }, DBL_WINDOW);
+    });
+
+    title.addEventListener("dblclick", function (e) {
+      e.stopPropagation();
+      if (clickTimer) {         // 取消挂起的单击
+        clearTimeout(clickTimer);
+        clickTimer = null;
+      }
+      openHomepage();
+    });
+
+    // 点击页面其它地方，立即隐藏版权
+    document.addEventListener("click", function (e) {
+      if (e.target === title) return;
+      hideCopyright();
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bindCopyright);
+  } else {
+    bindCopyright();
+  }
+})();
+</script>
+<!-- ================= 开物AI科学 · 版权模块 结束 ================= -->
+
+</body>
+</html>

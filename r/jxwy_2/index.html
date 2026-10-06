@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>体验活字印刷术 - 开物AI科学</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@500;700&display=swap');
+
+        body {
+            font-family: 'Noto Serif SC', serif;
+            overflow-x: hidden;
+        }
+
+        /* --- 动态背景层样式 --- */
+        #dynamic-bg {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -50;
+            transition: opacity 1s ease-in-out;
+        }
+
+        /* 场景1：静夜思 - 星星 */
+        .twinkle { animation: twinkle-anim 3s infinite ease-in-out; }
+        @keyframes twinkle-anim {
+            0%, 100% { opacity: 0.3; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        /* 场景2：登鹳雀楼 - 黄河波浪 */
+        .yellow-river {
+            position: absolute;
+            bottom: 0; left: 0; width: 100%; height: 180px;
+            background: #d97706; /* 深黄 */
+            overflow: hidden;
+        }
+        .wave {
+            position: absolute;
+            bottom: 0; left: 0; width: 200%; height: 100%;
+            background-repeat: repeat-x;
+            background-position: 0 bottom;
+            transform-origin: center bottom;
+        }
+        .wave1 {
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 800 100' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 50 C 200 20 400 80 800 50 V 100 H 0 V 50 Z' fill='%23fbbf24' fill-opacity='0.6'/%3E%3C/svg%3E");
+            background-size: 50% 100%;
+            animation: moveWave 10s linear infinite;
+            z-index: 1;
+        }
+        .wave2 {
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 800 100' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 50 C 300 90 500 10 800 50 V 100 H 0 V 50 Z' fill='%23f59e0b' fill-opacity='0.8'/%3E%3C/svg%3E");
+            background-size: 50% 100%;
+            animation: moveWave 15s linear infinite reverse;
+            z-index: 2; height: 80%;
+        }
+        @keyframes moveWave {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        /* 场景3：江雪 - 下雪 */
+        .snowflake {
+            position: absolute;
+            background: white; border-radius: 50%; opacity: 0.8;
+            animation: fall linear infinite;
+        }
+        @keyframes fall { to { transform: translateY(100vh); } }
+
+        /* --- 游戏组件样式 --- */
+        .type-block {
+            width: 50px; height: 50px;
+            background: #d4a373;
+            border: 2px solid #a98467; border-bottom: 4px solid #8c6a54; border-right: 4px solid #8c6a54;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 28px; font-family: 'Ma Shan Zheng', cursive; color: #3e2723;
+            cursor: grab; user-select: none;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+            transition: transform 0.1s; position: relative;
+        }
+        .type-block:active { cursor: grabbing; }
+        .type-block.selected { border-color: #e63946; box-shadow: 0 0 10px #e63946; transform: scale(1.1); }
+        .mirror-text { transform: scaleX(-1); display: inline-block; }
+        
+        .grid-slot {
+            width: 60px; height: 60px;
+            background: rgba(240, 240, 240, 0.9);
+            border: 2px dashed #ccc;
+            display: flex; justify-content: center; align-items: center;
+            transition: all 0.3s; position: relative;
+        }
+        .grid-slot.drag-over { background: #e3f2fd; border-color: #2196f3; }
+        
+        .hint-text {
+            position: absolute; color: #9ca3af; font-size: 24px;
+            z-index: 0; pointer-events: none; font-family: 'Ma Shan Zheng', cursive;
+        }
+
+        .wood-texture {
+            background-color: #8d6e63;
+            background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%235d4037' fill-opacity='0.4' fill-rule='evenodd'%3E%3Cpath d='M0 40L40 0H20L0 20M40 40V20L20 40'/%3E%3C/g%3E%3C/svg%3E");
+            border-radius: 8px; box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        .rice-paper {
+            background-color: #fffef8;
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23dcdcdc' fill-opacity='0.4'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z'/%3E%3C/g%3E%3C/svg%3E");
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .ink-effect { animation: inkIn 1s ease-out forwards; }
+        @keyframes inkIn {
+            0% { opacity: 0; transform: scale(0.95); filter: blur(2px); }
+            100% { opacity: 1; transform: scale(1); filter: blur(0); }
+        }
+
+        .success-seal {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(3);
+            opacity: 0; pointer-events: none; z-index: 10;
+        }
+        .success-seal.stamp-animate { animation: stampIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        @keyframes stampIn {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(3); }
+            50% { opacity: 0.8; }
+            100% { opacity: 0.9; transform: translate(-50%, -50%) scale(1) rotate(-15deg); }
+        }
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex; justify-content: center; align-items: center; z-index: 50;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center py-6 select-none relative">
+
+    <!-- 动态背景层 -->
+    <div id="dynamic-bg"></div>
+
+    <!-- 标题区 -->
+    <header class="text-center mb-6 z-10 bg-white/80 backdrop-blur-md px-8 py-4 rounded-xl shadow-lg border border-white/50">
+        <h1 id="main-title" class="text-3xl md:text-4xl font-bold text-gray-800 mb-1">活字印刷术</h1>
+        <p class="text-xs text-gray-600 font-serif">感受诗词意境，体验古法印刷</p>
+    </header>
+
+    <!-- 功能控制区 -->
+    <div class="bg-white/90 backdrop-blur-md p-4 rounded-xl shadow-md mb-6 flex flex-wrap gap-4 items-center justify-center w-11/12 max-w-4xl z-10 border border-white/50">
+        <div class="flex items-center gap-2">
+            <span class="font-bold text-gray-700">难度：</span>
+            <label class="flex items-center space-x-1 cursor-pointer">
+                <input type="radio" name="difficulty" value="easy" checked onchange="changeDifficulty()">
+                <span class="text-sm">简单</span>
+            </label>
+            <label class="flex items-center space-x-1 cursor-pointer">
+                <input type="radio" name="difficulty" value="medium" onchange="changeDifficulty()">
+                <span class="text-sm">中等</span>
+            </label>
+            <label class="flex items-center space-x-1 cursor-pointer">
+                <input type="radio" name="difficulty" value="hard" onchange="changeDifficulty()">
+                <span class="text-sm">困难</span>
+            </label>
+        </div>
+        
+        <div class="h-6 w-px bg-gray-300 mx-2 hidden md:block"></div>
+
+        <button onclick="showRule()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition shadow flex items-center gap-1">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            排版诀窍
+        </button>
+
+        <button onclick="switchPoem()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm transition shadow flex items-center gap-1">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            换一首诗
+        </button>
+
+        <button onclick="resetGame()" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm transition shadow">
+            重置
+        </button>
+
+        <button onclick="printResult()" class="bg-gray-800 hover:bg-black text-white px-6 py-2 rounded-lg text-sm transition shadow flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+            刷墨印刷
+        </button>
+    </div>
+
+    <!-- 游戏主区域 -->
+    <div class="flex flex-col md:flex-row gap-6 w-11/12 max-w-5xl z-10">
+        <div class="flex-1 bg-white/90 backdrop-blur rounded-lg p-4 shadow-lg border border-white/50">
+            <div class="flex justify-between items-center mb-2">
+                <h3 class="font-bold text-gray-700">字模库 (反字)</h3>
+                <span class="text-xs text-gray-500">点击选择</span>
+            </div>
+            <div class="bg-gray-200 p-4 rounded-lg min-h-[300px] border-inner shadow-inner">
+                <div id="source-container" class="flex flex-wrap gap-2 justify-center content-start"></div>
+            </div>
+        </div>
+
+        <div class="flex-1 bg-white/90 backdrop-blur rounded-lg p-4 shadow-lg border border-white/50">
+            <div class="flex justify-between items-center mb-2">
+                <h3 class="font-bold text-gray-700">活字排版盘</h3>
+                <span class="text-xs text-gray-500">将字放入格中</span>
+            </div>
+            <div class="wood-texture p-4 rounded-lg flex justify-center">
+                <div id="grid-container" class="grid grid-cols-5 gap-2 bg-black/10 p-2 rounded"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部：印刷效果展示 -->
+    <div id="print-area" class="mt-8 w-11/12 max-w-2xl hidden mb-10 z-10">
+        <div class="rice-paper p-8 rounded shadow-2xl text-center relative overflow-hidden border border-gray-300">
+            <h3 class="text-center font-bold text-gray-500 mb-4 text-sm tracking-widest">—— 印刷成品 (自动翻转) ——</h3>
+            <div id="print-content" class="grid grid-cols-5 gap-y-4 gap-x-2 text-2xl md:text-3xl font-serif text-gray-900 leading-relaxed"></div>
+            
+            <div class="absolute bottom-4 left-4 border-2 border-red-700 text-red-700 p-1 rounded-sm opacity-80 rotate-12 pointer-events-none">
+                <div class="border border-red-700 p-1 text-xs font-bold writing-vertical-rl">毕昇<br>活字</div>
+            </div>
+
+            <div id="success-seal" class="success-seal hidden border-4 border-red-600 rounded-lg p-2 text-red-600 bg-white/50 backdrop-blur-sm">
+                <div class="border-2 border-red-600 px-6 py-2 text-4xl font-bold font-serif whitespace-nowrap">
+                    上品佳作
+                </div>
+                <div class="text-xs text-center font-bold mt-1">排版逻辑正确</div>
+            </div>
+        </div>
+        <div class="text-center mt-4">
+             <button onclick="hidePrint()" class="bg-white/80 px-4 py-1 rounded-full text-gray-600 text-sm hover:bg-white shadow">收起展示</button>
+        </div>
+    </div>
+
+    <!-- 诀窍弹窗 -->
+    <div id="rule-modal" class="modal-overlay hidden" onclick="closeRule()">
+        <div class="bg-white rounded-lg p-6 max-w-md w-11/12 shadow-2xl transform transition-all scale-100" onclick="event.stopPropagation()">
+            <h3 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">📜 活字排版口诀</h3>
+            <div class="text-lg text-gray-700 leading-relaxed space-y-4 font-serif">
+                <p><span class="font-bold text-red-600">“左右倒排，字字相反”</span></p>
+                <p>印刷时纸张是反扣在印版上的，因此排版顺序必须与正常阅读顺序<strong class="text-gray-900">左右颠倒</strong>。</p>
+                <div class="bg-gray-100 p-3 rounded text-sm text-gray-600">
+                    <div>例如：<span class="font-bold">床前明月光</span></div>
+                    <div>排版：<span class="font-bold">光月明前床</span></div>
+                </div>
+            </div>
+            <button onclick="closeRule()" class="mt-6 w-full bg-gray-800 text-white py-2 rounded hover:bg-black transition">明白了</button>
+        </div>
+    </div>
+
+    <script>
+        const poems = [
+            { title: "静夜思", content: "床前明月光疑是地上霜举头望明月低头思故乡" },
+            { title: "登鹳雀楼", content: "白日依山尽黄河入海流欲穷千里目更上一层楼" },
+            { title: "江雪", content: "千山鸟飞绝万径人踪灭孤舟蓑笠翁独钓寒江雪" }
+        ];
+
+        let currentPoemIndex = 0;
+        let poemObj = poems[currentPoemIndex];
+        let poemArr = []; 
+        let targetArr = []; 
+        const distractors = "山水花鸟风云天地春去秋来大火木人入日口田目东西南北中上下左右"; 
+        let currentDifficulty = 'easy';
+        let placedData = new Array(20).fill(null);
+        let selectedChar = null;
+
+        const sourceContainer = document.getElementById('source-container');
+        const gridContainer = document.getElementById('grid-container');
+        const printArea = document.getElementById('print-area');
+        const printContent = document.getElementById('print-content');
+        const mainTitle = document.getElementById('main-title');
+        const successSeal = document.getElementById('success-seal');
+        const ruleModal = document.getElementById('rule-modal');
+        const bgLayer = document.getElementById('dynamic-bg');
+
+        function initGame() {
+            renderBackground(0);
+            processPoemData();
+            updateTitle();
+            renderGrid();
+            renderSource();
+        }
+
+        // --- 核心：动态背景渲染逻辑 (V2优化版)（开物AI科学） ---
+        function renderBackground(index) {
+            bgLayer.innerHTML = ''; 
+            bgLayer.className = ''; 
+
+            if (index === 0) {
+                // 静夜思
+                bgLayer.className = 'bg-gradient-to-b from-slate-900 via-slate-800 to-indigo-900';
+                
+                const moon = document.createElement('div');
+                moon.className = 'absolute top-10 right-10 w-24 h-24 rounded-full bg-yellow-100 shadow-[0_0_60px_rgba(253,224,71,0.6)] z-0';
+                bgLayer.appendChild(moon);
+
+                for(let i=0; i<20; i++) {
+                    const star = document.createElement('div');
+                    star.className = 'absolute bg-white rounded-full twinkle';
+                    const size = Math.random() * 3 + 1;
+                    star.style.width = `${size}px`; star.style.height = `${size}px`;
+                    star.style.top = `${Math.random() * 50}%`; star.style.left = `${Math.random() * 100}%`;
+                    star.style.animationDelay = `${Math.random() * 3}s`;
+                    bgLayer.appendChild(star);
+                }
+
+            } else if (index === 1) {
+                // 登鹳雀楼 (重制版)
+                bgLayer.className = 'bg-gradient-to-b from-orange-500 via-amber-200 to-yellow-100';
+
+                // 白日 (White Sun)
+                const sun = document.createElement('div');
+                sun.className = 'absolute top-16 left-[20%] w-28 h-28 rounded-full bg-white shadow-[0_0_40px_rgba(255,255,255,0.8)] opacity-90';
+                bgLayer.appendChild(sun);
+
+                // 远山 (Mountain Range) - 依山尽
+                const mountain = document.createElement('div');
+                mountain.className = 'absolute bottom-20 left-0 w-full h-[40vh] z-0 opacity-80';
+                mountain.innerHTML = `<svg viewBox="0 0 100 50" preserveAspectRatio="none" class="w-full h-full"><path d="M0 50 L20 25 L40 45 L60 10 L100 50 Z" fill="#78350f" /></svg>`;
+                bgLayer.appendChild(mountain);
+
+                // 鹳雀楼 (Tower) - 更上一层楼 - 具象化SVG
+                const tower = document.createElement('div');
+                tower.className = 'absolute bottom-20 right-5 md:right-20 w-48 h-80 z-10';
+                // 绘制三层带飞檐的楼
+                tower.innerHTML = `
+                    <svg viewBox="0 0 200 300" class="w-full h-full drop-shadow-2xl">
+                        <!-- 基座 -->
+                        <rect x="40" y="270" width="120" height="30" fill="#57534e" />
+                        <!-- 第三层 (底层) -->
+                        <rect x="60" y="200" width="80" height="70" fill="#b91c1c" /> <!-- 红柱 -->
+                        <rect x="65" y="200" width="10" height="70" fill="#7f1d1d" />
+                        <rect x="125" y="200" width="10" height="70" fill="#7f1d1d" />
+                        <path d="M30 200 Q 20 190, 40 180 L 160 180 Q 180 190, 170 200 Z" fill="#374151" /> <!-- 檐 -->
+                        
+                        <!-- 第二层 -->
+                        <rect x="70" y="130" width="60" height="50" fill="#b91c1c" />
+                        <rect x="75" y="130" width="8" height="50" fill="#7f1d1d" />
+                        <rect x="117" y="130" width="8" height="50" fill="#7f1d1d" />
+                        <path d="M40 130 Q 30 120, 50 110 L 150 110 Q 170 120, 160 130 Z" fill="#374151" />
+                        
+                        <!-- 第一层 (顶层) -->
+                        <rect x="80" y="70" width="40" height="40" fill="#b91c1c" />
+                        <path d="M50 70 Q 40 60, 60 40 L 140 40 Q 160 60, 150 70 Z" fill="#374151" />
+                        <path d="M95 40 L 95 20" stroke="#374151" stroke-width="4" /> <!-- 顶尖 -->
+                        
+                        <!-- 匾额 -->
+                        <rect x="90" y="80" width="20" height="10" fill="#1e293b" />
+                    </svg>`;
+                bgLayer.appendChild(tower);
+
+                // 黄河 (Yellow River) - 动态波浪
+                const riverContainer = document.createElement('div');
+                riverContainer.className = 'yellow-river z-20';
+                riverContainer.innerHTML = `
+                    <div class="wave wave1"></div>
+                    <div class="wave wave2"></div>
+                `;
+                bgLayer.appendChild(riverContainer);
+
+            } else if (index === 2) {
+                // 江雪
+                bgLayer.className = 'bg-gradient-to-b from-gray-300 to-slate-400';
+                
+                const inkMountain = document.createElement('div');
+                inkMountain.className = 'absolute bottom-32 w-full h-64 opacity-30';
+                inkMountain.innerHTML = `<svg viewBox="0 0 100 50" preserveAspectRatio="none" class="w-full h-full"><path d="M0 50 Q 50 0 100 50" fill="#374151" /></svg>`;
+                bgLayer.appendChild(inkMountain);
+
+                const boat = document.createElement('div');
+                boat.className = 'absolute bottom-20 left-1/2 transform -translate-x-1/2 w-48 h-24 z-10';
+                boat.innerHTML = `<svg viewBox="0 0 200 100" class="w-full h-full"><path d="M20 70 Q 100 90 180 70 L 160 80 L 40 80 Z" fill="#1f2937" /><path d="M90 75 L 90 50 L 80 55 M 90 50 A 5 5 0 1 1 100 50" stroke="#1f2937" stroke-width="3" fill="none"/><path d="M85 55 L 70 45" stroke="#1f2937" stroke-width="2" /></svg>`;
+                bgLayer.appendChild(boat);
+
+                for(let i=0; i<50; i++) {
+                    const snow = document.createElement('div');
+                    snow.className = 'snowflake';
+                    const size = Math.random() * 4 + 2;
+                    snow.style.width = `${size}px`; snow.style.height = `${size}px`;
+                    snow.style.left = `${Math.random() * 100}%`; snow.style.top = `-${Math.random() * 20}%`;
+                    snow.style.animationDuration = `${Math.random() * 5 + 5}s`;
+                    snow.style.animationDelay = `${Math.random() * 5}s`;
+                    bgLayer.appendChild(snow);
+                }
+            }
+        }
+
+        // --- 游戏逻辑保持不变 ---
+        function showRule() { ruleModal.classList.remove('hidden'); }
+        function closeRule() { ruleModal.classList.add('hidden'); }
+        function processPoemData() {
+            poemArr = poemObj.content.split('');
+            targetArr = [];
+            for (let i = 0; i < 4; i++) {
+                const line = poemArr.slice(i * 5, (i + 1) * 5);
+                const reversedLine = line.slice().reverse();
+                targetArr = targetArr.concat(reversedLine);
+            }
+        }
+        function updateTitle() { mainTitle.innerText = `活字印刷术 - ${poemObj.title}`; }
+        function switchPoem() {
+            currentPoemIndex = (currentPoemIndex + 1) % poems.length;
+            poemObj = poems[currentPoemIndex];
+            renderBackground(currentPoemIndex);
+            resetGame();
+            updateTitle();
+        }
+        function changeDifficulty() {
+            const radios = document.getElementsByName('difficulty');
+            for (const r of radios) { if (r.checked) currentDifficulty = r.value; }
+            resetGame();
+        }
+        function resetGame() {
+            processPoemData();
+            placedData = new Array(20).fill(null);
+            selectedChar = null;
+            printArea.classList.add('hidden');
+            successSeal.classList.add('hidden');
+            successSeal.classList.remove('stamp-animate');
+            renderGrid();
+            renderSource();
+        }
+        function renderGrid() {
+            gridContainer.innerHTML = '';
+            for (let i = 0; i < 20; i++) {
+                const slot = document.createElement('div');
+                slot.className = 'grid-slot rounded shadow-inner relative';
+                slot.dataset.index = i;
+                slot.addEventListener('dragover', handleDragOver);
+                slot.addEventListener('drop', handleDrop);
+                slot.addEventListener('click', () => handleSlotClick(i));
+                if (placedData[i]) {
+                    const block = createTypeBlock(placedData[i], false); 
+                    block.style.cursor = 'pointer';
+                    block.onclick = (e) => { e.stopPropagation(); removeCharFromGrid(i); };
+                    slot.appendChild(block);
+                } else {
+                    if (currentDifficulty === 'easy') {
+                        const hint = document.createElement('span');
+                        hint.className = 'hint-text';
+                        hint.innerText = targetArr[i]; 
+                        slot.appendChild(hint);
+                    }
+                }
+                gridContainer.appendChild(slot);
+            }
+        }
+        function renderSource() {
+            sourceContainer.innerHTML = '';
+            let charsToShow = [...poemArr];
+            if (currentDifficulty === 'hard') {
+                const randomDistractors = distractors.split('').sort(() => 0.5 - Math.random()).slice(0, 10);
+                charsToShow = charsToShow.concat(randomDistractors);
+            }
+            charsToShow.sort(() => 0.5 - Math.random());
+            charsToShow.forEach((char, index) => {
+                const block = createTypeBlock(char, true);
+                block.id = `source-${index}-${char}`;
+                block.addEventListener('click', (e) => handleSourceClick(e, char, block));
+                sourceContainer.appendChild(block);
+            });
+        }
+        function createTypeBlock(char, isDraggable) {
+            const div = document.createElement('div');
+            div.className = 'type-block rounded';
+            div.draggable = isDraggable;
+            const span = document.createElement('span');
+            span.className = 'mirror-text';
+            span.innerText = char;
+            div.appendChild(span);
+            if (isDraggable) {
+                div.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', char);
+                    e.dataTransfer.effectAllowed = 'copy'; 
+                    selectedChar = char; 
+                    highlightSelection(div);
+                });
+            }
+            return div;
+        }
+        function handleSourceClick(e, char, element) {
+            if (selectedChar === char && element.classList.contains('selected')) {
+                selectedChar = null;
+                element.classList.remove('selected');
+            } else {
+                document.querySelectorAll('.type-block').forEach(el => el.classList.remove('selected'));
+                selectedChar = char;
+                highlightSelection(element);
+            }
+        }
+        function highlightSelection(element) { element.classList.add('selected'); }
+        function handleSlotClick(index) {
+            if (placedData[index]) return; 
+            if (selectedChar) {
+                placeChar(index, selectedChar);
+                selectedChar = null;
+                document.querySelectorAll('.type-block').forEach(el => el.classList.remove('selected'));
+            }
+        }
+        function handleDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+        document.addEventListener('dragcenter', (e) => {
+             if(e.target.classList.contains('grid-slot')) e.target.classList.remove('drag-over');
+        }, true); 
+        function handleDrop(e) {
+            e.preventDefault();
+            const index = e.currentTarget.dataset.index;
+            e.currentTarget.classList.remove('drag-over');
+            const char = e.dataTransfer.getData('text/plain');
+            if (char) placeChar(parseInt(index), char);
+        }
+        function placeChar(index, char) {
+            placedData[index] = char;
+            renderGrid();
+        }
+        function removeCharFromGrid(index) {
+            placedData[index] = null;
+            renderGrid();
+        }
+        function printResult() {
+            printArea.classList.remove('hidden');
+            successSeal.classList.add('hidden');
+            successSeal.classList.remove('stamp-animate');
+            printContent.innerHTML = '';
+            let printedTextArray = [];
+            for(let i=0; i<4; i++) {
+                let row = placedData.slice(i*5, (i+1)*5);
+                let reversedRow = row.slice().reverse();
+                printedTextArray = printedTextArray.concat(reversedRow);
+            }
+            let isAllCorrect = true;
+            printedTextArray.forEach((char, idx) => {
+                const span = document.createElement('div');
+                span.className = 'w-full h-12 flex items-center justify-center';
+                if (char) {
+                    span.innerText = char;
+                    if (char !== poemArr[idx]) {
+                        span.style.color = '#e53e3e'; 
+                        span.style.transform = `rotate(${Math.random() * 20 - 10}deg)`;
+                        isAllCorrect = false;
+                    } else { span.style.opacity = Math.random() * 0.3 + 0.7; }
+                } else {
+                    span.innerText = "□";
+                    span.style.color = "#ccc";
+                    isAllCorrect = false;
+                }
+                printContent.appendChild(span);
+            });
+            setTimeout(() => {
+                printArea.scrollIntoView({ behavior: 'smooth' });
+                printContent.classList.remove('ink-effect');
+                void printContent.offsetWidth; 
+                printContent.classList.add('ink-effect');
+                if (isAllCorrect) {
+                    setTimeout(() => {
+                        successSeal.classList.remove('hidden');
+                        successSeal.classList.add('stamp-animate');
+                    }, 800);
+                }
+            }, 100);
+        }
+        function hidePrint() { printArea.classList.add('hidden'); }
+        initGame();
+    </script>
+<!-- ================= 开物AI科学 · 版权模块（单击显示 / 双击打开官网） ================= -->
+<style id="kaiming-copyright-style">
+  #kaiming-copyright {
+    position: fixed;
+    bottom: 26px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    pointer-events: none;
+    z-index: 999999;
+    transition: opacity 0.45s ease;
+    opacity: 0;
+    display: none;
+  }
+  #kaiming-copyright .inner {
+    display: inline-block;
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #eafaf2;
+    padding: 9px 26px;
+    border-radius: 60px;
+    /* 原稿为 14px；此处改为 16px 以符合本机 verify_html.py 的「字号不得小于 16px」硬规则 */
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.6px;
+    border: 1px solid rgba(255, 245, 210, 0.3);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+    font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+    white-space: nowrap;
+  }
+</style>
+
+<div id="kaiming-copyright">
+  <div class="inner">© 2026 开物AI科学 ｜ AI 赋能 · 教育公平</div>
+</div>
+
+<script id="kaiming-copyright-script">
+(function () {
+  "use strict";
+
+  /* 目标：单击标题 → 显示版权 3.5 秒；双击标题 → 打开 www.kaiwuaiscience.com */
+
+  const HOMEPAGE = "https://www.kaiwuaiscience.com";
+  const SHOW_MS = 3500;      // 版权显示时长
+  const DBL_WINDOW = 280;    // 双击判定的时间窗（毫秒）
+  const FADE_MS = 450;       // 淡出时长，与 CSS transition 一致
+
+  function bindCopyright() {
+    // 首选 #mainTitle（注入脚本会保证它存在）；后三个选择器是手写粘贴时的兜底
+    const title = document.getElementById("main-title") ||
+                  document.querySelector("h1, .title, .page-title, .main-title");
+    const box = document.getElementById("kaiming-copyright");
+    if (!title || !box) return;
+
+    title.style.cursor = "pointer";
+    title.style.userSelect = "none";
+    title.style.webkitUserSelect = "none";
+
+    let clickTimer = null;
+    let hideTimer = null;
+    let seq = 0;   // 每次显示/隐藏都 +1，用来作废在飞的定时器
+
+    function showCopyright() {
+      const my = ++seq;
+      if (hideTimer) clearTimeout(hideTimer);
+      box.style.display = "block";
+      /* 强制重绘，让 0 → 1 的淡入真的发生。
+         这里刻意不用 requestAnimationFrame：rAF 在页面不产生新帧时（后台标签页、
+         无头渲染、大屏久置）不保证触发——一旦它晚于下方的隐藏定时器回调，
+         就会把 opacity 又设成 1，导致版权条永久停在屏幕上。 */
+      void box.offsetHeight;
+      box.style.opacity = "1";
+      hideTimer = setTimeout(function () {
+        if (my !== seq) return;      // 期间又被点过，交给新的那一次收尾
+        box.style.opacity = "0";
+        setTimeout(function () {
+          if (my === seq) box.style.display = "none";
+        }, FADE_MS);
+      }, SHOW_MS);
+    }
+
+    function hideCopyright() {
+      const my = ++seq;              // 作废所有在飞的定时器，避免"淡出到一半又被点亮"卡住
+      if (hideTimer) clearTimeout(hideTimer);
+      if (box.style.display !== "block") return;
+      box.style.opacity = "0";
+      setTimeout(function () {
+        if (my === seq) box.style.display = "none";
+      }, FADE_MS);
+    }
+
+    function openHomepage() {
+      // 双击时隐藏版权，并跳转官网
+      hideCopyright();
+      window.open(HOMEPAGE, "_blank", "noopener,noreferrer");
+    }
+
+    title.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (clickTimer) return;   // 已在等待双击窗口，忽略这次单击
+      clickTimer = setTimeout(function () {
+        clickTimer = null;
+        showCopyright();        // 确认是单击
+      }, DBL_WINDOW);
+    });
+
+    title.addEventListener("dblclick", function (e) {
+      e.stopPropagation();
+      if (clickTimer) {         // 取消挂起的单击
+        clearTimeout(clickTimer);
+        clickTimer = null;
+      }
+      openHomepage();
+    });
+
+    // 点击页面其它地方，立即隐藏版权
+    document.addEventListener("click", function (e) {
+      if (e.target === title) return;
+      hideCopyright();
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bindCopyright);
+  } else {
+    bindCopyright();
+  }
+})();
+</script>
+<!-- ================= 开物AI科学 · 版权模块 结束 ================= -->
+
+</body>
+</html>

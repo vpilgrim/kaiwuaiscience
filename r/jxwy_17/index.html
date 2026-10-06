@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>太阳系中的行星 | 3D八大行星</title>
+<style>
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{width:100%; height:100%; overflow:hidden; font-family:'Microsoft YaHei','PingFang SC',sans-serif;
+    background:radial-gradient(ellipse at 50% 40%, #101f4d 0%, #060f2b 60%, #02060f 100%); color:#e8f0ff;}
+  #scene{position:absolute; inset:0;}
+
+  #title{position:absolute; top:16px; left:16px; z-index:10; background:rgba(8,16,40,.75); backdrop-filter:blur(8px);
+    padding:14px 16px; border-radius:14px; border-left:4px solid #5aa7ff; font-size:28px; font-weight:700;}
+  #title .sub{font-size:20px; font-weight:400; color:#9fb6e0; margin-top:3px;}
+
+  /* 行星列表 */
+  #list{position:absolute; left:16px; top:92px; z-index:10; display:flex; flex-direction:column; gap:5px;}
+  #list button{border:1px solid rgba(255,255,255,.16); background:rgba(12,22,52,.7); backdrop-filter:blur(8px); color:#cfe0ff;
+    padding:10px 13px; border-radius:16px; font-size:18px; font-weight:600; cursor:pointer; text-align:left; transition:.15s; display:flex; align-items:center; gap:8px; white-space:nowrap;}
+  #list button:hover{background:rgba(40,60,110,.8);}
+  #list button .dot{font-size:22px; line-height:1; flex:none;}
+  #list button.active{background:#1e3a70; border-color:#5aa7ff;}
+
+  /* 特征卡 */
+  #card{position:absolute; right:16px; top:96px; z-index:10; width:290px; max-height:72vh; overflow:auto;
+    background:rgba(8,16,40,.82); backdrop-filter:blur(12px); border-radius:16px; padding:16px 18px; border:1px solid rgba(255,255,255,.16);}
+  #card h3{margin-bottom:8px; font-size:28px; display:flex; align-items:center; gap:8px;}
+  #card .feat{margin:8px 0; padding:14px 12px; background:rgba(255,255,255,.05); border-radius:9px; font-size:20px; line-height:1.6;}
+  #card .feat b{color:#ffd98a;}
+  #card .hint{color:#9fb6e0; font-size:20px; text-align:center; margin-top:20px;}
+
+  /* 底部控制 */
+  #controls{position:absolute; bottom:18px; left:50%; transform:translateX(-50%); z-index:10; display:flex; flex-wrap:nowrap;
+    gap:8px; justify-content:center; align-items:center; background:rgba(8,14,38,.8); backdrop-filter:blur(12px); padding:12px 16px; border-radius:36px;
+    border:1px solid rgba(255,255,255,.2); max-width:96vw; overflow-x:auto;}
+  #controls button{border:none; padding:11px 14px; border-radius:18px; font-size:19px; font-weight:700; cursor:pointer; transition:.15s; white-space:nowrap; flex:0 0 auto;}
+  #controls button:hover{transform:translateY(-2px);}
+  .btn-play{background:#5aa7ff; color:#061028;}
+  .btn-rule{background:#3a4a7b; color:#dfe8ff;}
+  .btn-challenge{background:#ffaa44; color:#201400;}
+  .btn-scale{background:#28c86e; color:#04150a;}
+  .btn-scale.active{background:#b0f0c8; box-shadow:0 0 14px rgba(40,200,110,.7);}
+
+  /* 比例提示条 */
+  #scaleTip{position:absolute; top:16px; right:16px; z-index:10; display:none; background:rgba(8,30,16,.8); border:1px solid #28c86e;
+    color:#b0f0c8; padding:12px 16px; border-radius:16px; font-size:20px; font-weight:600; backdrop-filter:blur(8px); max-width:320px; line-height:1.5;}
+  #scaleTip.show{display:block;}
+
+  /* 判断挑战弹窗（双人对战：同时作答，先答对者得分） */
+  #quiz{position:absolute; inset:0; z-index:100; background:rgba(2,6,18,.94); display:none; flex-direction:column;}
+  #quiz.show{display:flex;}
+  #quiz .top{display:flex; align-items:center; justify-content:center; padding:12px 16px; position:relative;}
+  #quiz .top h2{color:#ffc46b; font-size:30px; margin:0; letter-spacing:2px;}
+  #quiz .top .close-btn{position:absolute; right:16px; top:50%; transform:translateY(-50%);
+    background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.3); color:#e8f0ff;
+    font-size:22px; padding:8px 18px; border-radius:20px; cursor:pointer;}
+  #quiz .q-body{flex:1; display:grid; grid-template-columns:1fr 1.3fr 1fr; gap:14px; padding:6px 16px 10px; min-height:0;}
+  /* 左右答题区 */
+  #quiz .player{border-radius:18px; border:3px solid transparent; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:10px; padding:14px 10px; transition:.2s;}
+  #quiz .player.p1{background:rgba(255,80,90,.10); border-color:rgba(255,90,100,.45);}
+  #quiz .player.p2{background:rgba(80,150,255,.10); border-color:rgba(90,150,255,.45);}
+  #quiz .player.got{border-color:#ffd24d; box-shadow:0 0 34px rgba(255,210,77,.55);}
+  #quiz .player .pname{font-size:28px; font-weight:800;}
+  #quiz .player.p1 .pname{color:#ff7a84;}
+  #quiz .player.p2 .pname{color:#7ab4ff;}
+  /* 行星收集：得 1 分点亮 1 个 */
+  #quiz .player .planets{display:flex; gap:5px; flex-wrap:wrap; justify-content:center; min-height:34px;}
+  #quiz .player .planets .slot{width:30px; height:30px; border-radius:50%; background:rgba(255,255,255,.08);
+    border:2px dashed rgba(255,255,255,.22); font-size:19px; line-height:1; display:flex; align-items:center; justify-content:center;}
+  #quiz .player .planets .slot.on{background:rgba(255,210,77,.18); border:2px solid #ffd24d;}
+  #quiz .player .score{font-size:44px; font-weight:900; color:#ffd24d; line-height:1;}
+  #quiz .player .score-label{font-size:18px; color:#8a97b5; margin-top:-4px;}
+  /* 选项按钮（动态渲染：对/错 或 A/B/C） */
+  #quiz .player .ans{display:flex; flex-direction:column; gap:10px; width:100%;}
+  #quiz .player .ans button{font-size:26px; font-weight:800; padding:13px 10px; border-radius:14px; cursor:pointer; border:none; transition:.15s;}
+  #quiz .player .ans button.yes{background:#28c86e; color:#04210f;}
+  #quiz .player .ans button.no{background:#ff5a5a; color:#2b0404;}
+  #quiz .player .ans button.abc{background:#4a6ad8; color:#eaf0ff;}
+  #quiz .player.locked .ans button{opacity:.2; pointer-events:none;}
+  /* 中间题目区 */
+  #quiz .q-center{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;
+    background:rgba(255,255,255,.06); border-radius:18px; padding:20px; text-align:center;}
+  #quiz .q-center .qnum{font-size:26px; color:#8ab4ff; font-weight:700;}
+  #quiz .q-center .qtype{font-size:22px; color:#ffc46b; font-weight:700;}
+  #quiz .q-center .qtext{font-size:34px; font-weight:800; color:#fff; line-height:1.5;}
+  #quiz .q-center .qresult{font-size:24px; line-height:1.6; max-width:100%;}
+  #quiz .q-center .qresult.ok{color:#a9f0c8;}
+  #quiz .q-center .qresult.no{color:#ffb9b9;}
+  /* 底部 */
+  #quiz .bottom{display:flex; justify-content:center; gap:16px; padding:10px 16px 16px;}
+  #quiz .bottom button{font-size:24px; font-weight:700; padding:14px 34px; border-radius:20px; cursor:pointer; border:none;}
+  #quiz .bottom .next-btn{background:#ffaa44; color:#3a2400; display:none;}
+  #quiz .bottom .restart-btn{background:#5aa7ff; color:#061028; display:none;}
+
+  @media (max-width:640px){ #list{top:80px;} #card{width:200px; top:80px;} #title{font-size:22px;} }
+</style>
+</head>
+<body>
+<div id="scene"></div>
+<div id="title">🪐 太阳系中的行星<span class="sub">大象版科学 · 四年级上册 · 第二单元第4课</span></div>
+<div id="scaleTip">📏 <b>原比例</b>：行星大小、距离按真实比例显示（太阳直径≈地球109倍）。内行星很小，用<b>标签</b>标出位置，点标签可放大查看。</div>
+<div id="list"></div>
+<div id="card">
+  <h3>🔍 点击行星查看介绍</h3>
+  <div class="hint">点击左侧列表，或直接点 3D 场景里的行星</div>
+</div>
+<div id="controls">
+  <button class="btn-play" id="playBtn">⏸ 暂停</button>
+  <button class="btn-rule" onclick="showRule(true)">📖 行星的特征</button>
+  <button class="btn-challenge" onclick="showQuiz(true)">🏆 判断挑战</button>
+  <button class="btn-scale" id="scaleBtn" onclick="toggleScale()">📏 原比例</button>
+  <button class="btn-rule" onclick="resetView()">🔄 重置视角</button>
+  <button class="btn-rule" onclick="zoomView(-1)">🔍− 缩小</button>
+  <button class="btn-rule" onclick="zoomView(1)">🔍+ 放大</button>
+</div>
+
+<div id="quiz">
+  <div class="top">
+    <h2>🏆 判断挑战 · 双人对战</h2>
+    <button class="close-btn" onclick="showQuiz(false)">✕ 关闭</button>
+  </div>
+  <div class="q-body">
+    <div class="player p1" id="p1">
+      <div class="pname">🔴 1号同学</div>
+      <div class="planets" id="planets1"></div>
+      <div class="score" id="score1">0</div>
+      <div class="score-label">得分</div>
+      <div class="ans" id="ans1"></div>
+    </div>
+    <div class="q-center">
+      <div class="qnum" id="qNum"></div>
+      <div class="qtype" id="qType"></div>
+      <div class="qtext" id="qText"></div>
+      <div class="qresult" id="qResult"></div>
+    </div>
+    <div class="player p2" id="p2">
+      <div class="pname">🔵 2号同学</div>
+      <div class="planets" id="planets2"></div>
+      <div class="score" id="score2">0</div>
+      <div class="score-label">得分</div>
+      <div class="ans" id="ans2"></div>
+    </div>
+  </div>
+  <div class="bottom">
+    <button class="next-btn" id="nextBtn" onclick="nextQuiz()">下一题 ▶</button>
+    <button class="restart-btn" id="restartBtn" onclick="restartQuiz()">🔄 重新开始</button>
+  </div>
+</div>
+
+<div id="ruleModal" style="position:absolute; inset:0; z-index:100; background:rgba(2,6,18,.75); display:none; align-items:center; justify-content:center;">
+  <div style="background:#0c1836; border:1px solid rgba(255,255,255,.2); border-radius:18px; max-width:640px; width:92%; padding:26px 30px; color:#e8f0ff; line-height:1.8; font-size:24px; box-shadow:0 10px 40px rgba(0,0,0,.6); max-height:88vh; overflow:auto;">
+    <h3 style="color:#5aa7ff; margin-bottom:12px;">📖 行星的特征</h3>
+    <div style="background:rgba(255,255,255,.05); border-radius:10px; padding:14px 16px; margin:8px 0;"><b>①</b> 行星围绕太阳<b>公转</b>。</div>
+    <div style="background:rgba(255,255,255,.05); border-radius:10px; padding:14px 16px; margin:8px 0;"><b>②</b> 行星围绕太阳运转的轨迹叫<b>公转轨道</b>，公转轨道是接近正圆的<b>椭圆轨道</b>。</div>
+    <div style="background:rgba(255,255,255,.05); border-radius:10px; padding:14px 16px; margin:8px 0;"><b>③</b> 行星<b>不发光</b>。</div>
+    <div style="background:rgba(255,255,255,.05); border-radius:10px; padding:14px 16px; margin:8px 0;"><b>④</b> 行星质量足够大，呈<b>球形或接近球形</b>，并且能够通过引力<b>清空轨道附近碎物</b>。</div>
+    <p>太阳系的八大行星：<b>水星、金星、地球、火星、木星、土星、天王星、海王星</b>。</p>
+    <button style="margin-top:14px; background:#5aa7ff; color:#061028; border:none; padding:14px 24px; border-radius:20px; font-size:22px; font-weight:700; cursor:pointer;" onclick="showRule(false)">我知道了</button>
+  </div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+const container = document.getElementById('scene');
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(50, innerWidth/innerHeight, 0.1, 3000);
+camera.position.set(0, 26, 40);
+
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+container.appendChild(renderer.domElement);
+
+const labelRenderer = new CSS2DRenderer();
+labelRenderer.setSize(innerWidth, innerHeight);
+labelRenderer.domElement.style.position = 'absolute';
+labelRenderer.domElement.style.top = '0';
+labelRenderer.domElement.style.pointerEvents = 'none';
+container.appendChild(labelRenderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.minDistance = 6; controls.maxDistance = 90;
+
+// 星空
+const sg = new THREE.BufferGeometry(); const sp=[];
+for(let i=0;i<1200;i++){ const r=150+Math.random()*120, th=Math.random()*Math.PI*2, ph=Math.acos(2*Math.random()-1);
+  sp.push(r*Math.sin(ph)*Math.cos(th), r*Math.sin(ph)*Math.sin(th), r*Math.cos(ph)); }
+sg.setAttribute('position', new THREE.Float32BufferAttribute(sp,3));
+scene.add(new THREE.Points(sg, new THREE.PointsMaterial({color:0xffffff,size:0.14,transparent:true,opacity:0.8})));
+
+scene.add(new THREE.AmbientLight(0x556688, 0.9));
+const sunLight = new THREE.PointLight(0xfff2cc, 1.6, 120); scene.add(sunLight);
+
+function glowTexture(){
+  const c=document.createElement('canvas'); c.width=c.height=256;
+  const g=c.getContext('2d'); const grd=g.createRadialGradient(128,128,10,128,128,128);
+  grd.addColorStop(0,'rgba(255,240,180,1)'); grd.addColorStop(.35,'rgba(255,200,80,.7)');
+  grd.addColorStop(.7,'rgba(255,150,40,.25)'); grd.addColorStop(1,'rgba(255,120,20,0)');
+  g.fillStyle=grd; g.fillRect(0,0,256,256); return new THREE.CanvasTexture(c);
+}
+
+// ===== 太阳 =====
+const SUN_R = 3;
+const sun = new THREE.Mesh(new THREE.SphereGeometry(SUN_R, 48, 48), new THREE.MeshBasicMaterial({color:0xffc44d}));
+scene.add(sun);
+const glow = new THREE.Sprite(new THREE.SpriteMaterial({map:glowTexture(), blending:THREE.AdditiveBlending, depthWrite:false}));
+glow.scale.set(18,18,1); sun.add(glow);
+
+// ===== 行星纹理（Canvas 生成，体现各行星关键特征） =====
+function planetTexture(tex){
+  const w=512, h=256;
+  const c=document.createElement('canvas'); c.width=w; c.height=h;
+  const g=c.getContext('2d');
+  if(tex==='mercury'){         // 灰 + 环形山
+    g.fillStyle='#9a9a9a'; g.fillRect(0,0,w,h);
+    for(let i=0;i<90;i++){
+      const r=3+Math.random()*15, x=Math.random()*w, y=Math.random()*h;
+      const grd=g.createRadialGradient(x,y,0,x,y,r);
+      grd.addColorStop(0,'rgba(60,60,60,.75)'); grd.addColorStop(.7,'rgba(130,130,130,.4)'); grd.addColorStop(1,'rgba(180,180,180,0)');
+      g.fillStyle=grd; g.beginPath(); g.arc(x,y,r,0,Math.PI*2); g.fill();
+    }
+  } else if(tex==='venus'){    // 黄白 + 云带
+    const grd=g.createLinearGradient(0,0,0,h);
+    grd.addColorStop(0,'#f4dd94'); grd.addColorStop(.5,'#e8c86a'); grd.addColorStop(1,'#f4dd94');
+    g.fillStyle=grd; g.fillRect(0,0,w,h);
+    for(let i=0;i<7;i++){
+      g.fillStyle='rgba(255,246,210,'+(0.2+Math.random()*0.25)+')';
+      g.fillRect(0, Math.random()*h, w, 6+Math.random()*16);
+    }
+  } else if(tex==='earth'){    // 蓝海 + 绿陆 + 白极冠
+    g.fillStyle='#2b5c9e'; g.fillRect(0,0,w,h);
+    const lands=[[0.3,0.35,90,70],[0.55,0.3,110,75],[0.2,0.3,80,55],[0.33,0.62,75,55],[0.52,0.6,65,50],[0.72,0.4,65,55]];
+    lands.forEach(([cx,cy,rx,ry])=>{
+      g.fillStyle='#4c9a4c'; g.beginPath();
+      const n=12;
+      for(let i=0;i<=n;i++){ const a=i/n*Math.PI*2, rr=0.55+Math.random()*0.45;
+        const px=cx*w+Math.cos(a)*rx*rr, py=cy*h+Math.sin(a)*ry*rr;
+        i===0?g.moveTo(px,py):g.lineTo(px,py); }
+      g.closePath(); g.fill();
+    });
+    g.fillStyle='rgba(255,255,255,.9)'; g.fillRect(0,0,w,14); g.fillRect(0,h-14,w,14);
+  } else if(tex==='mars'){     // 红 + 尘埃斑 + 白极冠
+    g.fillStyle='#c05a35'; g.fillRect(0,0,w,h);
+    for(let i=0;i<50;i++){
+      g.fillStyle='rgba(90,30,15,'+(0.2+Math.random()*0.3)+')';
+      const r=8+Math.random()*30, x=Math.random()*w, y=Math.random()*h;
+      g.beginPath(); g.arc(x,y,r,0,Math.PI*2); g.fill();
+    }
+    g.fillStyle='rgba(255,255,255,.9)'; g.fillRect(0,0,w,10); g.fillRect(0,h-10,w,10);
+  } else if(tex==='jupiter'){  // 条纹 + 大红斑
+    const bands=['#d8a05a','#e8c080','#c08850','#f0d090','#b87848','#e0b870','#c89058'];
+    bands.forEach((col,i)=>{ g.fillStyle=col; g.fillRect(0, i*h/bands.length, w, h/bands.length+1); });
+    const ox=w*0.68, oy=h*0.62;
+    const rg=g.createRadialGradient(ox,oy,2,ox,oy,40);
+    rg.addColorStop(0,'#c04028'); rg.addColorStop(1,'rgba(192,64,40,0)');
+    g.fillStyle=rg; g.beginPath(); g.ellipse(ox,oy,42,20,0,0,Math.PI*2); g.fill();
+  } else if(tex==='saturn'){   // 淡黄条纹
+    const bands=['#e8cf9a','#f0dcb0','#dcc088','#f4e4bc','#d4b878'];
+    bands.forEach((col,i)=>{ g.fillStyle=col; g.fillRect(0, i*h/bands.length, w, h/bands.length+1); });
+  } else if(tex==='uranus'){   // 淡蓝 + 微弱云带
+    const grd=g.createLinearGradient(0,0,0,h);
+    grd.addColorStop(0,'#9ad8e8'); grd.addColorStop(.5,'#8ad0e0'); grd.addColorStop(1,'#9ad8e8');
+    g.fillStyle=grd; g.fillRect(0,0,w,h);
+  } else if(tex==='neptune'){  // 深蓝 + 白云斑
+    const grd=g.createLinearGradient(0,0,0,h);
+    grd.addColorStop(0,'#3a58c8'); grd.addColorStop(.5,'#4a6ad8'); grd.addColorStop(1,'#3a58c8');
+    g.fillStyle=grd; g.fillRect(0,0,w,h);
+    for(let i=0;i<12;i++){
+      g.fillStyle='rgba(255,255,255,.5)';
+      const x=Math.random()*w, y=Math.random()*h;
+      g.beginPath(); g.ellipse(x,y,12+Math.random()*20,4+Math.random()*6,Math.random()*Math.PI,0,Math.PI*2); g.fill();
+    }
+  }
+  return new THREE.CanvasTexture(c);
+}
+
+// ===== 行星数据 =====
+// size/orbit 为示意模式视觉值；realD 为真实直径（地球=1）；realAU 为真实轨道半径（地球=1 AU）
+const planets = [
+  {name:'水星', color:0x9a9a9a, tex:'mercury', size:0.55, orbit:4.6,  speed:1.6,  realD:0.38, realAU:0.39,
+   desc:'围绕太阳以近似圆形的椭圆轨道运转，自身不会发光，球状天体。表面有许多平原和环形山。'},
+  {name:'金星', color:0xe8c86a, tex:'venus', size:0.85, orbit:6.4,  speed:1.2,  realD:0.95, realAU:0.72,
+   desc:'围绕太阳以近似圆形的椭圆轨道运转，自身不会发光，球状天体。早晨出现称启明星，傍晚出现称黄昏星，是天空最亮的星。'},
+  {name:'地球', color:0x3d7bd9, tex:'earth', size:0.9,  orbit:8.2,  speed:1.0,  realD:1.0,  realAU:1.0,
+   desc:'围绕太阳以近似圆形的椭圆轨道运转，自身不会发光，球状天体。有空气、有液态水，有生命。'},
+  {name:'火星', color:0xd95a3d, tex:'mars', size:0.65, orbit:10.2, speed:0.85, realD:0.53, realAU:1.52,
+   desc:'围绕太阳以近似圆形的椭圆轨道运转，红色球状天体，自身不会发光，大小和地球相似，北极有冰，地面尽是尘埃。'},
+  {name:'木星', color:0xd8a05a, tex:'jupiter', size:1.9,  orbit:13.0, speed:0.6,  realD:11.2, realAU:5.2,
+   desc:'围绕太阳以近似圆形的椭圆轨道运转，太阳系最大的气态球状天体，自身不会发光，有大红斑。'},
+  {name:'土星', color:0xe8cf9a, tex:'saturn', size:1.6,  orbit:18.0, speed:0.5,  realD:9.45, realAU:9.54,
+   desc:'围绕太阳以近似圆形的椭圆轨道运转，自身不会发光，太阳系第二大气态球状天体，有非常美丽的光环。', ring:true},
+  {name:'天王星', color:0x8ad0e0, tex:'uranus', size:1.2, orbit:21.8, speed:0.4,  realD:4.01, realAU:19.2,
+   desc:'围绕太阳以近似圆形的椭圆轨道运转，气态球状天体，自身不会发光，温度很低，表面呈淡蓝色。'},
+  {name:'海王星', color:0x4a6ad8, tex:'neptune', size:1.15, orbit:25.0, speed:0.32, realD:3.88, realAU:30.1,
+   desc:'围绕太阳以近似圆形的椭圆轨道运转，球状天体，自身不会发光，温度很低，大气层中包含可见的云。'},
+];
+
+const meshMap = {};
+const orbitRings = [];
+planets.forEach(p=>{
+  const mesh = new THREE.Mesh(new THREE.SphereGeometry(p.size, 48, 48), new THREE.MeshLambertMaterial({map:planetTexture(p.tex)}));
+  scene.add(mesh);
+  // 轨道环（独立，切换比例时缩放）
+  const ring = new THREE.Mesh(new THREE.RingGeometry(p.orbit-0.04, p.orbit+0.04, 128),
+    new THREE.MeshBasicMaterial({color:0x446699, side:THREE.DoubleSide, transparent:true, opacity:0.4}));
+  ring.rotation.x = -Math.PI/2; scene.add(ring);
+  orbitRings.push(ring);
+  // 土星光环（mesh 子对象，随 mesh 缩放）
+  if(p.ring){
+    const hr = new THREE.Mesh(new THREE.RingGeometry(p.size*1.2, p.size*1.7, 64),
+      new THREE.MeshBasicMaterial({color:0xd8c890, side:THREE.DoubleSide, transparent:true, opacity:0.6}));
+    hr.rotation.x = Math.PI/2.2; mesh.add(hr);
+  }
+  mesh.userData = p;
+  meshMap[p.name] = mesh;
+});
+
+// ===== 哈雷彗星（长椭圆轨道 + 彗核彗尾一体，默认隐藏，点列表才显示） =====
+const comet = { a:21, e:0.8, theta:0, speed:0.3 };   // 近日点 a(1-e)=4.2 > 太阳半径3，轨道不穿太阳
+const cometGroup = new THREE.Group(); scene.add(cometGroup);
+cometGroup.visible = false;   // 默认不显示
+// 彗星：彗核在轨道上，彗尾较短（背离太阳）
+function cometTexture(){
+  const c=document.createElement('canvas'); c.width=512; c.height=128;
+  const g=c.getContext('2d');
+  const cx=80, cy=64;   // 彗核偏左，尾巴向右（短尾）
+  // 外层彗尾：扇形扩散的淡蓝尾迹（较短）
+  let tail=g.createLinearGradient(cx,0,260,0);
+  tail.addColorStop(0,'rgba(170,210,255,.5)');
+  tail.addColorStop(1,'rgba(120,165,230,0)');
+  g.fillStyle=tail;
+  g.beginPath();
+  g.moveTo(cx,cy-4);
+  g.quadraticCurveTo(160,cy-24,260,cy-18);
+  g.lineTo(260,cy+18);
+  g.quadraticCurveTo(160,cy+24,cx,cy+4);
+  g.closePath(); g.fill();
+  // 内层亮白彗尾（彗核正后方，最亮）
+  let tail2=g.createLinearGradient(cx,0,180,0);
+  tail2.addColorStop(0,'rgba(245,250,255,.85)');
+  tail2.addColorStop(1,'rgba(180,210,250,0)');
+  g.fillStyle=tail2;
+  g.beginPath();
+  g.moveTo(cx,cy-2);
+  g.quadraticCurveTo(130,cy-10,180,cy-8);
+  g.lineTo(180,cy+8);
+  g.quadraticCurveTo(130,cy+10,cx,cy+2);
+  g.closePath(); g.fill();
+  // 彗发：彗核周围雾状光晕
+  const coma=g.createRadialGradient(cx,cy,1,cx,cy,28);
+  coma.addColorStop(0,'rgba(255,255,255,.95)');
+  coma.addColorStop(.4,'rgba(210,235,255,.5)');
+  coma.addColorStop(1,'rgba(160,200,245,0)');
+  g.fillStyle=coma;
+  g.beginPath(); g.arc(cx,cy,28,0,Math.PI*2); g.fill();
+  // 彗核：中心亮点
+  const core=g.createRadialGradient(cx,cy,0,cx,cy,10);
+  core.addColorStop(0,'rgba(255,255,255,1)');
+  core.addColorStop(.7,'rgba(255,255,255,.9)');
+  core.addColorStop(1,'rgba(255,255,255,0)');
+  g.fillStyle=core;
+  g.beginPath(); g.arc(cx,cy,10,0,Math.PI*2); g.fill();
+  return new THREE.CanvasTexture(c);
+}
+const cometSprite = new THREE.Sprite(new THREE.SpriteMaterial({map:cometTexture(), transparent:true, depthWrite:false}));
+cometSprite.scale.set(5.5, 1.4, 1);
+cometSprite.center.set(80/512, 0.5);   // 锚点设在彗核，让彗核正好压在轨道上
+cometGroup.add(cometSprite);
+// 彗星椭圆轨道线
+function cometPos(theta){
+  const r = comet.a*(1-comet.e*comet.e)/(1+comet.e*Math.cos(theta));
+  return { x:r*Math.cos(theta), z:r*Math.sin(theta), r };
+}
+const cometOrbitPts=[];
+for(let i=0;i<=160;i++){ const th=i/160*Math.PI*2; const p=cometPos(th); cometOrbitPts.push(new THREE.Vector3(p.x,0,p.z)); }
+const cometOrbitLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints(cometOrbitPts),
+  new THREE.LineBasicMaterial({color:0x8899bb, transparent:true, opacity:0.35}));
+scene.add(cometOrbitLine);
+cometOrbitLine.visible = false;   // 轨道线随彗星一起默认隐藏
+
+// ===== 标签（太阳 + 八大行星 + 彗星） =====
+function makeLabel(text, color, onClick){
+  const d=document.createElement('div');
+  d.textContent=text;
+  d.style.cssText=`color:${color};font-size:20px;font-weight:700;text-shadow:0 0 8px rgba(0,0,0,.9);` +
+    (onClick ? 'pointer-events:auto;cursor:pointer;' : 'pointer-events:none;');
+  const o=new CSS2DObject(d);
+  if(onClick) d.addEventListener('click', onClick);
+  return o;
+}
+const sunLabel = makeLabel('太阳','#ffd98a'); scene.add(sunLabel);
+const labels = planets.map(p=>{ const lb=makeLabel(p.name,'#9ecbff', ()=>zoomPlanet(p.name)); scene.add(lb); return {lb, p}; });
+const cometLabel = makeLabel('哈雷彗星','#cfe0ff'); scene.add(cometLabel);
+cometLabel.visible = false;   // 彗星标签随彗星默认隐藏
+
+// 显示哈雷彗星（点列表"哈雷彗星"时调用）
+function showComet(){
+  cometShown = true;
+  cometGroup.visible = !scaleMode;
+  cometOrbitLine.visible = !scaleMode;
+  cometLabel.visible = !scaleMode;
+  focusOn(cometSprite, '哈雷彗星', '围绕太阳运转，轨道是一个很长、很扁的椭圆，主要由冰块和尘埃组成，分为彗核、彗发和彗尾三部分。', 'comet');
+}
+
+// 原比例模式下点击标签：放大该行星 + 聚焦 + 显示介绍
+function zoomPlanet(name){
+  if(!scaleMode) return;
+  // 恢复所有行星到真实比例
+  planets.forEach(p=>{
+    const realSize = SUN_R * p.realD / 109;
+    meshMap[p.name].scale.setScalar(realSize / p.size);
+  });
+  // 放大目标行星到可见大小（直径约1.5单位，不放大过头）
+  const p = planets.find(x=>x.name===name);
+  const mesh = meshMap[name];
+  mesh.scale.setScalar(1.5 / p.size);
+  // 聚焦相机
+  const target = mesh.position.clone();
+  controls.target.copy(target);
+  camera.position.set(target.x, target.y + 3, target.z + 5);
+  // 显示介绍
+  focusOn(mesh, name, p.desc, name);
+}
+
+// ===== 列表 =====
+const listEl = document.getElementById('list');
+// 列表图标：用 emoji 表示各天体
+const planetEmoji = {
+  '太阳':'☀️','水星':'🟤','金星':'🟡','地球':'🌍','火星':'🔴',
+  '木星':'🟠','土星':'🪐','天王星':'🔵','海王星':'🟣','哈雷彗星':'☄️',
+};
+
+function buildList(){
+  listEl.innerHTML='';
+  const items = [
+    {key:'sun', label:'太阳', fn:()=>focusOn(sun, '太阳', '太阳系的中心恒星，自身发光发热。八大行星都围绕太阳公转。', 'sun')},
+    ...planets.map(p=>({key:p.name, label:p.name, fn:()=>focusOn(meshMap[p.name], p.name, p.desc, p.name)})),
+    {key:'comet', label:'哈雷彗星', fn:()=>showComet()},
+  ];
+  items.forEach(it=>{
+    const b=document.createElement('button');
+    b.innerHTML=`<span class="dot">${planetEmoji[it.label]||'🪐'}</span>${it.label}`;
+    b.onclick=it.fn;
+    listEl.appendChild(b);
+  });
+}
+
+function focusOn(mesh, name, desc, key){
+  document.querySelectorAll('#list button').forEach(b=>b.classList.remove('active'));
+  // 高亮对应列表项
+  const idx = {sun:0, ...Object.fromEntries(planets.map((p,i)=>[p.name,i+1])), comet:planets.length+1}[key];
+  if(listEl.children[idx]) listEl.children[idx].classList.add('active');
+  const target = mesh.position.clone();
+  controls.target.copy(target);
+  const card = document.getElementById('card');
+  card.innerHTML = `<h3><span style="font-size:26px;">${planetEmoji[name]||'🪐'}</span> ${name}</h3>` +
+    `<div class="feat">${desc}</div>`;
+}
+
+// ===== raycaster 点击 =====
+const raycaster = new THREE.Raycaster(); const mouse = new THREE.Vector2();
+renderer.domElement.addEventListener('click', e=>{
+  mouse.x = (e.clientX/innerWidth)*2-1; mouse.y = -(e.clientY/innerHeight)*2+1;
+  raycaster.setFromCamera(mouse, camera);
+  const all = [sun, ...planets.map(p=>meshMap[p.name])];
+  const hits = raycaster.intersectObjects(all, false);
+  if(hits.length){
+    const obj = hits[0].object;
+    if(obj===sun){
+      focusOn(sun, '太阳', '太阳系的中心恒星，自身发光发热。八大行星都围绕太阳公转。', 'sun');
+    } else {
+      const p = obj.userData;
+      focusOn(obj, p.name, p.desc, p.name);
+    }
+  }
+});
+
+// ===== 原比例模式 =====
+let scaleMode = false;
+let cometShown = false;   // 是否点击过"哈雷彗星"（默认隐藏）
+function applyScale(){
+  if(scaleMode){
+    // 太阳保持 SUN_R=3（作为基准）；行星按真实直径比例缩放，轨道按真实 AU 比例
+    planets.forEach(p=>{
+      const realSize = SUN_R * p.realD / 109;      // 真实直径相对太阳
+      const realOrbit = 25 * p.realAU;             // 地球轨道=25，其余按 AU
+      meshMap[p.name].scale.setScalar(realSize / p.size);
+      orbitRings[planets.indexOf(p)].scale.setScalar(realOrbit / p.orbit);
+    });
+    cometGroup.visible = false;
+    cometOrbitLine.visible = false;
+    camera.position.set(0, 70, 160);
+    controls.target.set(0,0,0);
+    controls.minDistance = 15; controls.maxDistance = 1200;
+  } else {
+    planets.forEach(p=>{
+      meshMap[p.name].scale.setScalar(1);
+      orbitRings[planets.indexOf(p)].scale.setScalar(1);
+    });
+    cometGroup.visible = cometShown;
+    cometOrbitLine.visible = cometShown;
+    camera.position.set(0, 26, 40);
+    controls.target.set(0,0,0);
+    controls.minDistance = 6; controls.maxDistance = 90;
+  }
+  controls.update();
+  document.getElementById('scaleTip').classList.toggle('show', scaleMode);
+  document.getElementById('scaleBtn').classList.toggle('active', scaleMode);
+  document.getElementById('scaleBtn').textContent = scaleMode ? '🌐 示意比例' : '📏 原比例';
+}
+function toggleScale(){ scaleMode = !scaleMode; applyScale(); }
+
+// 缩放视角（触屏可用）：d>0 放大靠近，d<0 缩小拉远
+function zoomView(d){
+  const offset = new THREE.Vector3().subVectors(camera.position, controls.target);
+  const dist = offset.length();
+  const factor = d>0 ? 0.7 : 1.4;   // 放大缩到0.7倍距离，缩小拉到1.4倍
+  let nd = dist * factor;
+  nd = Math.max(controls.minDistance, Math.min(controls.maxDistance, nd));
+  const dir = offset.normalize();
+  camera.position.copy(controls.target).add(dir.multiplyScalar(nd));
+  controls.update();
+}
+
+// ===== 动画 =====
+let playing = true;
+const playBtn = document.getElementById('playBtn');
+playBtn.onclick = ()=>{ playing=!playing; playBtn.textContent = playing?'⏸ 暂停':'▶ 播放'; };
+const angles = {}; planets.forEach(p=>angles[p.name]=Math.random()*Math.PI*2);
+
+function animate(){
+  requestAnimationFrame(animate);
+  if(playing){
+    planets.forEach(p=>{
+      angles[p.name] += 0.006 * p.speed;
+      const m = meshMap[p.name];
+      const orbitScale = scaleMode ? (25*p.realAU)/p.orbit : 1;
+      m.position.set(Math.cos(angles[p.name])*p.orbit*orbitScale, 0, Math.sin(angles[p.name])*p.orbit*orbitScale);
+      m.rotation.y += 0.02;
+    });
+    // 彗星运动：沿椭圆轨道飞行，彗尾始终背离太阳
+    comet.theta += 0.006 * comet.speed;
+    const cp = cometPos(comet.theta);
+    cometSprite.position.set(cp.x, 0, cp.z);
+    const dir = new THREE.Vector3(cp.x, 0, cp.z).normalize();
+    cometSprite.material.rotation = Math.atan2(dir.z, dir.x);
+  }
+  // 标签跟随
+  sunLabel.position.set(0, SUN_R + 1.2, 0);
+  labels.forEach(({lb,p})=>{
+    const m = meshMap[p.name];
+    const off = scaleMode ? 1.0 : (p.size + 0.7);
+    lb.position.set(m.position.x, m.position.y + off, m.position.z);
+  });
+  cometLabel.position.set(cometSprite.position.x, cometSprite.position.y + 1.0, cometSprite.position.z);
+  cometLabel.visible = cometGroup.visible && !scaleMode;
+
+  controls.update();
+  renderer.render(scene, camera);
+  labelRenderer.render(scene, camera);
+}
+
+window.showRule = v=>document.getElementById('ruleModal').style.display = v?'flex':'none';
+window.resetView = ()=>{ camera.position.set(scaleMode?0:0, scaleMode?70:26, scaleMode?160:40); controls.target.set(0,0,0); controls.update(); };
+window.toggleScale = toggleScale;
+window.zoomView = zoomView;
+
+/* ===== 判断挑战：双人对战（同时作答，先答对者得 1 分 = 多 1 颗行星） ===== */
+const QUIZ = [
+  {type:'judge', q:'行星围绕太阳公转。', opts:['对','错'], right:0, why:'行星的第一个特征，就是围绕太阳公转。'},
+  {type:'judge', q:'行星自身会发光发热。', opts:['对','错'], right:1, why:'行星自身不发光，只有恒星（如太阳）才自己发光。'},
+  {type:'judge', q:'行星的公转轨道，是接近正圆的椭圆轨道。', opts:['对','错'], right:0, why:'行星围绕太阳运转的轨迹叫公转轨道，是接近正圆的椭圆轨道。'},
+  {type:'judge', q:'行星能够通过引力，清空轨道附近的碎物。', opts:['对','错'], right:0, why:'能清空轨道附近碎物，是行星的重要特征。'},
+  {type:'choice', q:'下列哪个是行星？', opts:['A. 太阳','B. 木星','C. 月球'], right:1, why:'木星是太阳系最大的行星；太阳是恒星，月球是卫星。'},
+  {type:'choice', q:'下列哪个不是行星？', opts:['A. 地球','B. 金星','C. 哈雷彗星'], right:2, why:'哈雷彗星轨道又长又扁、彗核不是球体，不是行星。'},
+  {type:'choice', q:'太阳系的中心是？', opts:['A. 地球','B. 太阳','C. 月球'], right:1, why:'太阳是太阳系的中心，八大行星都围绕太阳公转。'},
+  {type:'choice', q:'下列哪个天体自身会发光？', opts:['A. 太阳','B. 地球','C. 火星'], right:0, why:'太阳是恒星，自己发光；行星自身不发光。'},
+];
+let qState = { idx:0, answered:false, locked:{p1:false,p2:false}, scores:{p1:0,p2:0} };
+
+// 得 1 分点亮 1 颗行星，按离太阳从近到远：水金地火木土天海
+const PLANET_ORDER = ['🟤','🟡','🌍','🔴','🟠','🪐','🔵','🟣'];
+function renderPlanets(p){
+  const box = document.getElementById(p==='p1'?'planets1':'planets2');
+  const sc = qState.scores[p];
+  box.innerHTML = PLANET_ORDER.map((e,i)=>
+    `<span class="slot${i<sc?' on':''}">${i<sc?e:''}</span>`).join('');
+}
+function renderQuiz(){
+  const q = QUIZ[qState.idx];
+  document.getElementById('qNum').textContent = `第 ${qState.idx+1} / ${QUIZ.length} 题`;
+  document.getElementById('qType').textContent = q.type==='judge' ? '【判断题】' : '【选择题】';
+  document.getElementById('qText').textContent = q.q;
+  const res = document.getElementById('qResult');
+  res.textContent = ''; res.className = 'qresult';
+  qState.answered = false; qState.locked = {p1:false,p2:false};
+  ['p1','p2'].forEach(p=>{
+    const el = document.getElementById(p);
+    el.classList.remove('got','locked');
+    const ansBox = document.getElementById(p==='p1'?'ans1':'ans2');
+    ansBox.innerHTML = q.opts.map((o,i)=>{
+      const cls = q.type==='judge' ? (i===0?'yes':'no') : 'abc';
+      return `<button class="${cls}" onclick="tryAnswer('${p}',${i})">${o}</button>`;
+    }).join('');
+  });
+  renderPlanets('p1'); renderPlanets('p2');
+  document.getElementById('score1').textContent = qState.scores.p1;
+  document.getElementById('score2').textContent = qState.scores.p2;
+  document.getElementById('nextBtn').style.display = 'none';
+  document.getElementById('restartBtn').style.display = 'none';
+}
+window.showQuiz = v=>{
+  document.getElementById('quiz').classList.toggle('show', v);
+  clearTimeout(autoNextTimer);
+  if(v){ qState = {idx:0, answered:false, locked:{p1:false,p2:false}, scores:{p1:0,p2:0}}; renderQuiz(); }
+};
+
+/* ===== 音效（Web Audio 合成，零外部依赖） ===== */
+let audioCtx = null;
+function playSound(type){
+  try{ audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ return; }
+  if(audioCtx.state==='suspended') audioCtx.resume();
+  const t = audioCtx.currentTime;
+  if(type==='ok'){
+    // 答对：胜利欢呼——明亮上行琶音 C-E-G-C'-E' + 低音和声
+    [523.25, 659.25, 783.99, 1046.50, 1318.51].forEach((f,i)=>{
+      const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+      o.type='triangle'; o.frequency.value=f;
+      const st = t + i*0.07;
+      const dur = (i===4) ? 0.4 : 0.14;
+      g.gain.setValueAtTime(0.0001, st);
+      g.gain.exponentialRampToValueAtTime(0.35, st+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, st+dur);
+      o.connect(g).connect(audioCtx.destination);
+      o.start(st); o.stop(st+dur+0.03);
+    });
+    [261.63, 329.63, 392.00].forEach((f,i)=>{
+      const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+      o.type='sine'; o.frequency.value=f;
+      const st = t + i*0.07;
+      g.gain.setValueAtTime(0.0001, st);
+      g.gain.exponentialRampToValueAtTime(0.16, st+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, st+0.16);
+      o.connect(g).connect(audioCtx.destination);
+      o.start(st); o.stop(st+0.18);
+    });
+  } else {
+    // 答错：低沉短促音
+    const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+    o.type='square'; o.frequency.value=180;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.2, t+0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t+0.28);
+    o.connect(g).connect(audioCtx.destination);
+    o.start(t); o.stop(t+0.3);
+  }
+}
+
+/* ===== 答完 2 秒后自动下一题 ===== */
+let autoNextTimer = null;
+function scheduleNext(){
+  clearTimeout(autoNextTimer);
+  autoNextTimer = setTimeout(()=>nextQuiz(), 2000);
+}
+
+window.tryAnswer = (p, i)=>{
+  if(qState.answered || qState.locked[p]) return;   // 本题已结束 或 该学生已答错锁定
+  const q = QUIZ[qState.idx];
+  const correct = (i === q.right);
+  const other = p==='p1'?'p2':'p1';
+  const name = p==='p1'?'1号':'2号';
+  const otherName = other==='p1'?'1号':'2号';
+  const res = document.getElementById('qResult');
+  if(correct){
+    qState.scores[p]++;
+    qState.answered = true;
+    playSound('ok');
+    document.getElementById(p).classList.add('got');
+    document.getElementById(other).classList.add('locked');
+    res.className = 'qresult ok';
+    res.innerHTML = `✅ ${name}同学先答对了！+1 🪐<br>${q.why}`;
+    renderPlanets(p);
+    document.getElementById('score1').textContent = qState.scores.p1;
+    document.getElementById('score2').textContent = qState.scores.p2;
+    const nb = document.getElementById('nextBtn');
+    nb.style.display = '';
+    nb.textContent = qState.idx < QUIZ.length-1 ? '下一题 ▶' : '查看结果 🏆';
+    scheduleNext();
+  } else {
+    qState.locked[p] = true;
+    playSound('no');
+    document.getElementById(p).classList.add('locked');
+    if(qState.locked[other]){
+      qState.answered = true;
+      res.className = 'qresult no';
+      res.innerHTML = `❌ 两位都答错了。正确答案是「${q.opts[q.right]}」。<br>${q.why}`;
+      const nb = document.getElementById('nextBtn');
+      nb.style.display = '';
+      nb.textContent = qState.idx < QUIZ.length-1 ? '下一题 ▶' : '查看结果 🏆';
+      scheduleNext();
+    } else {
+      res.className = 'qresult no';
+      res.innerHTML = `❌ ${name}同学答错了，${otherName}同学继续！`;
+    }
+  }
+};
+window.nextQuiz = ()=>{
+  clearTimeout(autoNextTimer);
+  if(qState.idx < QUIZ.length-1){ qState.idx++; renderQuiz(); }
+  else showResult();
+};
+function showResult(){
+  const s1=qState.scores.p1, s2=qState.scores.p2;
+  let w;
+  if(s1>s2) w='🔴 1号同学 获胜！';
+  else if(s2>s1) w='🔵 2号同学 获胜！';
+  else w='🤝 平局！';
+  document.getElementById('qNum').textContent = '挑战结束';
+  document.getElementById('qType').textContent = '';
+  document.getElementById('qText').innerHTML = w + '<br><span style="font-size:40px;">🪐 ' + s1 + ' : ' + s2 + ' 🪐</span>';
+  const res = document.getElementById('qResult');
+  res.textContent=''; res.className='qresult';
+  ['p1','p2'].forEach(p=>{
+    document.getElementById(p).classList.remove('got','locked');
+    document.getElementById(p==='p1'?'ans1':'ans2').innerHTML='';
+  });
+  document.getElementById('nextBtn').style.display='none';
+  document.getElementById('restartBtn').style.display='';
+}
+window.restartQuiz = ()=>{
+  clearTimeout(autoNextTimer);
+  qState = {idx:0, answered:false, locked:{p1:false,p2:false}, scores:{p1:0,p2:0}};
+  renderQuiz();
+};
+
+addEventListener('resize', ()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); labelRenderer.setSize(innerWidth, innerHeight); });
+
+buildList();
+animate();
+</script>
+
+
+<!-- ================= 开物AI科学 · 版权模块（单击显示 / 双击打开官网） ================= -->
+<style id="kaiming-copyright-style">
+  #kaiming-copyright {
+    position: fixed;
+    bottom: 90px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    pointer-events: none;
+    z-index: 999999;
+    transition: opacity 0.45s ease;
+    opacity: 0;
+    display: none;
+  }
+  #kaiming-copyright .inner {
+    display: inline-block;
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #eafaf2;
+    padding: 9px 26px;
+    border-radius: 60px;
+    /* 原稿为 14px；此处改为 16px 以符合本机 verify_html.py 的「字号不得小于 16px」硬规则 */
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.6px;
+    border: 1px solid rgba(255, 245, 210, 0.3);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+    font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+    white-space: nowrap;
+  }
+</style>
+
+<div id="kaiming-copyright">
+  <div class="inner">© 2026 开物AI科学 ｜ AI 赋能 · 教育公平</div>
+</div>
+
+<script id="kaiming-copyright-script">
+(function () {
+  "use strict";
+
+  /* 目标：单击标题 → 显示版权 3.5 秒；双击标题 → 打开 www.kaiwuaiscience.com */
+
+  const HOMEPAGE = "https://www.kaiwuaiscience.com";
+  const SHOW_MS = 3500;      // 版权显示时长
+  const DBL_WINDOW = 280;    // 双击判定的时间窗（毫秒）
+  const FADE_MS = 450;       // 淡出时长，与 CSS transition 一致
+
+  function bindCopyright() {
+    // 首选 #mainTitle（注入脚本会保证它存在）；后三个选择器是手写粘贴时的兜底
+    const title = document.getElementById("title") ||
+                  document.querySelector("h1, .title, .page-title, .main-title");
+    const box = document.getElementById("kaiming-copyright");
+    if (!title || !box) return;
+
+    title.style.cursor = "pointer";
+    title.style.userSelect = "none";
+    title.style.webkitUserSelect = "none";
+
+    let clickTimer = null;
+    let hideTimer = null;
+    let seq = 0;   // 每次显示/隐藏都 +1，用来作废在飞的定时器
+
+    function showCopyright() {
+      const my = ++seq;
+      if (hideTimer) clearTimeout(hideTimer);
+      box.style.display = "block";
+      /* 强制重绘，让 0 → 1 的淡入真的发生。
+         这里刻意不用 requestAnimationFrame：rAF 在页面不产生新帧时（后台标签页、
+         无头渲染、大屏久置）不保证触发——一旦它晚于下方的隐藏定时器回调，
+         就会把 opacity 又设成 1，导致版权条永久停在屏幕上。 */
+      void box.offsetHeight;
+      box.style.opacity = "1";
+      hideTimer = setTimeout(function () {
+        if (my !== seq) return;      // 期间又被点过，交给新的那一次收尾
+        box.style.opacity = "0";
+        setTimeout(function () {
+          if (my === seq) box.style.display = "none";
+        }, FADE_MS);
+      }, SHOW_MS);
+    }
+
+    function hideCopyright() {
+      const my = ++seq;              // 作废所有在飞的定时器，避免"淡出到一半又被点亮"卡住
+      if (hideTimer) clearTimeout(hideTimer);
+      if (box.style.display !== "block") return;
+      box.style.opacity = "0";
+      setTimeout(function () {
+        if (my === seq) box.style.display = "none";
+      }, FADE_MS);
+    }
+
+    function openHomepage() {
+      // 双击时隐藏版权，并跳转官网
+      hideCopyright();
+      window.open(HOMEPAGE, "_blank", "noopener,noreferrer");
+    }
+
+    title.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (clickTimer) return;   // 已在等待双击窗口，忽略这次单击
+      clickTimer = setTimeout(function () {
+        clickTimer = null;
+        showCopyright();        // 确认是单击
+      }, DBL_WINDOW);
+    });
+
+    title.addEventListener("dblclick", function (e) {
+      e.stopPropagation();
+      if (clickTimer) {         // 取消挂起的单击
+        clearTimeout(clickTimer);
+        clickTimer = null;
+      }
+      openHomepage();
+    });
+
+    // 点击页面其它地方，立即隐藏版权
+    document.addEventListener("click", function (e) {
+      if (e.target === title) return;
+      hideCopyright();
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bindCopyright);
+  } else {
+    bindCopyright();
+  }
+})();
+</script>
+<!-- ================= 开物AI科学 · 版权模块 结束 ================= -->
+
+</body>
+</html>

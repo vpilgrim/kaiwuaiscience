@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>模拟实验：小水珠从哪儿来</title>
+    <style>
+        /* ================= 基础变量与全局设定 (完全保留原版) ================= */
+        :root {
+            --theme-main: #0984e3;
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --text-dark: #2c3e50;
+            --success: #00b894;
+            --cold: #00cec9;
+            --drop: #74b9ff;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-drag: none; touch-action: none; }
+        body { 
+            font-family: 'Segoe UI', "Microsoft YaHei", sans-serif; 
+            color: var(--text-dark); overflow: hidden; height: 100vh; display: flex; flex-direction: column;
+            background: linear-gradient(135deg, #dff9fb 0%, #a29bfe 100%);
+            align-items: center; justify-content: center;
+        }
+
+        .vapor-bg { 
+            position: absolute; width: 200%; height: 100%; top: 0; left: 0; z-index: -1; opacity: 0.5; pointer-events: none; 
+            background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.9) 0%, transparent 60%);
+            background-size: 800px 800px; animation: vaporMove 20s infinite alternate linear; 
+        }
+        @keyframes vaporMove { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(-10%, -5%) scale(1.2); } }
+
+        header { text-align: center; margin-bottom: 20px; z-index: 10;}
+        header h1 { font-size: 42px; color: #2d3436; text-shadow: 0 4px 10px rgba(255,255,255,0.8); letter-spacing: 2px;}
+
+        .layout-lab { 
+            display: flex; gap: 30px; width: 95%; max-width: 1400px; height: 700px; 
+            background: var(--glass-bg); backdrop-filter: blur(20px); 
+            border: 2px solid rgba(255,255,255,0.6); border-radius: 30px; 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.1); padding: 30px; z-index: 10;
+        }
+
+        /* --- 左侧材料区 --- */
+        .tools-panel { flex: 0.25; display: flex; flex-direction: column; gap: 30px; align-items: center; border-right: 3px dashed #b2bec3; padding-right: 30px;}
+        .tools-title { font-size: 26px; color: #2d3436; width: 100%; text-align: left; font-weight: bold; margin-bottom: -10px;}
+        .tools-subtitle { font-size: 15px; color: #636e72; font-weight: normal; margin-top: 5px; display: block;}
+        
+        .drag-item { 
+            width: 100%; padding: 20px; background: white; border: 4px solid #dfe6e9; border-radius: 20px; 
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05); cursor: grab; transition: 0.2s; 
+            display: flex; flex-direction: column; align-items: center; gap: 10px;
+        }
+        .drag-item:active { transform: scale(0.95); border-color: var(--theme-main); }
+        .drag-item.locked { opacity: 0.4; pointer-events: none; filter: grayscale(1); }
+        .item-icon { font-size: 65px; pointer-events: none;}
+        .item-name { font-size: 24px; font-weight: bold; color: #333; pointer-events: none; text-align: center;}
+
+        .dragging-ghost {
+            position: fixed; pointer-events: none; z-index: 9999; 
+            transform: translate(-50%, -50%) scale(1.2);
+            font-size: 80px; filter: drop-shadow(0 15px 15px rgba(0,0,0,0.3));
+        }
+
+        /* --- 中央实验舞台 --- */
+        .lab-stage { 
+            flex: 0.45; border-radius: 24px; position: relative; background: #fff; 
+            box-shadow: inset 0 10px 30px rgba(0,0,0,0.05); border: 8px solid #dfe6e9; 
+            display: flex; justify-content: center; align-items: flex-end; padding-bottom: 80px;
+        }
+        
+        .drop-zone { position: absolute; border: 4px dashed transparent; border-radius: 20px; transition: 0.3s; z-index: 8; }
+        .drop-zone.active-target { border-color: var(--theme-main); background: rgba(9, 132, 227, 0.1); animation: pulse-warn 1s infinite;}
+        #zoneIce { bottom: 80px; left: 50%; transform: translateX(-50%); width: 220px; height: 180px; }
+        #zoneCover { top: 120px; left: 50%; transform: translateX(-50%); width: 340px; height: 80px; display: none;}
+
+        .cup-container { position: relative; width: 300px; height: 400px; z-index: 5; }
+        .cup-cold { filter: drop-shadow(0 0 30px rgba(0, 206, 201, 0.5)); transition: filter 2s; }
+        
+        .ice-cubes { 
+            position: absolute; bottom: 42px; left: 50%; transform: translateX(-50%); 
+            width: 170px; height: 120px; z-index: 4; pointer-events: none;
+        }
+
+        .glass-cover-3d { 
+            position: absolute; top: -120px; left: 50%; transform: translateX(-50%); 
+            width: 320px; height: 110px; z-index: 20; opacity: 0; 
+            transition: top 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.5s;
+            /* 修改为 auto，允许水珠可以被交互擦拭 */
+            pointer-events: auto; 
+        }
+        .glass-cover-3d.closed { top: 0px; opacity: 1; }
+
+        .drops-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 21; pointer-events: none;}
+        .water-drop {
+            position: absolute; background: var(--drop); 
+            border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
+            box-shadow: inset -1px -3px 3px rgba(255,255,255,0.6), 0 2px 3px rgba(0,0,0,0.2);
+            opacity: 0; transform: scale(0.2); 
+            transition: opacity 1.5s ease-out, transform 1.5s ease-out;
+            /* 新增擦拭相关的属性 */
+            cursor: pointer; pointer-events: auto;
+        }
+
+        #vaporCanvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; }
+
+        /* ================= 【新功能】温度计UI ================= */
+        .thermometer {
+            position: absolute; right: 20px; bottom: 80px; width: 40px; height: 260px;
+            background: rgba(255,255,255,0.8); border: 3px solid #dfe6e9; border-radius: 20px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05); display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 10px; z-index: 6; pointer-events: none; transition: 0.3s;
+        }
+        .thermo-bar {
+            width: 12px; height: 180px; background: #eee; border-radius: 10px; margin-bottom: 5px;
+            position: relative; overflow: hidden; box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .thermo-liquid {
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 80%;
+            background: linear-gradient(to top, #e17055, #fab1a0); border-radius: 10px; transition: height 1s ease-in-out, background 1s;
+        }
+        .thermo-bulb {
+            width: 24px; height: 24px; background: #e17055; border-radius: 50%;
+            box-shadow: inset -2px -2px 5px rgba(0,0,0,0.2); transition: background 1s;
+        }
+        .thermo-label {
+            position: absolute; top: -30px; font-weight: bold; font-size: 16px; color: #636e72;
+            width: 100px; text-align: center;
+        }
+        
+        /* 擦拭互动提示文本 */
+        .wipe-hint {
+            position: absolute; top: 20px; width: 100%; text-align: center; font-size: 18px; 
+            color: var(--theme-main); font-weight: bold; opacity: 0; transition: 0.5s; pointer-events: none;
+            text-shadow: 0 2px 5px rgba(255,255,255,0.9); z-index: 30;
+        }
+
+        /* --- 右侧交互面板 --- */
+        .action-panel { flex: 0.3; display: flex; flex-direction: column; gap: 30px; padding-left: 20px; position: relative;}
+        
+        .action-btn {
+            padding: 25px 20px; font-size: 26px; font-weight: bold; border-radius: 20px; border: none;
+            background: #b2bec3; color: white; cursor: not-allowed; transition: 0.3s;
+            display: flex; align-items: center; justify-content: center; gap: 15px;
+        }
+        .action-btn.ready { background: linear-gradient(135deg, var(--theme-main), #00a8ff); cursor: pointer; box-shadow: 0 10px 25px rgba(9, 132, 227, 0.4); }
+        .action-btn.ready:active { transform: scale(0.95); box-shadow: 0 5px 10px rgba(9, 132, 227, 0.3); }
+        .action-btn.ready:hover { transform: translateY(-5px); }
+
+        .result-box {
+            background: white; border: 4px solid var(--success); border-radius: 20px; padding: 30px;
+            font-size: 26px; color: #27ae60; font-weight: bold; line-height: 1.6; text-align: justify;
+            opacity: 0; transform: translateY(20px); transition: 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 15px 30px rgba(46, 204, 113, 0.15);
+        }
+        .result-box.show { opacity: 1; transform: translateY(0); }
+
+        .reset-btn { position: absolute; bottom: 0; right: 0; padding: 15px 30px; font-size: 20px; font-weight: bold; background: white; border: 3px solid #ccc; color: #777; border-radius: 15px; cursor: pointer; transition: 0.2s;}
+        .reset-btn:active { transform: scale(0.95); }
+
+        @keyframes pulse-warn { 0% { box-shadow: 0 0 0 0 rgba(9, 132, 227, 0.4); } 100% { box-shadow: 0 0 0 15px rgba(9, 132, 227, 0); } }
+    </style>
+</head>
+<body>
+    <div class="vapor-bg"></div>
+
+    <header>
+        <h1 id="mainTitle">🧪 互动实验：小水珠从哪儿来</h1>
+        <p style="font-size: 22px; color: #636e72; font-weight: bold; margin-top: 10px;">
+            请把左侧的材料拖入杯中，观察奇妙的物理现象
+        </p>
+    </header>
+
+    <div class="layout-lab">
+        <!-- 左侧材料库 -->
+        <div class="tools-panel">
+            <div class="tools-title">第一步：放入冰块
+                <span class="tools-subtitle">(放入冰块，可多放几块)</span>
+            </div>
+            <div class="drag-item" id="itemIce" data-type="ice">
+                <div class="item-icon">🧊</div>
+                <div class="item-name">冰块</div>
+            </div>
+
+            <div class="tools-title" style="margin-top: 20px;">第二步：盖上玻璃片</div>
+            <div class="drag-item locked" id="itemCover" data-type="cover">
+                <div class="item-icon">🪟</div>
+                <div class="item-name">方形玻璃片</div>
+            </div>
+        </div>
+        
+        <!-- 中央实验舞台 -->
+        <div class="lab-stage" id="labStage">
+            
+            <!-- 【新功能】杯内温度计 -->
+            <div class="thermometer">
+                <div class="thermo-label">杯内: <span id="tempValue">25</span>℃</div>
+                <div class="thermo-bar"><div class="thermo-liquid" id="tempLiquid"></div></div>
+                <div class="thermo-bulb" id="tempBulb"></div>
+            </div>
+
+            <!-- 【新功能】擦拭提示 -->
+            <div class="wipe-hint" id="wipeHint">✨ 试试用鼠标/手指擦掉玻璃片上的水珠吧！</div>
+
+            <!-- 磁吸区 -->
+            <div class="drop-zone" id="zoneIce"></div>
+            <div class="drop-zone" id="zoneCover"></div>
+            
+            <!-- 粒子系统 -->
+            <canvas id="vaporCanvas"></canvas>
+            
+            <!-- 3D 实验装置容器 -->
+            <div class="cup-container" id="cupWrapper">
+                
+                <!-- 3D 方形玻璃盖 -->
+                <div class="glass-cover-3d" id="glassCover">
+                    <svg viewBox="0 0 320 110" width="100%" height="100%" style="pointer-events: none;">
+                        <defs>
+                            <linearGradient id="glassGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="rgba(255, 255, 255, 0.85)"/>
+                                <stop offset="30%" stop-color="rgba(225, 245, 254, 0.5)"/>
+                                <stop offset="70%" stop-color="rgba(179, 229, 252, 0.4)"/>
+                                <stop offset="100%" stop-color="rgba(255, 255, 255, 0.75)"/>
+                            </linearGradient>
+                        </defs>
+                        <polygon points="15,50 160,90 160,98 15,58" fill="rgba(129, 212, 250, 0.8)" stroke="#4fc3f7" stroke-width="1"/>
+                        <polygon points="160,90 305,50 305,58 160,98" fill="rgba(79, 195, 247, 0.9)" stroke="#29b6f6" stroke-width="1"/>
+                        <polygon points="160,10 305,50 160,90 15,50" fill="url(#glassGrad)" stroke="rgba(255,255,255,0.95)" stroke-width="3"/>
+                        <line x1="80" y1="30" x2="200" y2="65" stroke="rgba(255,255,255,0.7)" stroke-width="3" stroke-linecap="round"/>
+                        <line x1="60" y1="45" x2="120" y2="65" stroke="rgba(255,255,255,0.5)" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <!-- 水珠容器 -->
+                    <div class="drops-container" id="dropsContainer"></div>
+                </div>
+
+                <!-- 冰块容器 -->
+                <div class="ice-cubes" id="iceCubes"></div>
+
+                <!-- 3D 玻璃杯 -->
+                <svg viewBox="0 0 300 400" width="100%" height="100%" style="pointer-events: none;">
+                    <defs>
+                        <linearGradient id="cupGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stop-color="rgba(255,255,255,0.3)"/>
+                            <stop offset="20%" stop-color="rgba(255,255,255,0.75)"/>
+                            <stop offset="50%" stop-color="rgba(255,255,255,0.1)"/>
+                            <stop offset="80%" stop-color="rgba(255,255,255,0.6)"/>
+                            <stop offset="100%" stop-color="rgba(255,255,255,0.2)"/>
+                        </linearGradient>
+                    </defs>
+                    <path d="M 30 50 L 50 350 A 100 20 0 0 0 250 350 L 270 50 Z" fill="url(#cupGrad)" stroke="#b2bec3" stroke-width="3"/>
+                    <ellipse cx="150" cy="350" rx="100" ry="20" fill="rgba(223, 230, 233, 0.6)" stroke="#b2bec3" stroke-width="3"/>
+                    <ellipse cx="150" cy="50" rx="120" ry="20" fill="rgba(255,255,255,0.2)" stroke="#ffffff" stroke-width="4"/>
+                </svg>
+            </div>
+        </div>
+
+        <!-- 右侧交互面板 -->
+        <div class="action-panel">
+            <button class="action-btn" id="btnObserve" onclick="triggerObservation()">
+                <span>👀</span> 点击观察现象
+            </button>
+            <button class="action-btn" id="btnConclude" onclick="triggerConclusion()">
+                <span>💡</span> 点击得出结论
+            </button>
+            
+            <div class="result-box" id="resultBox">
+                当空气中看不见的水蒸气，遇到<strong>温度很低</strong>的玻璃片时，就会发生<strong>凝结</strong>现象，变成液态的<strong>小水珠</strong>。
+            </div>
+
+            <button class="reset-btn" onclick="resetExperiment()">🔄 重新实验</button>
+        </div>
+    </div>
+
+    <script>
+        // ================= 【新功能】音频合成器引擎 (无需外部资源) =================
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx;
+        function initAudio() { if(!audioCtx) audioCtx = new AudioContext(); }
+
+        function playSound(type) {
+            if(!audioCtx || audioCtx.state === 'suspended') return;
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            if (type === 'ice') { // 冰块撞击声
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(800 + Math.random()*200, audioCtx.currentTime);
+                gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+            } else if (type === 'cover') { // 盖玻璃声
+                osc.type = 'sine'; osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                gainNode.gain.setValueAtTime(0.8, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+            } else if (type === 'drop') { // 水珠擦拭声
+                osc.type = 'sine'; osc.frequency.setValueAtTime(1200 + Math.random()*300, audioCtx.currentTime);
+                gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+            } else if (type === 'success') { // 成功音效
+                osc.type = 'sine'; osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+                osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1); // E5
+                osc.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.2); // G5
+                gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.5);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+            }
+        }
+
+        // ================= 【新功能】温度控制系统 =================
+        let currentTemp = 25; // 初始室温
+        function updateThermometer() {
+            let percent = (currentTemp / 30) * 100; // 假定最高30度为满管
+            document.getElementById('tempValue').innerText = currentTemp;
+            document.getElementById('tempLiquid').style.height = percent + '%';
+            
+            // 温度极低时，液体变成冷色调
+            if(currentTemp <= 5) {
+                document.getElementById('tempLiquid').style.background = 'linear-gradient(to top, #0984e3, #74b9ff)';
+                document.getElementById('tempBulb').style.background = '#0984e3';
+            } else {
+                document.getElementById('tempLiquid').style.background = 'linear-gradient(to top, #e17055, #fab1a0)';
+                document.getElementById('tempBulb').style.background = '#e17055';
+            }
+        }
+        updateThermometer();
+
+        // ================= 拖拽交互系统 (完全保留原版) =================
+        const dragItems = document.querySelectorAll('.drag-item');
+        let activeItem = null;
+        let ghost = null;
+        let currentIceCount = 0;
+        
+        function getPos(e) {
+            let cx = e.touches ? e.touches[0].clientX : e.clientX;
+            let cy = e.touches ? e.touches[0].clientY : e.clientY;
+            return { x: cx, y: cy };
+        }
+        function getCenter(el) {
+            let rect = el.getBoundingClientRect();
+            return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+        }
+
+        dragItems.forEach(item => {
+            let startDrag = (e) => {
+                initAudio(); // 初始化音频
+                if (item.classList.contains('locked')) return;
+                e.preventDefault();
+                activeItem = item;
+                
+                ghost = document.createElement('div');
+                ghost.className = 'dragging-ghost';
+                ghost.innerText = item.querySelector('.item-icon').innerText;
+                document.body.appendChild(ghost);
+                
+                let pos = getPos(e);
+                ghost.style.left = pos.x + 'px'; ghost.style.top = pos.y + 'px';
+                item.style.opacity = '0.3'; 
+            };
+            item.addEventListener('mousedown', startDrag);
+            item.addEventListener('touchstart', startDrag, {passive: false});
+        });
+
+        function moveDrag(e) {
+            if (!activeItem || !ghost) return;
+            e.preventDefault();
+            let pos = getPos(e);
+            ghost.style.left = pos.x + 'px'; ghost.style.top = pos.y + 'px';
+
+            let targetZone = activeItem.dataset.type === 'ice' ? document.getElementById('zoneIce') : document.getElementById('zoneCover');
+            if(targetZone.style.display !== 'none') {
+                let targetCenter = getCenter(targetZone);
+                let dist = Math.hypot(pos.x - targetCenter.x, pos.y - targetCenter.y);
+                if(dist < 200) targetZone.classList.add('active-target');
+                else targetZone.classList.remove('active-target');
+            }
+        }
+
+        function endDrag(e) {
+            if (!activeItem || !ghost) return;
+            let ex = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+            let ey = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+            let itemType = activeItem.dataset.type;
+            let targetZone = itemType === 'ice' ? document.getElementById('zoneIce') : document.getElementById('zoneCover');
+            let targetCenter = getCenter(targetZone);
+            let dist = Math.hypot(ex - targetCenter.x, ey - targetCenter.y);
+
+            targetZone.classList.remove('active-target');
+
+            if(dist < 200 && targetZone.style.display !== 'none') {
+                if (itemType === 'ice') {
+                    onIcePlaced();
+                } else if (itemType === 'cover') {
+                    activeItem.classList.add('locked');
+                    activeItem.style.opacity = '0.3';
+                    onCoverPlaced();
+                }
+            } else {
+                activeItem.style.opacity = '1';
+            }
+            ghost.remove(); ghost = null; activeItem = null;
+        }
+
+        document.addEventListener('mousemove', moveDrag);
+        document.addEventListener('touchmove', moveDrag, {passive: false});
+        document.addEventListener('mouseup', endDrag);
+        document.addEventListener('touchend', endDrag);
+
+        // ================= 实验流程控制 =================
+        function onIcePlaced() {
+            currentIceCount++;
+            playSound('ice'); // 播放冰块音效
+
+            // 【新功能】温度下降逻辑
+            currentTemp = Math.max(0, currentTemp - 6); 
+            updateThermometer();
+
+            let iceContainer = document.getElementById('iceCubes');
+            let layer = Math.floor((currentIceCount - 1) / 2); 
+            let isLeft = (currentIceCount % 2 !== 0);
+            
+            let x = isLeft ? Math.random() * 15 + 10 : Math.random() * 15 + 75;
+            let bottomOffset = layer * 16; 
+            let rot = Math.random() * 40 - 20;
+
+            let iceBox = document.createElement('div');
+            iceBox.style.position = 'absolute';
+            iceBox.style.left = x + 'px';
+            iceBox.style.bottom = bottomOffset + 'px';
+            iceBox.style.transition = 'all 0.5s ease-out';
+            
+            iceBox.innerHTML = `
+                <svg viewBox="0 0 100 100" style="width:68px; transform:rotate(${rot}deg) rotateX(15deg); filter: drop-shadow(0 6px 8px rgba(0,0,0,0.15)); transition: transform 60s linear, opacity 60s linear;">
+                    <rect x="10" y="10" width="80" height="80" rx="15" fill="rgba(116, 185, 255, 0.88)" stroke="#0984e3" stroke-width="4"/>
+                    <path d="M20 20 L40 20 M20 20 L20 40" stroke="white" stroke-width="4" stroke-linecap="round"/>
+                </svg>`;
+                
+            iceContainer.appendChild(iceBox);
+
+            setTimeout(() => { 
+                let svg = iceBox.querySelector('svg');
+                if(svg) {
+                    svg.style.transform = `scale(0.65) translateY(20px) rotate(${rot}deg)`;
+                    svg.style.opacity = '0.35'; 
+                }
+            }, 100);
+
+            document.getElementById('cupWrapper').classList.add('cup-cold');
+            document.getElementById('itemCover').classList.remove('locked');
+            document.getElementById('zoneCover').style.display = 'block';
+            document.getElementById('itemIce').style.opacity = '1';
+        }
+
+        function onCoverPlaced() {
+            playSound('cover'); // 播放玻璃盖音效
+
+            document.getElementById('zoneCover').style.display = 'none';
+            document.getElementById('zoneIce').style.display = 'none';
+            document.getElementById('itemIce').classList.add('locked');
+            document.getElementById('glassCover').classList.add('closed');
+            
+            let obsBtn = document.getElementById('btnObserve');
+            obsBtn.classList.add('ready');
+        }
+
+        // ================= 现象与水珠特效 =================
+        function triggerObservation() {
+            let obsBtn = document.getElementById('btnObserve');
+            if(!obsBtn.classList.contains('ready')) return;
+            
+            obsBtn.classList.remove('ready');
+            obsBtn.style.background = '#00b894';
+            obsBtn.innerHTML = "<span>👀</span> 正在观察(冷凝中)...";
+            
+            initParticleCanvas();
+            startParticles();
+            
+            setTimeout(() => {
+                spawnWaterDropsSlowly();
+            }, 5000);
+        }
+
+        function spawnWaterDropsSlowly() {
+            let container = document.getElementById('dropsContainer');
+            let totalDrops = 12 + currentIceCount * 4; 
+            let dropInterval = 1000; 
+
+            for(let i = 0; i < totalDrops; i++) {
+                setTimeout(() => {
+                    let drop = document.createElement('div');
+                    drop.className = 'water-drop';
+                    
+                    let size = Math.random() * 8 + 6;
+                    drop.style.width = size + 'px';
+                    drop.style.height = size + 'px';
+
+                    let u = (Math.random() - 0.5) * 1.5;
+                    let v = (Math.random() - 0.5) * 1.5;
+                    if (Math.abs(u) + Math.abs(v) > 1.2) { u *= 0.7; v *= 0.7; }
+
+                    let x = 160 + u * 120 - size / 2;
+                    let y = 50 + v * 32 - size / 2;
+                    
+                    drop.style.left = x + 'px';
+                    drop.style.top = y + 'px';
+                    
+                    // 【新功能】互动擦拭事件
+                    const wipeDrop = () => {
+                        if (drop.style.opacity == '0') return;
+                        playSound('drop'); // 擦拭破裂音效
+                        drop.style.transition = '0.3s';
+                        drop.style.transform = 'scale(0)';
+                        drop.style.opacity = '0';
+                    };
+                    drop.addEventListener('mouseenter', wipeDrop);
+                    drop.addEventListener('touchmove', (e) => {
+                        // 允许手指划过擦拭
+                        e.preventDefault();
+                        let touch = e.touches[0];
+                        let el = document.elementFromPoint(touch.clientX, touch.clientY);
+                        if (el && el.classList.contains('water-drop')) {
+                            el.dispatchEvent(new Event('mouseenter'));
+                        }
+                    }, {passive: false});
+
+                    container.appendChild(drop);
+                    
+                    requestAnimationFrame(() => {
+                        drop.style.opacity = '0.9';
+                        drop.style.transform = 'scale(1)';
+                    });
+
+                    if (i === totalDrops - 1) {
+                        setTimeout(() => {
+                            let conBtn = document.getElementById('btnConclude');
+                            conBtn.classList.add('ready');
+                            let obsBtn = document.getElementById('btnObserve');
+                            obsBtn.innerHTML = "<span>✔️</span> 观察完毕：形成水珠";
+                            
+                            // 显示擦拭提示
+                            playSound('success');
+                            document.getElementById('wipeHint').style.opacity = '1';
+                            setTimeout(() => { document.getElementById('wipeHint').style.opacity = '0'; }, 6000);
+                        }, 1500);
+                    }
+
+                }, i * dropInterval + Math.random() * 300);
+            }
+        }
+
+        function triggerConclusion() {
+            let conBtn = document.getElementById('btnConclude');
+            if(!conBtn.classList.contains('ready')) return;
+            playSound('success'); // 结论音效
+
+            conBtn.classList.remove('ready');
+            conBtn.style.background = '#00b894';
+            conBtn.innerHTML = "<span>✔️</span> 已得出结论";
+            document.getElementById('resultBox').classList.add('show');
+        }
+
+        // ================= 粒子引擎 (完全保留原版) =================
+        let canvas, ctx, particles = [], animId;
+        
+        function initParticleCanvas() {
+            canvas = document.getElementById('vaporCanvas');
+            canvas.width = canvas.parentElement.offsetWidth;
+            canvas.height = canvas.parentElement.offsetHeight;
+            ctx = canvas.getContext('2d');
+            particles = [];
+            for(let i=0; i<80; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    vx: (Math.random() - 0.5) * 1.5,
+                    vy: (Math.random() - 0.5) * 1.5,
+                    r: Math.random() * 4 + 3,
+                    alpha: Math.random() * 0.4 + 0.1
+                });
+            }
+        }
+
+        function startParticles() { if(!animId) loopParticles(); }
+        
+        function loopParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            let targetX = canvas.width / 2;
+            let targetY = 220; 
+            
+            particles.forEach(p => {
+                let dx = targetX - p.x; let dy = targetY - p.y;
+                let dist = Math.sqrt(dx*dx + dy*dy);
+                
+                if(dist > 60) { p.vx += dx * 0.00015; p.vy += dy * 0.00015; } 
+                else { p.vx *= 0.8; p.vy *= 0.8; p.alpha -= 0.003; } 
+                
+                p.vx += (Math.random() - 0.5) * 0.3; p.vy += (Math.random() - 0.5) * 0.3;
+                let speed = Math.sqrt(p.vx*p.vx + p.vy*p.vy);
+                if(speed > 2.5) { p.vx = (p.vx/speed)*2.5; p.vy = (p.vy/speed)*2.5; }
+                p.x += p.vx; p.y += p.vy;
+
+                if(p.alpha > 0) {
+                    ctx.beginPath();
+                    let gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r);
+                    gradient.addColorStop(0, `rgba(255,255,255,${p.alpha})`);
+                    gradient.addColorStop(1, 'rgba(255,255,255,0)');
+                    ctx.fillStyle = gradient;
+                    ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
+                }
+            });
+            animId = requestAnimationFrame(loopParticles);
+        }
+
+        // ================= 重置实验 =================
+        function resetExperiment() {
+            if(animId) { cancelAnimationFrame(animId); animId = null; }
+            if(ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            currentIceCount = 0;
+            currentTemp = 25; // 重置温度
+            updateThermometer();
+
+            document.getElementById('itemIce').classList.remove('locked');
+            document.getElementById('itemIce').style.opacity = '1';
+            document.getElementById('itemCover').classList.add('locked');
+            document.getElementById('itemCover').style.opacity = '0.4';
+
+            document.getElementById('zoneIce').style.display = 'block';
+            document.getElementById('zoneCover').style.display = 'none';
+
+            document.getElementById('iceCubes').innerHTML = '';
+            
+            document.getElementById('glassCover').classList.remove('closed');
+            document.getElementById('cupWrapper').classList.remove('cup-cold');
+            document.getElementById('dropsContainer').innerHTML = '';
+            document.getElementById('wipeHint').style.opacity = '0';
+
+            let obsBtn = document.getElementById('btnObserve');
+            obsBtn.classList.remove('ready');
+            obsBtn.style.background = '';
+            obsBtn.innerHTML = "<span>👀</span> 点击观察现象";
+
+            let conBtn = document.getElementById('btnConclude');
+            conBtn.classList.remove('ready');
+            conBtn.style.background = '';
+            conBtn.innerHTML = "<span>💡</span> 点击得出结论";
+
+            document.getElementById('resultBox').classList.remove('show');
+        }
+    </script>
+<!-- ================= 开物AI科学 · 版权模块（单击显示 / 双击打开官网） ================= -->
+<style id="kaiming-copyright-style">
+  #kaiming-copyright {
+    position: fixed;
+    bottom: 26px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    pointer-events: none;
+    z-index: 999999;
+    transition: opacity 0.45s ease;
+    opacity: 0;
+    display: none;
+  }
+  #kaiming-copyright .inner {
+    display: inline-block;
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #eafaf2;
+    padding: 9px 26px;
+    border-radius: 60px;
+    /* 原稿为 14px；此处改为 16px 以符合本机 verify_html.py 的「字号不得小于 16px」硬规则 */
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.6px;
+    border: 1px solid rgba(255, 245, 210, 0.3);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+    font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+    white-space: nowrap;
+  }
+</style>
+
+<div id="kaiming-copyright">
+  <div class="inner">© 2026 开物AI科学 ｜ AI 赋能 · 教育公平</div>
+</div>
+
+<script id="kaiming-copyright-script">
+(function () {
+  "use strict";
+
+  /* 目标：单击标题 → 显示版权 3.5 秒；双击标题 → 打开 www.kaiwuaiscience.com */
+
+  const HOMEPAGE = "https://www.kaiwuaiscience.com";
+  const SHOW_MS = 3500;      // 版权显示时长
+  const DBL_WINDOW = 280;    // 双击判定的时间窗（毫秒）
+  const FADE_MS = 450;       // 淡出时长，与 CSS transition 一致
+
+  function bindCopyright() {
+    // 首选 #mainTitle（注入脚本会保证它存在）；后三个选择器是手写粘贴时的兜底
+    const title = document.getElementById("mainTitle") ||
+                  document.querySelector("h1, .title, .page-title, .main-title");
+    const box = document.getElementById("kaiming-copyright");
+    if (!title || !box) return;
+
+    title.style.cursor = "pointer";
+    title.style.userSelect = "none";
+    title.style.webkitUserSelect = "none";
+
+    let clickTimer = null;
+    let hideTimer = null;
+    let seq = 0;   // 每次显示/隐藏都 +1，用来作废在飞的定时器
+
+    function showCopyright() {
+      const my = ++seq;
+      if (hideTimer) clearTimeout(hideTimer);
+      box.style.display = "block";
+      /* 强制重绘，让 0 → 1 的淡入真的发生。
+         这里刻意不用 requestAnimationFrame：rAF 在页面不产生新帧时（后台标签页、
+         无头渲染、大屏久置）不保证触发——一旦它晚于下方的隐藏定时器回调，
+         就会把 opacity 又设成 1，导致版权条永久停在屏幕上。 */
+      void box.offsetHeight;
+      box.style.opacity = "1";
+      hideTimer = setTimeout(function () {
+        if (my !== seq) return;      // 期间又被点过，交给新的那一次收尾
+        box.style.opacity = "0";
+        setTimeout(function () {
+          if (my === seq) box.style.display = "none";
+        }, FADE_MS);
+      }, SHOW_MS);
+    }
+
+    function hideCopyright() {
+      const my = ++seq;              // 作废所有在飞的定时器，避免"淡出到一半又被点亮"卡住
+      if (hideTimer) clearTimeout(hideTimer);
+      if (box.style.display !== "block") return;
+      box.style.opacity = "0";
+      setTimeout(function () {
+        if (my === seq) box.style.display = "none";
+      }, FADE_MS);
+    }
+
+    function openHomepage() {
+      // 双击时隐藏版权，并跳转官网
+      hideCopyright();
+      window.open(HOMEPAGE, "_blank", "noopener,noreferrer");
+    }
+
+    title.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (clickTimer) return;   // 已在等待双击窗口，忽略这次单击
+      clickTimer = setTimeout(function () {
+        clickTimer = null;
+        showCopyright();        // 确认是单击
+      }, DBL_WINDOW);
+    });
+
+    title.addEventListener("dblclick", function (e) {
+      e.stopPropagation();
+      if (clickTimer) {         // 取消挂起的单击
+        clearTimeout(clickTimer);
+        clickTimer = null;
+      }
+      openHomepage();
+    });
+
+    // 点击页面其它地方，立即隐藏版权
+    document.addEventListener("click", function (e) {
+      if (e.target === title) return;
+      hideCopyright();
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bindCopyright);
+  } else {
+    bindCopyright();
+  }
+})();
+</script>
+<!-- ================= 开物AI科学 · 版权模块 结束 ================= -->
+
+</body>
+</html>

@@ -1,0 +1,1357 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>动物的感知本领 · 孔雀开屏配对</title>
+    <style>
+        :root {
+            --tail-radius: min(48vw, 58vh);
+            --animal-size: clamp(80px, 10vmin, 130px);
+            --animal-font: clamp(45px, 7vmin, 75px);
+            --name-font: clamp(18px, 2.8vmin, 30px);
+            --slot-font: clamp(16px, 2.6vmin, 26px);
+            --word-size: clamp(20px, 3vmin, 34px);
+            --hint-font: clamp(18px, 2.8vmin, 30px);
+            --btn-font: clamp(18px, 2.8vmin, 30px);
+            --peacock-emoji-size: clamp(140px, 20vh, 240px);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: "Microsoft YaHei", "PingFang SC", "Helvetica Neue", sans-serif;
+            background: #d8f0fc;
+        }
+
+        .game-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(180deg, #a8d8f0 0%, #d8f0fc 40%, #b8e0a8 75%, #7cb45e 100%);
+            box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.05);
+            transition: background 1s ease;
+        }
+
+        .title {
+            text-align: center;
+            font-size: clamp(28px, 5.5vh, 52px);
+            font-weight: 900;
+            color: #064e3b;
+            padding: 1vh 2vw 0.2vh;
+            letter-spacing: 3px;
+            text-shadow: 0 3px 10px rgba(255, 255, 255, 0.8);
+            white-space: nowrap;
+            z-index: 5;
+            flex-shrink: 0;
+        }
+        .title-emoji {
+            cursor: pointer;
+            display: inline-block;
+        }
+
+        .stage {
+            flex: 1;
+            position: relative;
+            min-height: 0;
+            z-index: 1;
+            overflow: hidden;
+            pointer-events: auto;
+        }
+
+        .tail-wrapper {
+            position: absolute;
+            left: 50%;
+            bottom: 10%;
+            transform: translateX(-50%);
+            width: calc(var(--tail-radius) * 2);
+            height: var(--tail-radius);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .tail-fan {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: conic-gradient(from 270deg at 50% 100%,
+                #f7d794 0deg 18deg,
+                #f5cd79 18deg 36deg,
+                #f3a683 36deg 54deg,
+                #f19066 54deg 72deg,
+                #e77f67 72deg 90deg,
+                #e15f41 90deg 108deg,
+                #c44569 108deg 126deg,
+                #a55eea 126deg 144deg,
+                #4b7bec 144deg 162deg,
+                #45aaf2 162deg 180deg);
+            border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+            box-shadow: 0 0 40px rgba(255, 215, 0, 0.6), inset 0 0 30px rgba(255, 255, 255, 0.5);
+            border: 3px solid rgba(255, 255, 255, 0.6);
+            border-bottom: none;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.95;
+        }
+
+        .animal {
+            position: absolute;
+            width: var(--animal-size);
+            height: var(--animal-size);
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            pointer-events: auto;
+            cursor: default;
+            z-index: 2;
+            transition: transform 0.25s;
+        }
+        .animal .avatar {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 25%, #fffdf0, #f5e6c8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--animal-font);
+            box-shadow: 0 0 0 5px #fff, 0 8px 28px rgba(0, 0, 0, 0.4), 0 0 35px rgba(255, 220, 80, 0.6);
+            pointer-events: none;
+        }
+        .animal .name {
+            position: absolute;
+            bottom: -22%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: var(--name-font);
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+            white-space: nowrap;
+            pointer-events: none;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 3px 14px;
+            border-radius: 20px;
+            z-index: 5;
+        }
+        .animal .drop-zone {
+            position: absolute;
+            top: -35%;
+            left: 50%;
+            transform: translateX(-50%);
+            min-width: 3em;
+            padding: 5px 14px;
+            border: 3px dashed #fbbf24;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--slot-font);
+            font-weight: 900;
+            color: #064e3b;
+            pointer-events: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 16px rgba(0, 0, 0, 0.3);
+            z-index: 6;
+            white-space: nowrap;
+        }
+        .animal .drop-zone.filled {
+            background: #ffd966;
+            border: 3px solid #f59e0b;
+            color: #3a2800;
+            box-shadow: 0 0 35px #fbbf24, 0 0 20px #fbbf24;
+            animation: slotPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes slotPop {
+            0% { transform: translateX(-50%) scale(0.2); }
+            55% { transform: translateX(-50%) scale(1.3); }
+            100% { transform: translateX(-50%) scale(1); }
+        }
+        .animal.highlight .drop-zone {
+            border-color: #fff;
+            box-shadow: 0 0 45px #fff, 0 0 30px #fbbf24;
+            background: rgba(255, 255, 255, 0.9);
+        }
+        .animal.matched .avatar {
+            box-shadow: 0 0 0 8px #4ade80, 0 8px 30px rgba(0, 0, 0, 0.5), 0 0 45px #4ade80;
+        }
+        .animal .avatar.pop {
+            animation: animalPop 0.6s ease;
+        }
+        @keyframes animalPop {
+            0% { transform: scale(1); }
+            45% { transform: scale(1.25) rotate(6deg); }
+            100% { transform: scale(1); }
+        }
+
+        .peacock-emoji {
+            position: absolute;
+            left: 50%;
+            bottom: 0;
+            transform: translateX(-50%);
+            font-size: var(--peacock-emoji-size);
+            z-index: 3;
+            pointer-events: none;
+            filter: drop-shadow(0 0 20px rgba(255, 220, 80, 0.7));
+            animation: bodySway 3.5s ease-in-out infinite;
+            line-height: 1;
+        }
+        @keyframes bodySway {
+            0%, 100% { transform: translateX(-50%) translateY(0) rotate(0deg); }
+            50% { transform: translateX(-50%) translateY(-6px) rotate(0.8deg); }
+        }
+
+        .word-bank {
+            flex-shrink: 0;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: clamp(8px, 1.5vmin, 16px);
+            padding: 0.8vh 2vw 0.8vh;
+            z-index: 15;
+            pointer-events: auto;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 30px 30px 0 0;
+            backdrop-filter: blur(10px);
+            margin: 0 1vw;
+            min-height: 9vh;
+        }
+        .word {
+            font-size: var(--word-size);
+            font-weight: 900;
+            padding: 10px 20px;
+            min-height: 48px;
+            border: none;
+            border-radius: 30px;
+            background: #fef3c7;
+            color: #4d3700;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25), 0 0 14px rgba(255, 200, 0, 0.5);
+            cursor: grab;
+            letter-spacing: 2px;
+            transition: transform 0.15s, box-shadow 0.15s, opacity 0.3s;
+            white-space: nowrap;
+            touch-action: none;
+            user-select: none;
+            pointer-events: auto;
+        }
+        .word:active {
+            cursor: grabbing;
+            transform: scale(0.96);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+        }
+        .word.used {
+            opacity: 0.25;
+            pointer-events: none;
+            background: #b0b0b0;
+            color: #555;
+            box-shadow: none;
+        }
+        .word.dragging {
+            opacity: 0.4;
+            transform: scale(0.9);
+        }
+        .word.shake {
+            animation: shake 0.35s ease;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            50% { transform: translateX(10px); }
+            75% { transform: translateX(-6px); }
+        }
+
+        .drag-ghost {
+            position: fixed;
+            z-index: 9999;
+            pointer-events: none;
+            font-size: var(--word-size);
+            font-weight: 900;
+            padding: 12px 24px;
+            border-radius: 30px;
+            background: #ffecb3;
+            color: #4d3700;
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.5), 0 0 25px #fbbf24;
+            transform: translate(-50%, -50%);
+            opacity: 0.95;
+        }
+
+        .controls {
+            flex-shrink: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: clamp(10px, 2vw, 28px);
+            padding: 0.5vh 2vw 1.5vh;
+            z-index: 16;
+            pointer-events: auto;
+            flex-wrap: wrap;
+        }
+        .hint {
+            font-size: var(--hint-font);
+            font-weight: 800;
+            color: #064e3b;
+            background: rgba(255, 255, 255, 0.85);
+            padding: 0.8vh 1.8vw;
+            border-radius: 30px;
+            min-height: clamp(42px, 7vh, 60px);
+            display: flex;
+            align-items: center;
+            white-space: nowrap;
+            backdrop-filter: blur(6px);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+        }
+        .action-btn {
+            font-size: var(--btn-font);
+            font-weight: 900;
+            padding: 0.8vh 1.6vw;
+            min-height: clamp(42px, 7vh, 60px);
+            border: none;
+            border-radius: 20px;
+            background: #d97706;
+            color: #fff;
+            cursor: pointer;
+            box-shadow: 0 5px 18px rgba(0, 0, 0, 0.3), 0 0 15px rgba(255, 180, 0, 0.6);
+            letter-spacing: 2px;
+            transition: transform 0.15s, background 0.2s;
+            white-space: nowrap;
+            pointer-events: auto;
+        }
+        .action-btn:active {
+            transform: scale(0.94);
+            background: #b45309;
+        }
+        .action-btn.random-btn {
+            background: #4b7bec;
+            box-shadow: 0 5px 18px rgba(0, 0, 0, 0.3), 0 0 15px rgba(75, 123, 236, 0.6);
+        }
+
+        .timer-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 0.8vh 1.6vw;
+            border-radius: 20px;
+            font-size: var(--btn-font);
+            font-weight: 900;
+            color: #fff;
+            white-space: nowrap;
+            cursor: default;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        .timer-display {
+            cursor: pointer;
+            user-select: none;
+        }
+        .timer-display:hover {
+            text-decoration: underline;
+        }
+        .mistakes-display {
+            color: #ffd966;
+        }
+
+        /* 背景装饰层 */
+        .bg-decor-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        .decor-item {
+            position: absolute;
+            pointer-events: none;
+            opacity: 0.8;
+            filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.2));
+            animation-duration: 12s;
+            animation-timing-function: ease-in-out;
+            animation-iteration-count: infinite;
+        }
+        .decor-item.cloud {
+            background: #fff;
+            border-radius: 50%;
+            filter: blur(2px);
+            animation: cloudFloat 20s ease-in-out infinite;
+        }
+        .decor-item.butterfly { animation: butterflyMove 12s ease-in-out infinite; }
+        .decor-item.flower { animation: flowerSway 5s ease-in-out infinite; }
+        .decor-item.bird { animation: birdMove 10s ease-in-out infinite; }
+        .decor-item.star { animation: starTwinkle 3s ease-in-out infinite; }
+        .decor-item.sun { animation: sunGlow 6s ease-in-out infinite; }
+        .decor-item.fish { animation: fishSwim 8s ease-in-out infinite; }
+
+        @keyframes cloudFloat {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(30px); }
+        }
+        @keyframes butterflyMove {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(30px, -20px) rotate(10deg); }
+            50% { transform: translate(60px, 10px) rotate(-5deg); }
+            75% { transform: translate(20px, 30px) rotate(15deg); }
+        }
+        @keyframes flowerSway {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(8deg); }
+        }
+        @keyframes birdMove {
+            0%, 100% { transform: translate(0, 0); }
+            25% { transform: translate(50px, -30px); }
+            50% { transform: translate(100px, 20px); }
+            75% { transform: translate(40px, 50px); }
+        }
+        @keyframes starTwinkle {
+            0%, 100% { opacity: 0.3; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1.1); }
+        }
+        @keyframes sunGlow {
+            0%, 100% { filter: drop-shadow(0 0 10px rgba(255, 200, 0, 0.8)); }
+            50% { filter: drop-shadow(0 0 25px rgba(255, 200, 0, 1)); }
+        }
+        @keyframes fishSwim {
+            0%, 100% { transform: translate(0, 0) scaleX(1); }
+            50% { transform: translate(80px, 20px) scaleX(1); }
+        }
+
+        /* 庆祝 */
+        .celebrate {
+            position: fixed;
+            left: 50%;
+            top: 40%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.97);
+            padding: 2.5vh 4vw;
+            border-radius: 30px;
+            font-size: clamp(30px, 5.5vmin, 60px);
+            font-weight: 900;
+            color: #0f5e3a;
+            z-index: 1000;
+            box-shadow: 0 0 60px rgba(255, 200, 0, 0.9);
+            text-align: center;
+            animation: celebratePop 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+            pointer-events: none;
+            white-space: nowrap;
+        }
+        @keyframes celebratePop {
+            0% { transform: translate(-50%, -50%) scale(0.2); opacity: 0; }
+            60% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+
+        /* 记录弹窗 */
+        .records-modal {
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 24px;
+            padding: 3vh 3vw;
+            z-index: 2000;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+            min-width: 280px;
+            max-width: 90vw;
+            max-height: 80vh;
+            overflow-y: auto;
+            display: none;
+            pointer-events: auto;
+        }
+        .records-modal.show {
+            display: block;
+            animation: modalPop 0.3s ease;
+        }
+        @keyframes modalPop {
+            0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+        .records-modal h3 {
+            text-align: center;
+            font-size: clamp(22px, 4vmin, 32px);
+            margin-bottom: 20px;
+            color: #064e3b;
+        }
+        .records-modal table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: clamp(16px, 2.5vmin, 24px);
+            font-weight: 600;
+        }
+        .records-modal th,
+        .records-modal td {
+            padding: 10px 15px;
+            text-align: center;
+            border-bottom: 1px solid #ddd;
+        }
+        .records-modal th {
+            background: #064e3b;
+            color: #fff;
+            border-radius: 8px 8px 0 0;
+        }
+        .records-modal .close-btn {
+            display: block;
+            margin: 20px auto 0;
+            padding: 10px 30px;
+            background: #d97706;
+            color: #fff;
+            border: none;
+            border-radius: 20px;
+            font-size: clamp(16px, 2.5vmin, 22px);
+            font-weight: 900;
+            cursor: pointer;
+        }
+        .records-modal .close-btn:hover {
+            background: #b45309;
+        }
+        .records-modal .no-record {
+            text-align: center;
+            font-size: 20px;
+            color: #888;
+            padding: 30px;
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1500;
+            display: none;
+            pointer-events: auto;
+        }
+        .modal-overlay.show {
+            display: block;
+        }
+
+        @media (max-width: 600px) {
+            :root {
+                --tail-radius: min(55vw, 45vh);
+                --animal-size: 70px;
+                --animal-font: 40px;
+                --name-font: 16px;
+                --slot-font: 14px;
+                --word-size: 18px;
+                --hint-font: 16px;
+                --btn-font: 16px;
+                --peacock-emoji-size: 120px;
+            }
+            .controls {
+                gap: 6px;
+            }
+            .timer-container {
+                padding: 0.5vh 2vw;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container" id="gameContainer">
+        <!-- 动态背景装饰层 -->
+        <div class="bg-decor-layer" id="bgDecorLayer"></div>
+
+        <header class="title" id="mainTitle">
+            <span class="title-emoji" id="titleEmoji" title="双击清空记录">🦚</span> 动物的感知本领
+        </header>
+
+        <div class="stage" id="stage">
+            <div class="tail-wrapper" id="tailWrapper">
+                <div class="tail-fan"></div>
+            </div>
+            <div class="peacock-emoji">🦚</div>
+        </div>
+
+        <div class="word-bank" id="wordBank">
+            <button class="word" data-type="echolocation">回声定位</button>
+            <button class="word" data-type="eye">眼睛</button>
+            <button class="word" data-type="skin">皮肤</button>
+            <button class="word" data-type="antenna">触角</button>
+            <button class="word" data-type="skin">皮肤</button>
+            <button class="word" data-type="tongue">舌</button>
+            <button class="word" data-type="antenna">触角</button>
+            <button class="word" data-type="limb">四肢</button>
+            <button class="word" data-type="ear">耳朵</button>
+            <button class="word" data-type="wing">翼</button>
+            <button class="word" data-type="fin">鳍</button>
+            <button class="word" data-type="gill">鳃</button>
+        </div>
+
+        <div class="controls">
+            <div class="hint" id="hint">👆 拖动本领词到对应的动物身上</div>
+            <button class="action-btn" id="answerBtn">✨ 显示答案</button>
+            <button class="action-btn random-btn" id="shuffleBtn">🎲 随机打乱</button>
+            <button class="action-btn" id="resetBtn">🔄 重新开始</button>
+            <div class="timer-container">
+                <span class="timer-display" id="timerDisplay" title="单击查看记录">⏱️ 00:00</span>
+                <span class="mistakes-display" id="mistakesDisplay">失误: 0</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 记录弹窗 -->
+    <div class="modal-overlay" id="modalOverlay"></div>
+    <div class="records-modal" id="recordsModal">
+        <h3>🏆 最短十次记录</h3>
+        <div id="recordsContent">
+            <div class="no-record">暂无记录</div>
+        </div>
+        <button class="close-btn" id="closeModalBtn">关闭</button>
+    </div>
+
+    <script>
+        (function() {
+            // 动物配置
+            const baseAnimalsConfig = [
+                { id: 'cat', name: '猫', emoji: '🐱', need: 'ear', color: '#ffb347' },
+                { id: 'bat', name: '蝙蝠', emoji: '🦇', need: 'echolocation', color: '#b48cd9' },
+                { id: 'ant', name: '蚂蚁', emoji: '🐜', need: 'antenna', color: '#e88b6b' },
+                { id: 'chameleon', name: '变色龙', emoji: '🦎', need: 'skin', color: '#7ecb8f' },
+                { id: 'elephant', name: '大象', emoji: '🐘', need: 'limb', color: '#9aa9b5' },
+                { id: 'eagle', name: '鹰', emoji: '🦅', need: 'wing', color: '#c1a06b' },
+                { id: 'snake', name: '蛇', emoji: '🐍', need: 'tongue', color: '#b5c96a' },
+                { id: 'frog', name: '青蛙', emoji: '🐸', need: 'skin', color: '#80c685' },
+                { id: 'snail', name: '蜗牛', emoji: '🐌', need: 'antenna', color: '#d8a887' },
+                { id: 'fish', name: '鲫鱼', emoji: '🐟', need: ['fin', 'gill'], color: '#6fbfd0' }
+            ];
+
+            let animalsConfig = [...baseAnimalsConfig];
+            const correctMap = {
+                cat: 'ear', bat: 'echolocation', ant: 'antenna', chameleon: 'skin',
+                elephant: 'limb', eagle: 'wing', snake: 'tongue', frog: 'skin',
+                snail: 'antenna', fish: ['fin', 'gill']
+            };
+
+            // DOM元素
+            const gameContainer = document.getElementById('gameContainer');
+            const bgDecorLayer = document.getElementById('bgDecorLayer');
+            const stage = document.getElementById('stage');
+            const tailWrapper = document.getElementById('tailWrapper');
+            const hintEl = document.getElementById('hint');
+            const wordBank = document.getElementById('wordBank');
+            const wordButtons = Array.from(document.querySelectorAll('.word'));
+            const timerDisplay = document.getElementById('timerDisplay');
+            const mistakesDisplay = document.getElementById('mistakesDisplay');
+            const resetBtn = document.getElementById('resetBtn');
+            const answerBtn = document.getElementById('answerBtn');
+            const shuffleBtn = document.getElementById('shuffleBtn');
+            const modalOverlay = document.getElementById('modalOverlay');
+            const recordsModal = document.getElementById('recordsModal');
+            const recordsContent = document.getElementById('recordsContent');
+            const closeModalBtn = document.getElementById('closeModalBtn');
+            const titleEmoji = document.getElementById('titleEmoji');
+
+            // 状态变量
+            let animalElements = [];
+            let isDragging = false;
+            let dragWord = null;
+            let ghost = null;
+            let selectedAnimal = null;
+            let celebrationShown = false;
+            let mistakesCount = 0;
+            let timerInterval = null;
+            let startTime = null;
+            let elapsedSeconds = 0;
+            let timerRunning = false;
+            let usedAnswerButton = false;
+
+            // ===== 背景主题（增加更多） =====
+            const themes = [
+                {
+                    gradient: 'linear-gradient(180deg, #a8d8f0 0%, #d8f0fc 40%, #b8e0a8 75%, #7cb45e 100%)',
+                    decorations: [
+                        { emoji: '🦋', type: 'butterfly', style: 'top:15%; left:10%; font-size:32px;' },
+                        { emoji: '🦋', type: 'butterfly', style: 'top:30%; right:15%; font-size:28px; animation-delay:3s;' },
+                        { emoji: '🌸', type: 'flower', style: 'bottom:15%; left:8%; font-size:28px;' },
+                        { emoji: '🌼', type: 'flower', style: 'bottom:12%; right:10%; font-size:24px; animation-delay:2s;' },
+                        { emoji: '🌺', type: 'flower', style: 'bottom:20%; left:80%; font-size:26px; animation-delay:1s;' },
+                        { emoji: '☁️', type: 'cloud', style: 'top:8%; left:5%; width:140px; height:50px;' },
+                        { emoji: '☁️', type: 'cloud', style: 'top:15%; right:10%; width:180px; height:60px; animation-delay:2s;' }
+                    ]
+                },
+                {
+                    gradient: 'linear-gradient(160deg, #f9e7b2 0%, #f5d0b8 40%, #b5d8a8 75%, #7cb45e 100%)',
+                    decorations: [
+                        { emoji: '🌞', type: 'sun', style: 'top:10%; right:15%; font-size:60px;' },
+                        { emoji: '🐦', type: 'bird', style: 'top:20%; left:10%; font-size:28px;' },
+                        { emoji: '🐦', type: 'bird', style: 'top:35%; right:25%; font-size:24px; animation-delay:4s;' },
+                        { emoji: '🌻', type: 'flower', style: 'bottom:18%; left:15%; font-size:30px;' },
+                        { emoji: '🌾', type: 'flower', style: 'bottom:10%; right:20%; font-size:22px; animation-delay:1s;' },
+                        { emoji: '☁️', type: 'cloud', style: 'top:5%; left:40%; width:120px; height:40px;' }
+                    ]
+                },
+                {
+                    gradient: 'linear-gradient(140deg, #b8d0f0 0%, #d8e8f8 40%, #c8e6c0 75%, #8bc46c 100%)',
+                    decorations: [
+                        { emoji: '⭐', type: 'star', style: 'top:12%; left:20%; font-size:26px;' },
+                        { emoji: '⭐', type: 'star', style: 'top:25%; right:18%; font-size:22px; animation-delay:2s;' },
+                        { emoji: '🌙', type: 'star', style: 'top:5%; right:30%; font-size:40px;' },
+                        { emoji: '🍄', type: 'flower', style: 'bottom:20%; left:10%; font-size:30px;' },
+                        { emoji: '🍄', type: 'flower', style: 'bottom:15%; right:12%; font-size:28px; animation-delay:3s;' },
+                        { emoji: '🌿', type: 'flower', style: 'bottom:8%; left:60%; font-size:25px;' }
+                    ]
+                },
+                {
+                    gradient: 'linear-gradient(200deg, #f0c8d8 0%, #f8e0e8 40%, #c8e0c8 75%, #8cc47c 100%)',
+                    decorations: [
+                        { emoji: '🌈', type: 'cloud', style: 'top:8%; left:35%; width:150px; height:60px;' },
+                        { emoji: '🦄', type: 'butterfly', style: 'top:20%; right:15%; font-size:40px;' },
+                        { emoji: '💮', type: 'flower', style: 'bottom:15%; left:15%; font-size:26px;' },
+                        { emoji: '💮', type: 'flower', style: 'bottom:12%; right:18%; font-size:24px; animation-delay:1s;' },
+                        { emoji: '☁️', type: 'cloud', style: 'top:3%; left:10%; width:100px; height:35px;' }
+                    ]
+                },
+                {
+                    gradient: 'linear-gradient(180deg, #e0c8f0 0%, #e8d8f8 40%, #c0d8c0 75%, #8cb47c 100%)',
+                    decorations: [
+                        { emoji: '🐟', type: 'fish', style: 'top:25%; left:15%; font-size:30px;' },
+                        { emoji: '🐟', type: 'fish', style: 'top:40%; right:20%; font-size:26px; animation-delay:5s;' },
+                        { emoji: '🫧', type: 'star', style: 'top:10%; left:40%; font-size:20px;' },
+                        { emoji: '🫧', type: 'star', style: 'top:30%; right:30%; font-size:18px; animation-delay:2s;' },
+                        { emoji: '🪸', type: 'flower', style: 'bottom:15%; left:25%; font-size:28px;' },
+                        { emoji: '🌊', type: 'cloud', style: 'bottom:5%; right:10%; font-size:35px; animation-duration:6s;' }
+                    ]
+                },
+                {
+                    gradient: 'linear-gradient(135deg, #e6c9a0 0%, #f2d8b0 30%, #d4b896 60%, #b3926c 100%)',
+                    decorations: [
+                        { emoji: '🌵', type: 'flower', style: 'bottom:15%; left:15%; font-size:40px;' },
+                        { emoji: '🌵', type: 'flower', style: 'bottom:20%; right:20%; font-size:35px; animation-delay:2s;' },
+                        { emoji: '🏜️', type: 'cloud', style: 'top:10%; left:45%; width:100px; height:40px;' },
+                        { emoji: '🐪', type: 'bird', style: 'top:30%; right:10%; font-size:45px;' },
+                        { emoji: '☀️', type: 'sun', style: 'top:5%; left:10%; font-size:50px;' }
+                    ]
+                },
+                {
+                    gradient: 'linear-gradient(180deg, #0a2e4a 0%, #1e5a7a 40%, #2a7a9a 75%, #1e5a7a 100%)',
+                    decorations: [
+                        { emoji: '🐠', type: 'fish', style: 'top:20%; left:15%; font-size:35px;' },
+                        { emoji: '🐡', type: 'fish', style: 'top:40%; right:20%; font-size:32px; animation-delay:3s;' },
+                        { emoji: '🪼', type: 'butterfly', style: 'top:15%; right:15%; font-size:45px;' },
+                        { emoji: '🌟', type: 'star', style: 'top:8%; left:45%; font-size:25px;' },
+                        { emoji: '🐚', type: 'flower', style: 'bottom:15%; left:30%; font-size:35px;' },
+                        { emoji: '🫧', type: 'star', style: 'top:35%; left:20%; font-size:20px; animation-delay:2s;' }
+                    ]
+                },
+                {
+                    gradient: 'linear-gradient(160deg, #0a1a2a 0%, #1a2a4a 40%, #2a3a5a 75%, #1a2a4a 100%)',
+                    decorations: [
+                        { emoji: '🌌', type: 'cloud', style: 'top:10%; left:50%; width:200px; height:80px;' },
+                        { emoji: '⭐', type: 'star', style: 'top:20%; left:20%; font-size:22px;' },
+                        { emoji: '⭐', type: 'star', style: 'top:15%; right:25%; font-size:20px; animation-delay:1s;' },
+                        { emoji: '🌠', type: 'bird', style: 'top:30%; left:60%; font-size:30px; animation-duration:4s;' },
+                        { emoji: '🪐', type: 'sun', style: 'top:8%; right:10%; font-size:50px;' },
+                        { emoji: '🌟', type: 'star', style: 'bottom:30%; left:15%; font-size:28px; animation-delay:2s;' }
+                    ]
+                },
+                {
+                    gradient: 'linear-gradient(180deg, #2a5a2a 0%, #4a8a4a 40%, #6aaa6a 75%, #3a6a3a 100%)',
+                    decorations: [
+                        { emoji: '🌳', type: 'flower', style: 'bottom:15%; left:10%; font-size:55px;' },
+                        { emoji: '🌳', type: 'flower', style: 'bottom:20%; right:15%; font-size:50px; animation-delay:1s;' },
+                        { emoji: '🍄', type: 'flower', style: 'bottom:5%; left:40%; font-size:30px;' },
+                        { emoji: '🦊', type: 'bird', style: 'bottom:10%; left:70%; font-size:40px; animation-duration:8s;' },
+                        { emoji: '🐿️', type: 'bird', style: 'bottom:12%; right:5%; font-size:32px; animation-delay:2s;' }
+                    ]
+                },
+                {
+                    gradient: 'linear-gradient(140deg, #f0d8c8 0%, #f8e8d8 40%, #e0c8b8 75%, #c0a898 100%)',
+                    decorations: [
+                        { emoji: '🍁', type: 'flower', style: 'bottom:20%; left:15%; font-size:35px;' },
+                        { emoji: '🍁', type: 'flower', style: 'bottom:25%; right:20%; font-size:30px; animation-delay:1s;' },
+                        { emoji: '🍂', type: 'butterfly', style: 'top:15%; left:40%; font-size:28px;' },
+                        { emoji: '🦔', type: 'bird', style: 'bottom:15%; left:80%; font-size:38px; animation-duration:7s;' },
+                        { emoji: '🐌', type: 'bird', style: 'bottom:10%; left:5%; font-size:30px; animation-delay:2s;' }
+                    ]
+                }
+            ];
+
+            function applyRandomBackground() {
+                const randomIndex = Math.floor(Math.random() * themes.length);
+                const theme = themes[randomIndex];
+                gameContainer.style.background = theme.gradient;
+                bgDecorLayer.innerHTML = '';
+                theme.decorations.forEach(dec => {
+                    const el = document.createElement('div');
+                    el.className = `decor-item ${dec.type}`;
+                    el.textContent = dec.emoji;
+                    el.style.cssText = dec.style;
+                    bgDecorLayer.appendChild(el);
+                });
+            }
+
+            // ===== 计时器与记录 =====
+            function formatTime(seconds) {
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            }
+
+            function startTimer() {
+                if (timerRunning) return;
+                timerRunning = true;
+                startTime = Date.now() - elapsedSeconds * 1000;
+                timerInterval = setInterval(() => {
+                    elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+                    timerDisplay.textContent = `⏱️ ${formatTime(elapsedSeconds)}`;
+                }, 200);
+            }
+
+            function stopTimer() {
+                if (timerRunning) {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                    timerRunning = false;
+                }
+            }
+
+            function resetTimer() {
+                stopTimer();
+                elapsedSeconds = 0;
+                timerDisplay.textContent = '⏱️ 00:00';
+                startTimer();
+            }
+
+            function resetMistakes() {
+                mistakesCount = 0;
+                mistakesDisplay.textContent = '失误: 0';
+            }
+
+            function addMistake() {
+                mistakesCount++;
+                mistakesDisplay.textContent = `失误: ${mistakesCount}`;
+            }
+
+            function saveRecord(time, mistakes) {
+                let records = JSON.parse(localStorage.getItem('peacockGameRecords')) || [];
+                records.push({ time: time, mistakes: mistakes });
+                records.sort((a, b) => a.time - b.time || a.mistakes - b.mistakes);
+                if (records.length > 10) records = records.slice(0, 10);
+                localStorage.setItem('peacockGameRecords', JSON.stringify(records));
+            }
+
+            function getRecords() {
+                return JSON.parse(localStorage.getItem('peacockGameRecords')) || [];
+            }
+
+            function showRecords() {
+                const records = getRecords();
+                if (records.length === 0) {
+                    recordsContent.innerHTML = '<div class="no-record">暂无记录</div>';
+                } else {
+                    let html = '<table><thead><tr><th>名次</th><th>用时</th><th>失误</th></tr></thead><tbody>';
+                    records.forEach((rec, index) => {
+                        html += `<tr><td>${index + 1}</td><td>${formatTime(rec.time)}</td><td>${rec.mistakes}</td></tr>`;
+                    });
+                    html += '</tbody></table>';
+                    recordsContent.innerHTML = html;
+                }
+                modalOverlay.classList.add('show');
+                recordsModal.classList.add('show');
+            }
+
+            function hideRecords() {
+                modalOverlay.classList.remove('show');
+                recordsModal.classList.remove('show');
+            }
+
+            function clearRecords() {
+                localStorage.removeItem('peacockGameRecords');
+                showHint('🗑️ 记录已清空');
+                if (modalOverlay.classList.contains('show')) {
+                    showRecords(); // 刷新弹窗内容
+                }
+            }
+
+            // ===== 游戏逻辑 =====
+            function showHint(text) { hintEl.textContent = text; }
+
+            function isNeedMatch(need, wordType) {
+                if (Array.isArray(need)) return need.includes(wordType);
+                return need === wordType;
+            }
+
+            function layoutAnimals() {
+                const wrapperRect = tailWrapper.getBoundingClientRect();
+                const W = wrapperRect.width;
+                const H = wrapperRect.height;
+                if (W === 0 || H === 0) return;
+
+                const cx = W / 2;
+                const cy = H;
+                const radius = H;
+                const total = animalsConfig.length;
+                const startAngle = -81;
+                const endAngle = 81;
+
+                const oldAnimals = tailWrapper.querySelectorAll('.animal');
+                oldAnimals.forEach(el => el.remove());
+                animalElements = [];
+                celebrationShown = false;
+
+                for (let i = 0; i < total; i++) {
+                    const config = animalsConfig[i];
+                    const t = total === 1 ? 0.5 : i / (total - 1);
+                    const angleDeg = startAngle + t * (endAngle - startAngle);
+                    const angleRad = angleDeg * Math.PI / 180;
+                    const r = radius * 0.93;
+                    const x = cx + r * Math.sin(angleRad);
+                    const y = cy - r * Math.cos(angleRad);
+
+                    const animalDiv = document.createElement('div');
+                    animalDiv.className = 'animal';
+                    animalDiv.dataset.animalId = config.id;
+                    animalDiv.style.left = x + 'px';
+                    animalDiv.style.top = y + 'px';
+
+                    const avatar = document.createElement('div');
+                    avatar.className = 'avatar';
+                    avatar.textContent = config.emoji;
+                    avatar.style.background = `radial-gradient(circle at 30% 25%, #fffdf0, ${config.color}cc)`;
+
+                    const nameSpan = document.createElement('span');
+                    nameSpan.className = 'name';
+                    nameSpan.textContent = config.name;
+
+                    const dropZone = document.createElement('div');
+                    dropZone.className = 'drop-zone';
+                    dropZone.textContent = '?';
+
+                    animalDiv.appendChild(avatar);
+                    animalDiv.appendChild(nameSpan);
+                    animalDiv.appendChild(dropZone);
+
+                    tailWrapper.appendChild(animalDiv);
+                    animalElements.push(animalDiv);
+                }
+            }
+
+            function checkComplete() {
+                const matched = animalElements.filter(a => a.classList.contains('matched')).length;
+                if (matched === animalElements.length && !celebrationShown) {
+                    celebrationShown = true;
+                    stopTimer();
+                    if (!usedAnswerButton) {
+                        saveRecord(elapsedSeconds, mistakesCount);
+                    }
+                    showHint('🎉 太棒了！孔雀开屏完美完成！');
+                    showCelebrate();
+                }
+            }
+
+            function showCelebrate() {
+                const div = document.createElement('div');
+                div.className = 'celebrate';
+                div.textContent = '🎉 孔雀开屏完美完成！';
+                document.body.appendChild(div);
+                setTimeout(() => div.remove(), 4000);
+            }
+
+            function startDrag(e, btn) {
+                if (btn.classList.contains('used')) return;
+                e.preventDefault();
+                isDragging = true;
+                dragWord = btn;
+                btn.classList.add('dragging');
+                ghost = document.createElement('div');
+                ghost.className = 'drag-ghost';
+                ghost.textContent = btn.textContent;
+                document.body.appendChild(ghost);
+                moveGhost(e);
+            }
+
+            function moveGhost(e) {
+                if (!ghost) return;
+                let cx, cy;
+                if (e.touches && e.touches[0]) { cx = e.touches[0].clientX; cy = e.touches[0].clientY; }
+                else { cx = e.clientX; cy = e.clientY; }
+                if (cx === undefined || cy === undefined) return;
+                ghost.style.left = cx + 'px';
+                ghost.style.top = cy + 'px';
+
+                if (selectedAnimal) { selectedAnimal.classList.remove('highlight'); selectedAnimal = null; }
+                let closestAnimal = null;
+                let minDist = Infinity;
+                animalElements.forEach(animal => {
+                    const rect = animal.getBoundingClientRect();
+                    const centerX = rect.left + rect.width / 2;
+                    const centerY = rect.top + rect.height / 2;
+                    const dist = Math.hypot(cx - centerX, cy - centerY);
+                    if (dist < minDist) {
+                        minDist = dist;
+                        closestAnimal = animal;
+                    }
+                });
+                const threshold = 150;
+                if (closestAnimal && minDist < threshold) {
+                    closestAnimal.classList.add('highlight');
+                    selectedAnimal = closestAnimal;
+                }
+            }
+
+            function getAnimalNeed(animalId) {
+                const config = animalsConfig.find(a => a.id === animalId);
+                return config ? config.need : correctMap[animalId];
+            }
+
+            function endDrag(e) {
+                if (!isDragging || !dragWord) {
+                    if (selectedAnimal) selectedAnimal.classList.remove('highlight');
+                    if (ghost) ghost.remove();
+                    isDragging = false; dragWord = null; selectedAnimal = null;
+                    return;
+                }
+                let cx, cy;
+                if (e.changedTouches && e.changedTouches[0]) { cx = e.changedTouches[0].clientX; cy = e.changedTouches[0].clientY; }
+                else { cx = e.clientX; cy = e.clientY; }
+
+                if (selectedAnimal) selectedAnimal.classList.remove('highlight');
+
+                let targetAnimal = null;
+                if (cx !== undefined && cy !== undefined) {
+                    const els = document.elementsFromPoint(cx, cy);
+                    for (let el of els) {
+                        if (el.classList && el.classList.contains('drag-ghost')) continue;
+                        const animal = el.closest ? el.closest('.animal') : null;
+                        if (animal) {
+                            targetAnimal = animal;
+                            break;
+                        }
+                    }
+                }
+                if (!targetAnimal && cx !== undefined && cy !== undefined) {
+                    let closestAnimal = null;
+                    let minDist = Infinity;
+                    animalElements.forEach(animal => {
+                        const rect = animal.getBoundingClientRect();
+                        const centerX = rect.left + rect.width / 2;
+                        const centerY = rect.top + rect.height / 2;
+                        const dist = Math.hypot(cx - centerX, cy - centerY);
+                        if (dist < minDist) {
+                            minDist = dist;
+                            closestAnimal = animal;
+                        }
+                    });
+                    const threshold = 120;
+                    if (closestAnimal && minDist < threshold) {
+                        targetAnimal = closestAnimal;
+                    }
+                }
+
+                if (targetAnimal) {
+                    const animalId = targetAnimal.dataset.animalId;
+                    const need = getAnimalNeed(animalId);
+                    const wordType = dragWord.dataset.type;
+                    if (isNeedMatch(need, wordType)) {
+                        matchSuccess(targetAnimal, dragWord);
+                    } else {
+                        matchFail(dragWord);
+                    }
+                } else {
+                    if (!dragWord.classList.contains('used')) {
+                        showHint('👆 请拖到正确的动物附近');
+                    }
+                }
+
+                dragWord.classList.remove('dragging');
+                if (ghost) ghost.remove();
+                ghost = null; isDragging = false; dragWord = null; selectedAnimal = null;
+            }
+
+            function matchSuccess(animalDiv, btn) {
+                btn.classList.add('used');
+                const isAlreadyMatched = animalDiv.classList.contains('matched');
+                if (!isAlreadyMatched) {
+                    animalDiv.classList.add('matched');
+                    const av = animalDiv.querySelector('.avatar');
+                    av.classList.add('pop');
+                    setTimeout(() => av.classList.remove('pop'), 700);
+                }
+                const dz = animalDiv.querySelector('.drop-zone');
+                if (dz.textContent === '?') {
+                    dz.textContent = btn.textContent;
+                } else {
+                    dz.textContent = dz.textContent + '/' + btn.textContent;
+                }
+                dz.classList.add('filled');
+                showHint('✅ 匹配正确！继续加油！');
+                checkComplete();
+            }
+
+            function matchFail(btn) {
+                addMistake();
+                showHint('❌ 不对哦，再想想这个动物主要靠什么感知？');
+                btn.classList.add('shake');
+                setTimeout(() => btn.classList.remove('shake'), 450);
+            }
+
+            function shuffleArray(arr) {
+                for (let i = arr.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [arr[i], arr[j]] = [arr[j], arr[i]];
+                }
+                return arr;
+            }
+
+            function shuffleGame() {
+                animalsConfig = shuffleArray([...baseAnimalsConfig]);
+                const wordArray = Array.from(wordBank.children);
+                shuffleArray(wordArray);
+                wordArray.forEach(btn => wordBank.appendChild(btn));
+                resetGame();
+            }
+
+            function resetGame() {
+                if (ghost) ghost.remove();
+                isDragging = false; dragWord = null; selectedAnimal = null;
+                animalElements.forEach(a => {
+                    a.classList.remove('matched', 'highlight');
+                    a.querySelector('.drop-zone').textContent = '?';
+                    a.querySelector('.drop-zone').classList.remove('filled');
+                });
+                wordButtons.forEach(btn => btn.classList.remove('used', 'shake', 'dragging'));
+                showHint('👆 拖动本领词到对应的动物身上');
+                document.querySelectorAll('.celebrate').forEach(el => el.remove());
+                celebrationShown = false;
+                usedAnswerButton = false;
+                resetMistakes();
+                resetTimer();
+                applyRandomBackground();
+                layoutAnimals();
+            }
+
+            function showAnswer() {
+                usedAnswerButton = true;
+                let filled = false;
+                animalElements.forEach(animal => {
+                    if (animal.classList.contains('matched')) return;
+                    const animalId = animal.dataset.animalId;
+                    const need = getAnimalNeed(animalId);
+                    let btn = null;
+                    if (Array.isArray(need)) {
+                        for (let type of need) {
+                            btn = wordButtons.find(b => !b.classList.contains('used') && b.dataset.type === type);
+                            if (btn) break;
+                        }
+                    } else {
+                        btn = wordButtons.find(b => !b.classList.contains('used') && b.dataset.type === need);
+                    }
+                    if (btn) {
+                        btn.classList.add('used');
+                        animal.classList.add('matched');
+                        const dz = animal.querySelector('.drop-zone');
+                        dz.textContent = btn.textContent;
+                        dz.classList.add('filled');
+                        filled = true;
+                    }
+                });
+                if (filled) { showHint('💡 答案已显示，请观察'); checkComplete(); }
+                else { showHint('✅ 全部已经匹配好啦！'); }
+            }
+
+            // 事件绑定
+            wordButtons.forEach(btn => {
+                btn.addEventListener('pointerdown', function(e) { startDrag(e, btn); });
+                btn.addEventListener('pointermove', moveGhost);
+                btn.addEventListener('pointerup', endDrag);
+                btn.addEventListener('pointercancel', endDrag);
+                btn.addEventListener('touchstart', function(e) { e.preventDefault(); }, { passive: false });
+            });
+
+            document.addEventListener('pointermove', function(e) { if (isDragging) { e.preventDefault(); moveGhost(e); } });
+            document.addEventListener('pointerup', function(e) { if (isDragging) endDrag(e); });
+
+            resetBtn.addEventListener('click', resetGame);
+            answerBtn.addEventListener('click', showAnswer);
+            shuffleBtn.addEventListener('click', shuffleGame);
+
+            // 单击计时器显示记录
+            timerDisplay.addEventListener('click', showRecords);
+
+            // 双击标题表情清空记录
+            titleEmoji.addEventListener('dblclick', clearRecords);
+
+            closeModalBtn.addEventListener('click', hideRecords);
+            modalOverlay.addEventListener('click', hideRecords);
+
+            let resizeTimeout;
+            window.addEventListener('resize', function() {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(resetGame, 200);
+            });
+            window.addEventListener('orientationchange', function() { setTimeout(resetGame, 300); });
+
+            // 初始化
+            function init() {
+                applyRandomBackground();
+                resetMistakes();
+                resetTimer();
+                layoutAnimals();
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', init);
+            } else {
+                init();
+            }
+        })();
+    </script>
+
+
+
+
+<!-- ================= 开物AI科学 · 版权模块（单击显示 / 双击打开官网） ================= -->
+<style id="kaiming-copyright-style">
+  #kaiming-copyright {
+    position: fixed;
+    bottom: 166px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    pointer-events: none;
+    z-index: 999999;
+    transition: opacity 0.45s ease;
+    opacity: 0;
+    display: none;
+  }
+  #kaiming-copyright .inner {
+    display: inline-block;
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #eafaf2;
+    padding: 9px 26px;
+    border-radius: 60px;
+    /* 原稿为 14px；此处改为 16px 以符合本机 verify_html.py 的「字号不得小于 16px」硬规则 */
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.6px;
+    border: 1px solid rgba(255, 245, 210, 0.3);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+    font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+    white-space: nowrap;
+  }
+</style>
+
+<div id="kaiming-copyright">
+  <div class="inner">© 2026 开物AI科学 ｜ AI 赋能 · 教育公平</div>
+</div>
+
+<script id="kaiming-copyright-script">
+(function () {
+  "use strict";
+
+  /* 目标：单击标题 → 显示版权 3.5 秒；双击标题 → 打开 www.kaiwuaiscience.com */
+
+  const HOMEPAGE = "https://www.kaiwuaiscience.com";
+  const SHOW_MS = 3500;      // 版权显示时长
+  const DBL_WINDOW = 280;    // 双击判定的时间窗（毫秒）
+  const FADE_MS = 450;       // 淡出时长，与 CSS transition 一致
+
+  function bindCopyright() {
+    // 首选 #mainTitle（注入脚本会保证它存在）；后三个选择器是手写粘贴时的兜底
+    const title = document.getElementById("mainTitle") ||
+                  document.querySelector("h1, .title, .page-title, .main-title");
+    const box = document.getElementById("kaiming-copyright");
+    if (!title || !box) return;
+
+    title.style.cursor = "pointer";
+    title.style.userSelect = "none";
+    title.style.webkitUserSelect = "none";
+
+    let clickTimer = null;
+    let hideTimer = null;
+    let seq = 0;   // 每次显示/隐藏都 +1，用来作废在飞的定时器
+
+    function showCopyright() {
+      const my = ++seq;
+      if (hideTimer) clearTimeout(hideTimer);
+      box.style.display = "block";
+      /* 强制重绘，让 0 → 1 的淡入真的发生。
+         这里刻意不用 requestAnimationFrame：rAF 在页面不产生新帧时（后台标签页、
+         无头渲染、大屏久置）不保证触发——一旦它晚于下方的隐藏定时器回调，
+         就会把 opacity 又设成 1，导致版权条永久停在屏幕上。 */
+      void box.offsetHeight;
+      box.style.opacity = "1";
+      hideTimer = setTimeout(function () {
+        if (my !== seq) return;      // 期间又被点过，交给新的那一次收尾
+        box.style.opacity = "0";
+        setTimeout(function () {
+          if (my === seq) box.style.display = "none";
+        }, FADE_MS);
+      }, SHOW_MS);
+    }
+
+    function hideCopyright() {
+      const my = ++seq;              // 作废所有在飞的定时器，避免"淡出到一半又被点亮"卡住
+      if (hideTimer) clearTimeout(hideTimer);
+      if (box.style.display !== "block") return;
+      box.style.opacity = "0";
+      setTimeout(function () {
+        if (my === seq) box.style.display = "none";
+      }, FADE_MS);
+    }
+
+    function openHomepage() {
+      // 双击时隐藏版权，并跳转官网
+      hideCopyright();
+      window.open(HOMEPAGE, "_blank", "noopener,noreferrer");
+    }
+
+    title.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (clickTimer) return;   // 已在等待双击窗口，忽略这次单击
+      clickTimer = setTimeout(function () {
+        clickTimer = null;
+        showCopyright();        // 确认是单击
+      }, DBL_WINDOW);
+    });
+
+    title.addEventListener("dblclick", function (e) {
+      e.stopPropagation();
+      if (clickTimer) {         // 取消挂起的单击
+        clearTimeout(clickTimer);
+        clickTimer = null;
+      }
+      openHomepage();
+    });
+
+    // 点击页面其它地方，立即隐藏版权
+    document.addEventListener("click", function (e) {
+      if (e.target === title) return;
+      hideCopyright();
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bindCopyright);
+  } else {
+    bindCopyright();
+  }
+})();
+</script>
+<!-- ================= 开物AI科学 · 版权模块 结束 ================= -->
+
+</body>
+</html>

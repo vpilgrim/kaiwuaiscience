@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>月球的表面 | 3D环形山 + 撞击模拟实验</title>
+<style>
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{width:100%; height:100%; overflow:hidden; font-family:'Microsoft YaHei','PingFang SC',sans-serif;
+    background:radial-gradient(ellipse at 50% 40%, #0d1230 0%, #04061a 60%, #01020a 100%); color:#e8f0ff;}
+  #scene{position:absolute; inset:0;}
+
+  #title{position:absolute; top:16px; left:16px; z-index:10; background:rgba(10,14,40,.78); backdrop-filter:blur(8px);
+    padding:14px 16px; border-radius:14px; border-left:4px solid #b8b4ae; font-size:28px; font-weight:700;}
+  #title .sub{font-size:20px; font-weight:400; color:#9fb6e0; margin-top:3px;}
+
+  /* 资料卡（默认隐藏，点"月球概况"显示，加宽让内容完整显示） */
+  #card{position:absolute; right:16px; top:16px; z-index:10; width:540px;
+    background:rgba(10,14,40,.9); backdrop-filter:blur(12px); border-radius:16px; padding:16px 20px; border:1px solid rgba(255,255,255,.16); display:none;}
+  #card.show{display:block;}
+  #card h3{margin-bottom:10px; font-size:26px; color:#ffd98a;}
+  #card .item{margin:8px 0; padding:12px 11px; background:rgba(255,255,255,.05); border-radius:9px; font-size:19px; line-height:1.55;}
+  #card .item b{color:#ffd98a;}
+  #card table{width:100%; border-collapse:collapse; font-size:19px; margin:8px 0;}
+  #card th,#card td{border:1px solid #2a3a6b; padding:10px 7px; text-align:left;}
+  #card th{background:#1a2a55;}
+
+  /* 底部控制（一排） */
+  #controls{position:absolute; bottom:18px; left:50%; transform:translateX(-50%); z-index:10; display:flex; flex-wrap:nowrap;
+    gap:8px; justify-content:center; align-items:center; background:rgba(8,12,36,.82); backdrop-filter:blur(12px); padding:12px 16px; border-radius:36px;
+    border:1px solid rgba(255,255,255,.2); max-width:98vw; overflow-x:auto;}
+  #controls button{border:none; padding:12px 14px; border-radius:18px; font-size:20px; font-weight:700; cursor:pointer; transition:.15s; white-space:nowrap;}
+  #controls button:hover{transform:translateY(-2px);}
+  #controls button.on{outline:3px solid #ffd24d; outline-offset:2px;}
+  .btn-play{background:#5aa7ff; color:#061028;}
+  .btn-exp{background:#ffaa44; color:#201400;}
+  .btn-info{background:#3a4a7b; color:#dfe8ff;}
+
+  /* 环形山模拟弹窗 */
+  #exp{position:absolute; inset:0; z-index:100; background:rgba(2,4,14,.8); display:none; align-items:center; justify-content:center;}
+  #exp.show{display:flex;}
+  #exp .panel{background:#0c1836; border:1px solid rgba(255,255,255,.2); border-radius:18px; padding:22px 24px;
+    max-width:760px; width:94%; color:#e8f0ff; box-shadow:0 10px 40px rgba(0,0,0,.6);}
+  #exp .panel h3{color:#ffc46b; margin-bottom:6px; font-size:28px;}
+  #exp .panel .desc{font-size:20px; color:#9fb6e0; margin-bottom:12px; line-height:1.6;}
+  #exp canvas{width:100%; border-radius:12px; background:#c8b78a; display:block; box-shadow:inset 0 0 30px rgba(80,60,30,.4);}
+  #exp .row{display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin-top:12px;}
+  #exp .row label{font-size:20px; color:#cfe0ff; display:flex; align-items:center; gap:6px;}
+  #exp .row input[type=range]{width:130px; accent-color:#ffaa44;}
+  #exp button{border:none; padding:14px 18px; border-radius:20px; font-weight:700; cursor:pointer;}
+  .btn-drop{background:#ffaa44; color:#201400;}
+  .btn-reset{background:#3a4a7b; color:#dfe8ff;}
+  .btn-close{background:#5a2a3a; color:#ffd0d0;}
+
+  @media (max-width:640px){ #card{width:190px; font-size:18px;} #title{font-size:22px;} }
+</style>
+</head>
+<body>
+<div id="scene"></div>
+<div id="title">🌕 月球的表面<span class="sub">大象版科学 · 四年级上册 · 第二单元第5课</span></div>
+
+<div id="card">
+  <h3>🌕 月球表面概况</h3>
+  <div class="item"><b>环形山</b>：月球表面密密麻麻的"坑"，是太阳光照在环形山上留下的影子形成的，主要由陨石撞击形成。</div>
+  <div class="item"><b>月海</b>：表面较暗的大片区域（不是真的海洋）。<br><b>月陆</b>：较亮的高地。</div>
+  <div class="item"><b>月球环境</b>：没有空气、没有水、没有动植物，昼夜温差大（白天最高 127℃，夜晚最低 -183℃）。</div>
+  <table>
+    <tr><th>对比</th><th>地球表面</th><th>月球表面</th></tr>
+    <tr><td>空气/水</td><td>有空气、有水</td><td>没有</td></tr>
+    <tr><td>动植物</td><td>有</td><td>没有</td></tr>
+    <tr><td>温差</td><td>小</td><td>大（127℃~-183℃）</td></tr>
+    <tr><td>地形</td><td>高原、山脉、海洋</td><td>环形山、月海、月陆</td></tr>
+  </table>
+  <div class="item">💡 <b>嫦娥工程</b>：我国已完成环绕探测、月面软着陆、采样返回等无人探测任务。</div>
+</div>
+
+<div id="controls">
+  <button class="btn-play" id="playBtn">⏸ 暂停</button>
+  <button class="btn-exp" onclick="showExp(true)">🌋 撞击模拟</button>
+  <button class="btn-info" onclick="showModal(true)">📖 科学原理</button>
+  <button class="btn-info" id="overviewBtn" onclick="toggleOverview()">🌍 月球概况</button>
+  <button class="btn-info" id="earthMoonBtn" onclick="toggleEarthMoon()">🪐 地月系统</button>
+  <button class="btn-info" id="scaleBtn" onclick="toggleScale()">📏 原比例</button>
+  <button class="btn-info" onclick="resetView()">🔄 重置</button>
+</div>
+
+<div id="modal" style="position:absolute; inset:0; z-index:110; background:rgba(2,6,18,.75); display:none; align-items:center; justify-content:center;">
+  <div style="background:#0c1836; border:1px solid rgba(255,255,255,.2); border-radius:18px; max-width:520px; width:90%; padding:24px 26px; color:#e8f0ff; line-height:1.8; font-size:22px; box-shadow:0 10px 40px rgba(0,0,0,.6); max-height:80vh; overflow:auto;">
+    <h3 style="color:#ffc46b; margin-bottom:10px;">📖 月球表面与环形山</h3>
+    <p>月球是地球的<b>天然卫星</b>，每 27.3 天围绕地球运转一周。</p>
+    <p>1609 年，伽利略用望远镜首次发现：月球表面的斑纹是<b>太阳光照在环形山上留下的影子</b>形成的。</p>
+    <p>环形山主要由<b>陨石撞击</b>形成——试试"环形山撞击模拟"，用不同大小的"陨石"砸向沙地，看看会砸出怎样的坑。</p>
+    <p>月球上没有空气、没有水、没有动植物，昼夜温差极大，所以宇航员登月要穿宇航服。</p>
+    <button style="margin-top:14px; background:#ffaa44; color:#201400; border:none; padding:14px 22px; border-radius:20px; font-weight:700; cursor:pointer;" onclick="showModal(false)">我知道了</button>
+  </div>
+</div>
+
+<div id="exp" onclick="if(event.target===this)showExp(false)">
+  <div class="panel" onclick="event.stopPropagation()">
+    <h3>🌋 环形山是怎样形成的？—— 撞击模拟实验</h3>
+    <div class="desc">用沙子模拟月球表面的岩石和月壤，用"陨石"砸向沙地。观察：陨石越大，砸出的环形山越<span style="color:#ffc46b;">大</span>、越<span style="color:#ffc46b;">深</span>。</div>
+    <canvas id="expCanvas" width="680" height="360"></canvas>
+    <div class="row">
+      <label>陨石大小 <input type="range" id="sizeSlider" min="6" max="30" value="14"></label>
+      <button class="btn-drop" onclick="dropRock()">💥 投放陨石</button>
+      <button class="btn-reset" onclick="resetExp()">🔄 重置</button>
+      <button class="btn-close" onclick="showExp(false)">关闭</button>
+    </div>
+  </div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const container = document.getElementById('scene');
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(50, innerWidth/innerHeight, 0.1, 2000);
+camera.position.set(0, 1.5, 5.5);
+
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+container.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true; controls.minDistance = 2.6; controls.maxDistance = 12;
+
+// 星空
+const sg = new THREE.BufferGeometry(); const sp=[];
+for(let i=0;i<700;i++){ const r=40+Math.random()*30, th=Math.random()*Math.PI*2, ph=Math.acos(2*Math.random()-1);
+  sp.push(r*Math.sin(ph)*Math.cos(th), r*Math.sin(ph)*Math.sin(th), r*Math.cos(ph)); }
+sg.setAttribute('position', new THREE.Float32BufferAttribute(sp,3));
+scene.add(new THREE.Points(sg, new THREE.PointsMaterial({color:0xffffff,size:0.12,transparent:true,opacity:0.8})));
+
+scene.add(new THREE.AmbientLight(0x8899bb, 0.9));
+const dir = new THREE.DirectionalLight(0xffffff, 1.2); dir.position.set(8, 6, 6); scene.add(dir);
+
+/* ===== 月球纹理（canvas 生成，1024 高清，自然逼真） ===== */
+function moonTexture(){
+  const S=1024;
+  const c = document.createElement('canvas'); c.width=c.height=S;
+  const g = c.getContext('2d');
+  // 基底：灰白高地，中心亮边缘暗（球体感）
+  const base=g.createRadialGradient(S*0.48,S*0.44,S*0.08,S*0.5,S*0.5,S*0.72);
+  base.addColorStop(0,'#dedad2'); base.addColorStop(0.55,'#c6c2ba'); base.addColorStop(1,'#a9a59d');
+  g.fillStyle=base; g.fillRect(0,0,S,S);
+  // 月海：暗灰蓝不规则区域（多个椭圆叠加 + 随机旋转）
+  g.fillStyle='rgba(100,106,118,.52)';
+  const seas=[[310,340,185,130],[510,460,150,108],[690,300,138,100],[420,610,170,120],[760,610,120,88],[250,660,108,78],[640,120,90,70]];
+  seas.forEach(([x,y,rx,ry])=>{
+    g.save(); g.translate(x,y); g.rotate(Math.random()*Math.PI);
+    g.beginPath(); g.ellipse(0,0,rx,ry,0,0,Math.PI*2); g.fill(); g.restore();
+  });
+  // 大量小环形山（带投影 + 坑底 + 受光亮边）
+  for(let i=0;i<700;i++){
+    const x=Math.random()*S, y=Math.random()*S, r=2+Math.random()*12;
+    g.fillStyle='rgba(66,68,72,.32)';
+    g.beginPath(); g.arc(x+r*0.18, y+r*0.18, r, 0, Math.PI*2); g.fill();
+    g.fillStyle='rgba(88,90,94,.4)';
+    g.beginPath(); g.arc(x,y,r,0,Math.PI*2); g.fill();
+    g.strokeStyle='rgba(238,235,229,.55)'; g.lineWidth=1.5;
+    g.beginPath(); g.arc(x,y,r,Math.PI*1.05,Math.PI*1.95); g.stroke();
+  }
+  // 中型环形山（中心凸起）
+  for(let i=0;i<60;i++){
+    const x=Math.random()*S, y=Math.random()*S, r=14+Math.random()*30;
+    const grd=g.createRadialGradient(x,y,r*0.1,x,y,r);
+    grd.addColorStop(0,'#8f8b82'); grd.addColorStop(0.55,'#b9b5ac'); grd.addColorStop(1,'#c6c2ba');
+    g.fillStyle=grd; g.beginPath(); g.arc(x,y,r,0,Math.PI*2); g.fill();
+    g.strokeStyle='rgba(242,238,230,.6)'; g.lineWidth=2;
+    g.beginPath(); g.arc(x,y,r,Math.PI*1.05,Math.PI*1.95); g.stroke();
+    g.fillStyle='rgba(142,138,130,.55)'; g.beginPath(); g.arc(x,y,r*0.16,0,Math.PI*2); g.fill();
+  }
+  // 大环形山 + 放射纹（第谷式亮色射线）
+  for(let i=0;i<12;i++){
+    const x=Math.random()*S, y=Math.random()*S, r=35+Math.random()*30;
+    const grd=g.createRadialGradient(x,y,r*0.1,x,y,r);
+    grd.addColorStop(0,'#7d7a72'); grd.addColorStop(0.6,'#b1ada3'); grd.addColorStop(1,'#c6c2ba');
+    g.fillStyle=grd; g.beginPath(); g.arc(x,y,r,0,Math.PI*2); g.fill();
+    g.strokeStyle='rgba(246,242,234,.65)'; g.lineWidth=2.5;
+    g.beginPath(); g.arc(x,y,r,Math.PI*1.05,Math.PI*1.95); g.stroke();
+    g.strokeStyle='rgba(232,228,220,.32)'; g.lineWidth=1.2;
+    for(let j=0;j<9;j++){
+      const a=Math.random()*Math.PI*2, len=r*(1.5+Math.random()*2.2);
+      g.beginPath(); g.moveTo(x+Math.cos(a)*r, y+Math.sin(a)*r);
+      g.lineTo(x+Math.cos(a)*len, y+Math.sin(a)*len); g.stroke();
+    }
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.anisotropy = 8;
+  return tex;
+}
+const moon = new THREE.Mesh(new THREE.SphereGeometry(1.6, 64, 64), new THREE.MeshStandardMaterial({map:moonTexture(), roughness:0.95}));
+scene.add(moon);
+// 加载 Three.js 官方成熟月球贴图，成功则替换 Canvas 纹理（失败保留 Canvas 兜底）
+const texLoader = new THREE.TextureLoader();
+texLoader.load('https://threejs.org/examples/textures/planets/moon_1024.jpg',
+  tex=>{ tex.anisotropy = 8; moon.material.map = tex; moon.material.needsUpdate = true; },
+  undefined, ()=>{});
+
+/* ===== 地球（地月系统用，1024 自然纹理） ===== */
+function earthTexture(){
+  const S=1024;
+  const c=document.createElement('canvas'); c.width=c.height=S;
+  const g=c.getContext('2d');
+  // 海洋：深浅渐变
+  const ocean=g.createLinearGradient(0,0,S,S);
+  ocean.addColorStop(0,'#2a6cc4'); ocean.addColorStop(0.5,'#3d82d8'); ocean.addColorStop(1,'#1c56a0');
+  g.fillStyle=ocean; g.fillRect(0,0,S,S);
+  // 大陆：用平滑多边形勾勒（简化的真实轮廓）
+  function land(pts, color){
+    g.fillStyle=color;
+    g.beginPath();
+    g.moveTo(pts[0][0],pts[0][1]);
+    for(let i=1;i<pts.length;i++){
+      const mx=(pts[i-1][0]+pts[i][0])/2, my=(pts[i-1][1]+pts[i][1])/2;
+      g.quadraticCurveTo(pts[i-1][0],pts[i-1][1],mx,my);
+    }
+    g.closePath(); g.fill();
+  }
+  land([[190,120],[310,85],[420,135],[485,195],[445,300],[385,360],[300,385],[235,345],[175,265],[170,190]], '#4d9e52');       // 欧亚
+  land([[300,360],[360,335],[405,420],[385,520],[320,565],[280,480],[285,420]], '#57a75c');                                      // 非洲
+  land([[120,115],[225,88],[300,135],[285,225],[205,245],[140,195],[125,150]], '#4d9e52');                                       // 北美
+  land([[230,300],[282,290],[325,360],[305,465],[265,525],[232,420],[225,350]], '#57a75c');                                      // 南美
+  land([[520,500],[585,500],[605,565],[565,605],[510,565],[505,525]], '#c9a24e');                                                // 澳洲
+  land([[600,180],[680,165],[740,215],[730,300],[660,330],[605,260]], '#4d9e52');                                                // 亚洲东部/岛屿
+  // 沙漠带（撒哈拉/中亚）
+  g.fillStyle='#d8b878';
+  g.beginPath(); g.ellipse(365,265,85,45,0.25,0,Math.PI*2); g.fill();
+  g.beginPath(); g.ellipse(430,175,60,32,-0.2,0,Math.PI*2); g.fill();
+  // 极地冰盖
+  g.fillStyle='#eef2f5';
+  g.beginPath(); g.ellipse(S/2,8,S*0.30,62,0,Math.PI,Math.PI*2); g.fill();
+  g.fillStyle='#f2f5f7';
+  g.beginPath(); g.ellipse(S/2,S-8,S*0.42,90,0,Math.PI,Math.PI*2); g.fill();
+  // 云层（柔白斑）
+  for(let i=0;i<55;i++){
+    const x=Math.random()*S, y=Math.random()*S, r=15+Math.random()*38;
+    const grd=g.createRadialGradient(x,y,0,x,y,r);
+    grd.addColorStop(0,'rgba(255,255,255,.68)');
+    grd.addColorStop(1,'rgba(255,255,255,0)');
+    g.fillStyle=grd; g.beginPath(); g.arc(x,y,r,0,Math.PI*2); g.fill();
+  }
+  const tex=new THREE.CanvasTexture(c);
+  tex.anisotropy=8;
+  return tex;
+}
+const earth = new THREE.Mesh(new THREE.SphereGeometry(2.6, 64, 64), new THREE.MeshStandardMaterial({map:earthTexture(), roughness:0.7}));
+earth.visible = false;
+scene.add(earth);
+// 加载 Three.js 官方成熟地球贴图，成功则替换 Canvas 纹理
+texLoader.load('https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg',
+  tex=>{ tex.anisotropy = 8; earth.material.map = tex; earth.material.needsUpdate = true; },
+  undefined, ()=>{});
+
+// 视图模式：'moon' 单独观察月球 | 'earthmoon' 地月系统
+let viewMode = 'moon';
+let scaleMode = false;   // false=示意比例, true=原比例（真实大小和距离）
+const moonOrbit = { radius: 5.2, angle: 0 };
+// 月球轨道环（地月系统用）
+const moonOrbitRing = new THREE.Mesh(
+  new THREE.RingGeometry(5.1, 5.3, 128),
+  new THREE.MeshBasicMaterial({color:0x8899bb, side:THREE.DoubleSide, transparent:true, opacity:0.35})
+);
+moonOrbitRing.rotation.x = -Math.PI/2;
+moonOrbitRing.visible = false;
+scene.add(moonOrbitRing);
+
+// 真实比例数据：地球直径是月球 3.67 倍，地月距离约地球直径 30 倍
+const EARTH_D = 5.2;                                  // 地球直径（当前模型）
+const MOON_SCALE_DEMO = 0.55;                         // 示意缩放（月球放大便于观察）
+const MOON_SCALE_REAL = (EARTH_D/3.67) / (1.6*2);     // 真实月球直径 ÷ 原始直径 ≈ 0.44
+const ORBIT_DEMO = 5.2;                               // 示意轨道
+const ORBIT_REAL = EARTH_D * 30;                      // 真实地月距离
+
+let spinning = true;
+const playBtn = document.getElementById('playBtn');
+playBtn.onclick = ()=>{ spinning=!spinning; playBtn.textContent = spinning?'⏸ 暂停':'▶ 播放'; };
+
+function applyScale(){
+  if(viewMode !== 'earthmoon') return;
+  if(scaleMode){
+    moonOrbit.radius = ORBIT_REAL;
+    moonOrbitRing.scale.setScalar(ORBIT_REAL / ORBIT_DEMO);
+    moon.scale.setScalar(MOON_SCALE_REAL);
+    camera.position.set(0, 30, 90);
+    controls.minDistance = 10; controls.maxDistance = 500;
+  } else {
+    moonOrbit.radius = ORBIT_DEMO;
+    moonOrbitRing.scale.setScalar(1);
+    moon.scale.setScalar(MOON_SCALE_DEMO);
+    camera.position.set(0, 6, 14);
+    controls.minDistance = 5; controls.maxDistance = 30;
+  }
+  controls.target.set(0,0,0); controls.update();
+  const sb = document.getElementById('scaleBtn');
+  if(sb){ sb.classList.toggle('on', scaleMode); sb.textContent = scaleMode ? '🌐 示意比例' : '📏 原比例'; }
+}
+
+function animate(){
+  requestAnimationFrame(animate);
+  if(viewMode==='moon'){
+    earth.visible = false;
+    moonOrbitRing.visible = false;
+    moon.position.set(0,0,0);
+    moon.scale.setScalar(1);
+    if(spinning) moon.rotation.y += 0.0025;
+  } else {
+    earth.visible = true;
+    moonOrbitRing.visible = true;
+    moonOrbit.angle += 0.006;
+    moon.position.set(Math.cos(moonOrbit.angle)*moonOrbit.radius, 0, Math.sin(moonOrbit.angle)*moonOrbit.radius);
+    moon.scale.setScalar(scaleMode ? MOON_SCALE_REAL : MOON_SCALE_DEMO);
+    if(spinning) moon.rotation.y += 0.0025;
+    earth.rotation.y += 0.001;
+  }
+  controls.update();
+  renderer.render(scene, camera);
+}
+
+/* ===== 环形山撞击模拟（Canvas 2D，随机掉落 + 撞击感） ===== */
+const ec = document.getElementById('expCanvas'), ex = ec.getContext('2d');
+const rocks = [];        // {x,y,vx,vy,r, landed}
+let craters = [];
+let particles = [];      // 撞击飞溅的沙粒 {x,y,vx,vy,life}
+let flashes = [];        // 撞击闪光 {x,y,life}
+function resetExp(){
+  craters = []; rocks.length = 0; particles = []; flashes = [];
+  drawExp();
+}
+function drawSand(){
+  ex.fillStyle='#c8b78a'; ex.fillRect(0,0,ec.width,ec.height);
+  ex.fillStyle='rgba(120,100,60,.25)';
+  for(let i=0;i<300;i++){ ex.fillRect(Math.random()*ec.width, Math.random()*ec.height, 1.5, 1.5); }
+}
+function drawCraters(){
+  craters.forEach(k=>{
+    const g=ex.createRadialGradient(k.x,k.y,2,k.x,k.y,k.r);
+    g.addColorStop(0,'#6b5f45'); g.addColorStop(.6,'#a89868'); g.addColorStop(1,'#c8b78a');
+    ex.fillStyle=g; ex.beginPath(); ex.arc(k.x,k.y,k.r,0,Math.PI*2); ex.fill();
+    ex.strokeStyle='#e6d9b0'; ex.lineWidth=2.5; ex.beginPath(); ex.arc(k.x,k.y,k.r,0,Math.PI*2); ex.stroke();
+  });
+}
+function drawExp(){
+  drawSand(); drawCraters();
+  // 飞行中的陨石
+  rocks.forEach(r=>{
+    ex.fillStyle='#5a564e';
+    ex.beginPath(); ex.arc(r.x,r.y,r.r,0,Math.PI*2); ex.fill();
+    ex.strokeStyle='#333'; ex.lineWidth=1; ex.stroke();
+  });
+  // 撞击闪光
+  flashes.forEach(f=>{
+    const a = f.life/12;
+    const g = ex.createRadialGradient(f.x,f.y,0,f.x,f.y,36);
+    g.addColorStop(0,`rgba(255,244,190,${a*0.9})`);
+    g.addColorStop(1,'rgba(255,200,80,0)');
+    ex.fillStyle=g; ex.beginPath(); ex.arc(f.x,f.y,36,0,Math.PI*2); ex.fill();
+  });
+  // 飞溅沙粒
+  particles.forEach(p=>{
+    ex.fillStyle=`rgba(160,130,80,${Math.min(1,p.life/20)})`;
+    ex.beginPath(); ex.arc(p.x,p.y,2.5,0,Math.PI*2); ex.fill();
+  });
+}
+function dropRock(){
+  const avg = +document.getElementById('sizeSlider').value;  // 滑块 = 平均大小
+  const r = avg * (0.7 + Math.random()*0.6);                 // 每颗大小随机 0.7~1.3 倍
+  const x = Math.random()*(ec.width-100)+50;                  // 随机横向落点
+  const ty = Math.random()*(ec.height*0.6) + ec.height*0.15;  // 随机落点深度（画布 15%~75% 高度）
+  const vx = (Math.random()-0.5)*3;                           // 随机水平速度，斜着掉
+  rocks.push({x:x, y:-30, vx:vx, vy:0, r:r, ty:ty, landed:false});
+  if(rocks.length===1 && !expRunning) expLoop();
+}
+let impactAudio = null;
+function playImpact(r){
+  try{ impactAudio = impactAudio || new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ return; }
+  if(impactAudio.state==='suspended') impactAudio.resume();
+  const t = impactAudio.currentTime;
+  // 主撞击：低频"砰"，陨石越大声音越低越响
+  const o = impactAudio.createOscillator();
+  const g = impactAudio.createGain();
+  o.type = 'sine';
+  o.frequency.setValueAtTime(Math.max(55, 150 - r*3.5), t);
+  o.frequency.exponentialRampToValueAtTime(45, t + 0.25);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(Math.min(0.6, 0.25 + r*0.012), t + 0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+  o.connect(g).connect(impactAudio.destination);
+  o.start(t); o.stop(t + 0.32);
+  // 沙粒飞溅：短促高频"沙沙"声
+  const n = impactAudio.createOscillator();
+  const ng = impactAudio.createGain();
+  n.type = 'triangle';
+  n.frequency.value = 800 + Math.random()*400;
+  ng.gain.setValueAtTime(0.0001, t);
+  ng.gain.exponentialRampToValueAtTime(0.12, t + 0.008);
+  ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+  n.connect(ng).connect(impactAudio.destination);
+  n.start(t); n.stop(t + 0.14);
+}
+function spawnImpact(x, y, r){
+  playImpact(r);   // 撞击音效
+  flashes.push({x:x, y:y, life:12});
+  const n = Math.max(12, Math.round(r*1.8));
+  for(let i=0;i<n;i++){
+    const a = Math.random()*Math.PI*2;
+    const sp = 2 + Math.random()*6;
+    particles.push({x:x, y:y, vx:Math.cos(a)*sp, vy:-Math.abs(Math.sin(a))*sp - Math.random()*4, life:25+Math.random()*15});
+  }
+}
+function updateParticles(){
+  for(let i=particles.length-1;i>=0;i--){
+    const p=particles[i];
+    p.x += p.vx; p.y += p.vy; p.vy += 0.3; p.life--;
+    if(p.life<=0) particles.splice(i,1);
+  }
+  for(let i=flashes.length-1;i>=0;i--){ flashes[i].life--; if(flashes[i].life<=0) flashes.splice(i,1); }
+}
+let expRunning=false;
+function expLoop(){
+  expRunning=true;
+  updateParticles();
+  for(let i=rocks.length-1;i>=0;i--){
+    const r=rocks[i];
+    if(!r.landed){
+      r.vy += 0.5; r.y += r.vy; r.x += r.vx;
+      if(r.y + r.r >= r.ty){
+        r.y = r.ty - r.r; r.landed = true;
+        craters.push({x:r.x, y:r.ty-6, r:r.r*3.2});
+        spawnImpact(r.x, r.ty-6, r.r);   // 撞击粒子 + 闪光
+      }
+    }
+  }
+  for(let i=rocks.length-1;i>=0;i--){ if(rocks[i].landed) rocks.splice(i,1); }
+  drawExp();
+  if(rocks.length>0 || particles.length>0 || flashes.length>0){
+    requestAnimationFrame(expLoop);
+  } else {
+    expRunning = false;
+  }
+}
+window.showExp = v=>{ document.getElementById('exp').classList.toggle('show', v); if(v) drawExp(); };
+window.showModal = v=>document.getElementById('modal').style.display = v?'flex':'none';
+window.dropRock = dropRock; window.resetExp = resetExp;
+window.toggleOverview = ()=>document.getElementById('card').classList.toggle('show');
+window.toggleEarthMoon = ()=>{
+  viewMode = (viewMode==='moon') ? 'earthmoon' : 'moon';
+  const btn = document.getElementById('earthMoonBtn');
+  if(viewMode==='earthmoon'){
+    scaleMode = false;
+    applyScale();
+    btn.textContent = '🌕 回到月球';
+    btn.classList.add('on');
+  } else {
+    camera.position.set(0, 1.5, 5.5);
+    controls.minDistance = 2.6; controls.maxDistance = 12;
+    btn.textContent = '🪐 地月系统';
+    btn.classList.remove('on');
+    const sb = document.getElementById('scaleBtn');
+    if(sb){ sb.classList.remove('on'); sb.textContent = '📏 原比例'; }
+  }
+  controls.target.set(0,0,0); controls.update();
+};
+window.toggleScale = ()=>{
+  if(viewMode !== 'earthmoon') toggleEarthMoon();  // 不在"地月系统"就先切过去
+  scaleMode = !scaleMode;
+  applyScale();
+};
+window.resetView = ()=>{
+  if(viewMode==='earthmoon'){
+    if(scaleMode){ camera.position.set(0, 30, 90); controls.minDistance=10; controls.maxDistance=500; }
+    else { camera.position.set(0, 6, 14); controls.minDistance=5; controls.maxDistance=30; }
+  } else { camera.position.set(0, 1.5, 5.5); controls.minDistance=2.6; controls.maxDistance=12; }
+  controls.target.set(0,0,0); controls.update();
+};
+
+addEventListener('resize', ()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
+
+resetExp();
+animate();
+</script>
+
+
+<!-- ================= 开物AI科学 · 版权模块（单击显示 / 双击打开官网） ================= -->
+<style id="kaiming-copyright-style">
+  #kaiming-copyright {
+    position: fixed;
+    bottom: 94px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    pointer-events: none;
+    z-index: 999999;
+    transition: opacity 0.45s ease;
+    opacity: 0;
+    display: none;
+  }
+  #kaiming-copyright .inner {
+    display: inline-block;
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #eafaf2;
+    padding: 9px 26px;
+    border-radius: 60px;
+    /* 原稿为 14px；此处改为 16px 以符合本机 verify_html.py 的「字号不得小于 16px」硬规则 */
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.6px;
+    border: 1px solid rgba(255, 245, 210, 0.3);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+    font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+    white-space: nowrap;
+  }
+</style>
+
+<div id="kaiming-copyright">
+  <div class="inner">© 2026 开物AI科学 ｜ AI 赋能 · 教育公平</div>
+</div>
+
+<script id="kaiming-copyright-script">
+(function () {
+  "use strict";
+
+  /* 目标：单击标题 → 显示版权 3.5 秒；双击标题 → 打开 www.kaiwuaiscience.com */
+
+  const HOMEPAGE = "https://www.kaiwuaiscience.com";
+  const SHOW_MS = 3500;      // 版权显示时长
+  const DBL_WINDOW = 280;    // 双击判定的时间窗（毫秒）
+  const FADE_MS = 450;       // 淡出时长，与 CSS transition 一致
+
+  function bindCopyright() {
+    // 首选 #mainTitle（注入脚本会保证它存在）；后三个选择器是手写粘贴时的兜底
+    const title = document.getElementById("title") ||
+                  document.querySelector("h1, .title, .page-title, .main-title");
+    const box = document.getElementById("kaiming-copyright");
+    if (!title || !box) return;
+
+    title.style.cursor = "pointer";
+    title.style.userSelect = "none";
+    title.style.webkitUserSelect = "none";
+
+    let clickTimer = null;
+    let hideTimer = null;
+    let seq = 0;   // 每次显示/隐藏都 +1，用来作废在飞的定时器
+
+    function showCopyright() {
+      const my = ++seq;
+      if (hideTimer) clearTimeout(hideTimer);
+      box.style.display = "block";
+      /* 强制重绘，让 0 → 1 的淡入真的发生。
+         这里刻意不用 requestAnimationFrame：rAF 在页面不产生新帧时（后台标签页、
+         无头渲染、大屏久置）不保证触发——一旦它晚于下方的隐藏定时器回调，
+         就会把 opacity 又设成 1，导致版权条永久停在屏幕上。 */
+      void box.offsetHeight;
+      box.style.opacity = "1";
+      hideTimer = setTimeout(function () {
+        if (my !== seq) return;      // 期间又被点过，交给新的那一次收尾
+        box.style.opacity = "0";
+        setTimeout(function () {
+          if (my === seq) box.style.display = "none";
+        }, FADE_MS);
+      }, SHOW_MS);
+    }
+
+    function hideCopyright() {
+      const my = ++seq;              // 作废所有在飞的定时器，避免"淡出到一半又被点亮"卡住
+      if (hideTimer) clearTimeout(hideTimer);
+      if (box.style.display !== "block") return;
+      box.style.opacity = "0";
+      setTimeout(function () {
+        if (my === seq) box.style.display = "none";
+      }, FADE_MS);
+    }
+
+    function openHomepage() {
+      // 双击时隐藏版权，并跳转官网
+      hideCopyright();
+      window.open(HOMEPAGE, "_blank", "noopener,noreferrer");
+    }
+
+    title.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (clickTimer) return;   // 已在等待双击窗口，忽略这次单击
+      clickTimer = setTimeout(function () {
+        clickTimer = null;
+        showCopyright();        // 确认是单击
+      }, DBL_WINDOW);
+    });
+
+    title.addEventListener("dblclick", function (e) {
+      e.stopPropagation();
+      if (clickTimer) {         // 取消挂起的单击
+        clearTimeout(clickTimer);
+        clickTimer = null;
+      }
+      openHomepage();
+    });
+
+    // 点击页面其它地方，立即隐藏版权
+    document.addEventListener("click", function (e) {
+      if (e.target === title) return;
+      hideCopyright();
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bindCopyright);
+  } else {
+    bindCopyright();
+  }
+})();
+</script>
+<!-- ================= 开物AI科学 · 版权模块 结束 ================= -->
+
+</body>
+</html>

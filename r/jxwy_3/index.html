@@ -1,0 +1,547 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>探究条形磁铁的磁极</title>
+    <style>
+        /* 全局去滚动条，满屏显示 */
+        * { box-sizing: border-box; }
+        body, html {
+            margin: 0; padding: 0;
+            width: 100vw; height: 100vh;
+            overflow: hidden; 
+            font-family: '楷体', 'KaiTi', 'Microsoft YaHei', sans-serif;
+            background-color: #2c3e50; 
+            display: flex;
+            flex-direction: row; 
+        }
+
+        /* 左右分屏容器 */
+        .panel {
+            height: 100%;
+            transition: flex 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.4s;
+            padding: 20px 25px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .active { flex: 6; opacity: 1; z-index: 10; box-shadow: 0 0 20px rgba(0,0,0,0.3); }
+        .inactive { flex: 4; opacity: 0.85; transform: scale(0.98); cursor: pointer; }
+        .inactive:hover { opacity: 1; }
+        .inactive * { pointer-events: none; }
+
+        .left-panel { background-color: #fdfefe; border-right: 4px solid #34495e; }
+        .right-panel { background-color: #f4fdf4; border-left: 2px solid #a9dfbf; }
+
+        /* 标题样式 */
+        .main-title {
+            font-size: 36px; font-weight: bold; color: #d35400;
+            background: #fdebd0; padding: 15px 30px; border-radius: 10px;
+            display: inline-block; margin-bottom: 10px; border: 3px solid #f39c12;
+            text-align: center;
+        }
+
+        /* ======== 左侧：实验区 ======== */
+        .experiment-header { text-align: center; margin-top: 5px; flex-shrink: 0; }
+        
+        .clip-box {
+            display: flex; justify-content: center; align-items: center;
+            margin: 10px 0; background: #ebedef; padding: 10px; 
+            border-radius: 10px; border: 2px dashed #95a5a6;
+        }
+        .clip-text { font-size: 24px; color: #555; margin-right: 15px; font-weight: bold;}
+        .clip-source {
+            font-size: 50px; cursor: grab; user-select: none;
+            transition: transform 0.2s; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin-top: -10px;
+        }
+        .clip-source:active { cursor: grabbing; transform: scale(1.2); }
+
+        /* 磁铁区域 */
+        .magnet-area { flex-grow: 1; display: flex; flex-direction: column; align-items: center; margin-top: 15px; }
+        .magnet {
+            display: flex; width: 95%; height: 90px; border-radius: 8px;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3); position: relative; margin-bottom: 5px;
+        }
+        .pole-text { position: absolute; top: 20px; font-size: 45px; color: rgba(255,255,255,0.4); pointer-events: none;}
+        
+        /* 拖拽列：整列感应设计 */
+        .drop-zone { 
+            flex: 1; display: flex; flex-direction: column; align-items: center; 
+            position: relative; transition: background 0.2s; 
+            cursor: pointer;
+        }
+        /* 隐藏的透明罩，确保拖拽到已有曲别针上也能完美识别整列，防止闪烁 */
+        .drop-overlay {
+            position: absolute; inset: 0; z-index: 50; 
+        }
+        
+        .zone-number {
+            width: 100%; height: 90px; display: flex; justify-content: center; align-items: center;
+            color: white; font-size: 40px; font-weight: bold; transition: border 0.2s; border: 1px dashed rgba(255,255,255,0.2);
+        }
+        
+        /* 拖拽时的整列微光与数字高亮反馈 */
+        .drop-zone.drag-over { background-color: rgba(255,255,255,0.15); box-shadow: inset 0 0 15px rgba(255,255,255,0.2); }
+        .drop-zone.drag-over .zone-number { border: 2px dashed #fff; background-color: rgba(255,255,255,0.3); }
+        
+        /* 悬挂曲别针区 */
+        .clips-hanging-area { width: 100%; min-height: 250px; display: flex; flex-direction: column; align-items: center; }
+        
+        .hanging-clip {
+            font-size: 45px; 
+            margin-top: -18px; 
+            position: relative;
+            animation: dropIn 0.3s ease-out forwards;
+            text-shadow: 2px 2px 3px rgba(0,0,0,0.5);
+        }
+        .hanging-clip:nth-child(even) { transform: rotate(8deg); }
+        .hanging-clip:nth-child(odd) { transform: rotate(-8deg); }
+
+        @keyframes dropIn { 
+            from { top: -20px; opacity: 0; } 
+            to { top: 0; opacity: 1; } 
+        }
+
+        .left-controls { text-align: center; margin-top: auto; padding-top: 15px; border-top: 2px dashed #ccc; flex-shrink: 0;}
+        .left-controls button {
+            padding: 15px 25px; font-size: 22px; border: none; border-radius: 8px; cursor: pointer;
+            font-weight: bold; margin: 0 10px; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+        .btn-reset { background-color: #7f8c8d; }
+        .btn-sync { background-color: #2980b9; }
+
+        /* ======== 右侧：记录区 ======== */
+        .table-title { font-size: 28px; font-weight: bold; text-align: center; color: #27ae60; margin: 15px 0; }
+        
+        table { 
+            width: 100%; border-collapse: collapse; font-size: 24px; background: white; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: all 0.4s ease;
+        }
+        th, td { border: 2px solid #8fc98f; padding: 10px 5px; text-align: center; transition: all 0.4s ease; }
+        th { background-color: #edf7ed; color: #2d5a2d; }
+        input[type="number"] {
+            width: 80%; padding: 8px; font-size: 24px; text-align: center;
+            border: 2px solid #bdc3c7; border-radius: 5px; font-family: inherit; transition: all 0.4s ease;
+        }
+
+        .strength-group { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 5px; }
+        .strength-btn {
+            background-color: #ecf0f1; border: 1px solid #bdc3c7; border-radius: 4px;
+            padding: 6px 2px; font-size: 18px; cursor: pointer; color: #333; font-family: inherit; font-weight: bold;
+            transition: all 0.2s;
+        }
+        .strength-btn.selected { background-color: #f39c12; color: white; border-color: #e67e22; transform: scale(1.05); box-shadow: 0 2px 4px rgba(0,0,0,0.2);}
+
+        table.shrunk th, table.shrunk td { padding: 4px 2px; font-size: 20px; }
+        table.shrunk input[type="number"] { font-size: 20px; padding: 4px; }
+        table.shrunk .strength-btn { font-size: 16px; padding: 4px 2px; }
+
+        .btn-reveal {
+            background-color: #f39c12; color: white; border: none; padding: 15px 0; width: 100%;
+            font-size: 28px; font-weight: bold; border-radius: 10px; cursor: pointer; margin-top: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2); transition: all 0.3s;
+        }
+        .btn-reveal:active { transform: translateY(2px); }
+
+        /* 结论区（字号调小） */
+        .conclusion-box {
+            background-color: #e0f0ff; border-radius: 10px; padding: 20px 25px; margin-top: 15px;
+            font-size: 28px; /* 字体改小一号 */
+            line-height: 1.6; color: #1a5276; border: 3px solid #99c2e1;
+            display: none; 
+            animation: fadeIn 0.5s ease forwards;
+            text-align: justify;
+        }
+        /* 结论内加粗关键字号同步变小 */
+        .conclusion-box strong { font-size: 34px; color: #e74c3c; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* 居中弹窗 */
+        #toast {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(231, 76, 60, 0.95); color: white; padding: 20px 40px;
+            border-radius: 15px; font-size: 30px; font-weight: bold;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3); pointer-events: none; opacity: 0;
+            transition: opacity 0.3s; z-index: 100;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="toast"></div>
+
+    <!-- =============== 左半屏 =============== -->
+    <div class="panel left-panel active" id="pnl-left" onclick="focusPanel('left')">
+        <div class="experiment-header">
+            <div class="main-title" id="mainTitle">💡 条形磁铁哪个部位的磁性强</div>
+        </div>
+
+        <div class="clip-box">
+            <div class="clip-text">👇 拖动此处曲别针（或点击磁铁数字）👉</div>
+            <div class="clip-source" draggable="true" ondragstart="drag(event)">📎</div>
+        </div>
+
+        <div class="magnet-area">
+            <div class="magnet">
+                <span class="pole-text" style="left:15px;">S</span>
+                <span class="pole-text" style="right:15px;">N</span>
+                
+                <div style="width: 40%; display: flex; background-color: #1a5276; border-radius: 8px 0 0 8px;">
+                    <!-- 加入 drop-overlay 透明罩，保证挂再多曲别针也能流畅接收拖放事件 -->
+                    <div class="drop-zone" ondrop="drop(event, 1)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)" onclick="clickToAdd(event, 1)">
+                        <div class="drop-overlay"></div>
+                        <div class="zone-number">1</div>
+                        <div class="clips-hanging-area" id="zone-1"></div>
+                    </div>
+                    <div class="drop-zone" ondrop="drop(event, 2)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)" onclick="clickToAdd(event, 2)">
+                        <div class="drop-overlay"></div>
+                        <div class="zone-number">2</div>
+                        <div class="clips-hanging-area" id="zone-2"></div>
+                    </div>
+                </div>
+                
+                <div class="drop-zone" style="width: 20%; background: linear-gradient(to right, #1a5276 50%, #c0392b 50%);" ondrop="drop(event, 3)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)" onclick="clickToAdd(event, 3)">
+                    <div class="drop-overlay"></div>
+                    <div class="zone-number">3</div>
+                    <div class="clips-hanging-area" id="zone-3"></div>
+                </div>
+
+                <div style="width: 40%; display: flex; background-color: #c0392b; border-radius: 0 8px 8px 0;">
+                    <div class="drop-zone" ondrop="drop(event, 4)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)" onclick="clickToAdd(event, 4)">
+                        <div class="drop-overlay"></div>
+                        <div class="zone-number">4</div>
+                        <div class="clips-hanging-area" id="zone-4"></div>
+                    </div>
+                    <div class="drop-zone" ondrop="drop(event, 5)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)" onclick="clickToAdd(event, 5)">
+                        <div class="drop-overlay"></div>
+                        <div class="zone-number">5</div>
+                        <div class="clips-hanging-area" id="zone-5"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="left-controls">
+            <button class="btn-reset" onclick="resetClips(event)">🔄 重新实验</button>
+            <button class="btn-sync" onclick="syncData(event)">⬇️ 将当前数据填入表格</button>
+        </div>
+    </div>
+
+
+    <!-- =============== 右半屏 =============== -->
+    <div class="panel right-panel inactive" id="pnl-right" onclick="focusPanel('right')">
+        <div class="table-title">● 条形磁铁不同部位磁性强弱实验记录表 ●</div>
+        
+        <table id="record-table" onclick="event.stopPropagation()">
+            <tr>
+                <th rowspan="2" style="width: 15%;">组别</th>
+                <th colspan="5">各部位吸引曲别针的数量</th>
+            </tr>
+            <tr>
+                <th style="width: 17%;">部位 1</th>
+                <th style="width: 17%;">部位 2</th>
+                <th style="width: 17%;">部位 3</th>
+                <th style="width: 17%;">部位 4</th>
+                <th style="width: 17%;">部位 5</th>
+            </tr>
+            <tr>
+                <td>1 组</td>
+                <td><input type="number" id="t-1-1" min="0"></td><td><input type="number" id="t-1-2" min="0"></td>
+                <td><input type="number" id="t-1-3" min="0"></td><td><input type="number" id="t-1-4" min="0"></td><td><input type="number" id="t-1-5" min="0"></td>
+            </tr>
+            <tr>
+                <td>2 组</td>
+                <td><input type="number" id="t-2-1" min="0"></td><td><input type="number" id="t-2-2" min="0"></td>
+                <td><input type="number" id="t-2-3" min="0"></td><td><input type="number" id="t-2-4" min="0"></td><td><input type="number" id="t-2-5" min="0"></td>
+            </tr>
+            <tr>
+                <td>3 组</td>
+                <td><input type="number" id="t-3-1" min="0"></td><td><input type="number" id="t-3-2" min="0"></td>
+                <td><input type="number" id="t-3-3" min="0"></td><td><input type="number" id="t-3-4" min="0"></td><td><input type="number" id="t-3-5" min="0"></td>
+            </tr>
+            <tr>
+                <td>我发现</td>
+                <td>磁性<div class="strength-group"><button class="strength-btn" onclick="selectStrength(event, this)">最强</button><button class="strength-btn" onclick="selectStrength(event, this)">较强</button><button class="strength-btn" onclick="selectStrength(event, this)">较弱</button><button class="strength-btn" onclick="selectStrength(event, this)">最弱</button></div></td>
+                <td>磁性<div class="strength-group"><button class="strength-btn" onclick="selectStrength(event, this)">最强</button><button class="strength-btn" onclick="selectStrength(event, this)">较强</button><button class="strength-btn" onclick="selectStrength(event, this)">较弱</button><button class="strength-btn" onclick="selectStrength(event, this)">最弱</button></div></td>
+                <td>磁性<div class="strength-group"><button class="strength-btn" onclick="selectStrength(event, this)">最强</button><button class="strength-btn" onclick="selectStrength(event, this)">较强</button><button class="strength-btn" onclick="selectStrength(event, this)">较弱</button><button class="strength-btn" onclick="selectStrength(event, this)">最弱</button></div></td>
+                <td>磁性<div class="strength-group"><button class="strength-btn" onclick="selectStrength(event, this)">最强</button><button class="strength-btn" onclick="selectStrength(event, this)">较强</button><button class="strength-btn" onclick="selectStrength(event, this)">较弱</button><button class="strength-btn" onclick="selectStrength(event, this)">最弱</button></div></td>
+                <td>磁性<div class="strength-group"><button class="strength-btn" onclick="selectStrength(event, this)">最强</button><button class="strength-btn" onclick="selectStrength(event, this)">较强</button><button class="strength-btn" onclick="selectStrength(event, this)">较弱</button><button class="strength-btn" onclick="selectStrength(event, this)">最弱</button></div></td>
+            </tr>
+        </table>
+
+        <button class="btn-reveal" onclick="toggleConclusion(event)">🌟 揭晓科学结论 🌟</button>
+        
+        <div class="conclusion-box" id="conclusion" onclick="event.stopPropagation()">
+            &nbsp;&nbsp;&nbsp;&nbsp;条形磁铁的 <strong>两端</strong> 吸引的曲别针最多，磁性 <strong>最强</strong>。我们把磁性最强的部分叫作 <strong>磁极</strong>。条形磁铁有 <strong>两个</strong> 磁极。
+        </div>
+    </div>
+
+    <script>
+        function focusPanel(side) {
+            const left = document.getElementById('pnl-left');
+            const right = document.getElementById('pnl-right');
+            const toast = document.getElementById('toast');
+            if (side === 'left') {
+                left.className = 'panel left-panel active'; right.className = 'panel right-panel inactive'; toast.style.left = "35%"; 
+            } else {
+                left.className = 'panel left-panel inactive'; right.className = 'panel right-panel active'; toast.style.left = "65%"; 
+            }
+        }
+
+        const baseLimits = { 1: 5, 2: 2, 3: 0, 4: 2, 5: 5 }; 
+        let currentLimits = {}; 
+        let currentClips = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }; 
+        let targetRow = 1; 
+
+        function randomizeLimits() {
+            for (let i = 1; i <= 5; i++) {
+                let variance = Math.floor(Math.random() * 3) - 1; 
+                if (i === 3) { variance = Math.random() < 0.2 ? 1 : 0; }
+                currentLimits[i] = Math.max(0, baseLimits[i] + variance); 
+            }
+        }
+        randomizeLimits(); 
+
+        let toastTimeout;
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg; toast.style.opacity = 1;
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => { toast.style.opacity = 0; }, 2000);
+        }
+
+        // ============ 拖放事件逻辑重构 ============
+        function drag(ev) { ev.dataTransfer.setData("text", "clip"); focusPanel('left'); }
+        
+        function allowDrop(ev) {
+            ev.preventDefault();
+            let el = ev.target; 
+            while(el && !el.classList.contains('drop-zone')) { el = el.parentElement; }
+            if(el) el.classList.add('drag-over');
+        }
+        
+        function dragLeave(ev) {
+            let el = ev.target; 
+            while(el && !el.classList.contains('drop-zone')) { el = el.parentElement; }
+            if(el) el.classList.remove('drag-over');
+        }
+        
+        function drop(ev, zoneId) {
+            ev.preventDefault();
+            let el = ev.target; 
+            while(el && !el.classList.contains('drop-zone')) { el = el.parentElement; }
+            if(el) el.classList.remove('drag-over');
+            processAddClip(zoneId);
+        }
+        
+        function clickToAdd(ev, zoneId) { ev.stopPropagation(); processAddClip(zoneId); }
+
+        function processAddClip(zoneId) {
+            if (currentClips[zoneId] < currentLimits[zoneId]) {
+                currentClips[zoneId]++;
+                const container = document.getElementById('zone-' + zoneId);
+                const clipDiv = document.createElement('div');
+                clipDiv.className = 'hanging-clip';
+                clipDiv.innerHTML = '📎';
+                clipDiv.style.zIndex = 100 - currentClips[zoneId];
+                container.appendChild(clipDiv);
+            } else {
+                if (currentLimits[zoneId] === 0) {
+                    showToast("❌ 部位 " + zoneId + " 磁性太弱，一个都吸不住！");
+                } else {
+                    showToast("⚠️ 部位 " + zoneId + " 挂满啦，太重掉下来了！");
+                }
+            }
+        }
+
+        function resetClips(ev) {
+            ev.stopPropagation(); 
+            currentClips = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+            randomizeLimits(); 
+            for (let i = 1; i <= 5; i++) { document.getElementById('zone-' + i).innerHTML = ''; }
+            showToast("🔄 实验台已重置，磁铁特性发生了微小变化");
+        }
+
+        function syncData(ev) {
+            ev.stopPropagation(); 
+            if (targetRow > 3) {
+                showToast("⚠️ 1、2、3组的数据都已经填满啦！");
+                return;
+            }
+            focusPanel('right');
+            for (let i = 1; i <= 5; i++) {
+                document.getElementById('t-' + targetRow + '-' + i).value = currentClips[i];
+            }
+            const btn = document.querySelector('.btn-sync');
+            btn.innerHTML = '✅ 数据已成功填入第 ' + targetRow + ' 组！';
+            targetRow++; 
+            setTimeout(() => { btn.innerHTML = '⬇️ 将当前数据填入表格'; }, 2000);
+        }
+
+        function selectStrength(ev, btn) {
+            ev.stopPropagation();
+            let siblings = btn.parentElement.children;
+            for(let i=0; i<siblings.length; i++) { siblings[i].classList.remove('selected'); }
+            btn.classList.add('selected');
+        }
+
+        function toggleConclusion(ev) {
+            ev.stopPropagation();
+            const box = document.getElementById('conclusion');
+            const table = document.getElementById('record-table');
+            const btn = ev.target;
+
+            if (box.style.display === 'block') {
+                box.style.display = 'none';
+                table.classList.remove('shrunk');
+                btn.innerHTML = '🌟 揭晓科学结论 🌟';
+                btn.style.backgroundColor = '#f39c12';
+            } else {
+                box.style.display = 'block';
+                table.classList.add('shrunk');
+                btn.innerHTML = '⬆️ 收起科学结论 ⬆️';
+                btn.style.backgroundColor = '#d35400';
+            }
+        }
+    </script>
+
+
+<!-- ================= 开物AI科学 · 版权模块（单击显示 / 双击打开官网） ================= -->
+<style id="kaiming-copyright-style">
+  #kaiming-copyright {
+    position: fixed;
+    bottom: 92px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    pointer-events: none;
+    z-index: 999999;
+    transition: opacity 0.45s ease;
+    opacity: 0;
+    display: none;
+  }
+  #kaiming-copyright .inner {
+    display: inline-block;
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #eafaf2;
+    padding: 9px 26px;
+    border-radius: 60px;
+    /* 原稿为 14px；此处改为 16px 以符合本机 verify_html.py 的「字号不得小于 16px」硬规则 */
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.6px;
+    border: 1px solid rgba(255, 245, 210, 0.3);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+    font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+    white-space: nowrap;
+  }
+</style>
+
+<div id="kaiming-copyright">
+  <div class="inner">© 2026 开物AI科学 ｜ AI 赋能 · 教育公平</div>
+</div>
+
+<script id="kaiming-copyright-script">
+(function () {
+  "use strict";
+
+  /* 目标：单击标题 → 显示版权 3.5 秒；双击标题 → 打开 www.kaiwuaiscience.com */
+
+  const HOMEPAGE = "https://www.kaiwuaiscience.com";
+  const SHOW_MS = 3500;      // 版权显示时长
+  const DBL_WINDOW = 280;    // 双击判定的时间窗（毫秒）
+  const FADE_MS = 450;       // 淡出时长，与 CSS transition 一致
+
+  function bindCopyright() {
+    // 首选 #mainTitle（注入脚本会保证它存在）；后三个选择器是手写粘贴时的兜底
+    const title = document.getElementById("mainTitle") ||
+                  document.querySelector("h1, .title, .page-title, .main-title");
+    const box = document.getElementById("kaiming-copyright");
+    if (!title || !box) return;
+
+    title.style.cursor = "pointer";
+    title.style.userSelect = "none";
+    title.style.webkitUserSelect = "none";
+
+    let clickTimer = null;
+    let hideTimer = null;
+    let seq = 0;   // 每次显示/隐藏都 +1，用来作废在飞的定时器
+
+    function showCopyright() {
+      const my = ++seq;
+      if (hideTimer) clearTimeout(hideTimer);
+      box.style.display = "block";
+      /* 强制重绘，让 0 → 1 的淡入真的发生。
+         这里刻意不用 requestAnimationFrame：rAF 在页面不产生新帧时（后台标签页、
+         无头渲染、大屏久置）不保证触发——一旦它晚于下方的隐藏定时器回调，
+         就会把 opacity 又设成 1，导致版权条永久停在屏幕上。 */
+      void box.offsetHeight;
+      box.style.opacity = "1";
+      hideTimer = setTimeout(function () {
+        if (my !== seq) return;      // 期间又被点过，交给新的那一次收尾
+        box.style.opacity = "0";
+        setTimeout(function () {
+          if (my === seq) box.style.display = "none";
+        }, FADE_MS);
+      }, SHOW_MS);
+    }
+
+    function hideCopyright() {
+      const my = ++seq;              // 作废所有在飞的定时器，避免"淡出到一半又被点亮"卡住
+      if (hideTimer) clearTimeout(hideTimer);
+      if (box.style.display !== "block") return;
+      box.style.opacity = "0";
+      setTimeout(function () {
+        if (my === seq) box.style.display = "none";
+      }, FADE_MS);
+    }
+
+    function openHomepage() {
+      // 双击时隐藏版权，并跳转官网
+      hideCopyright();
+      window.open(HOMEPAGE, "_blank", "noopener,noreferrer");
+    }
+
+    title.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (clickTimer) return;   // 已在等待双击窗口，忽略这次单击
+      clickTimer = setTimeout(function () {
+        clickTimer = null;
+        showCopyright();        // 确认是单击
+      }, DBL_WINDOW);
+    });
+
+    title.addEventListener("dblclick", function (e) {
+      e.stopPropagation();
+      if (clickTimer) {         // 取消挂起的单击
+        clearTimeout(clickTimer);
+        clickTimer = null;
+      }
+      openHomepage();
+    });
+
+    // 点击页面其它地方，立即隐藏版权
+    document.addEventListener("click", function (e) {
+      if (e.target === title) return;
+      hideCopyright();
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bindCopyright);
+  } else {
+    bindCopyright();
+  }
+})();
+</script>
+<!-- ================= 开物AI科学 · 版权模块 结束 ================= -->
+
+</body>
+</html>

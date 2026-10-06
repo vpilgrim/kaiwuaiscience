@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <title>寻访动物的家 - 互动挑战</title>
+    <style>
+        :root {
+            --color-food: #FF9800;
+            --color-location: #2196F3;
+            --color-shape: #4CAF50;
+            --color-material: #9C27B0;
+            --color-success: #2ecc71;
+            --color-error: #e74c3c;
+            --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.12);
+            --shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.2);
+            --radius-card: 16px;
+            --radius-slot: 14px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+        html, body { width: 100vw; height: 100vh; overflow: hidden; font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif; background: linear-gradient(170deg, #fef9e7 0%, #fff8e1 30%, #f3e5d8 60%, #e8f5e9 100%); display: flex; flex-direction: column; align-items: center; justify-content: flex-start; position: relative; }
+        .top-decor { position: absolute; top: 0; left: 0; right: 0; height: 0.8vh; background: linear-gradient(90deg, #FF9800, #4CAF50, #2196F3, #9C27B0, #FF9800); z-index: 10; }
+        .header { width: 100%; text-align: center; padding: 0.6vh 0 0.2vh 0; flex-shrink: 0; z-index: 5; position: relative; }
+        .header h1 { font-size: clamp(32px, 5.5vh, 68px); font-weight: 900; color: #3e2723; letter-spacing: 4px; text-shadow: 2px 2px 0px #ffcc80, 4px 4px 0px rgba(0,0,0,0.08); display: inline-block; position: relative; }
+        .header h1::after { content: '🐾 帮动物找到自己的家 🐾'; display: block; font-size: clamp(16px, 2.8vh, 32px); font-weight: 600; color: #6d4c41; letter-spacing: 2px; text-shadow: none; margin-top: 0.3vh; }
+
+        /* 动物展示区 */
+        .animal-area { display: flex; flex-direction: row; justify-content: center; align-items: flex-start; gap: 0.8vw; width: 96vw; flex-shrink: 0; padding: 0.6vh 0 0.4vh 0; z-index: 4; }
+        .animal-card { flex: 1; max-width: 23.5vw; background: rgba(255,255,255,0.85); border-radius: var(--radius-card); box-shadow: var(--shadow-card); padding: 0.8vh 0.5vw; display: flex; flex-direction: column; align-items: center; transition: all 0.25s; border: 3px solid transparent; position: relative; backdrop-filter: blur(8px); }
+        .animal-card:hover { box-shadow: var(--shadow-hover); }
+        .animal-card.complete-animal { border-color: var(--color-success); background: rgba(232,245,233,0.92); }
+        .animal-icon { font-size: clamp(52px, 9vh, 130px); line-height: 1; display: block; margin-bottom: 0.2vh; transition: transform 0.3s; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15)); }
+        .animal-card:hover .animal-icon { transform: scale(1.08); }
+        .animal-name { font-size: clamp(18px, 3vh, 40px); font-weight: 800; letter-spacing: 2px; margin-bottom: 0.4vh; padding: 0.1vh 1vw; border-radius: 20px; color: #fff; text-shadow: 1px 1px 2px rgba(0,0,0,0.2); white-space: nowrap; }
+        .name-magpie { background: #4A90D9; } .name-moorhen { background: #1ABC9C; } .name-rabbit { background: #E67E22; } .name-woodpecker { background: #E74C3C; }
+        .slots-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 0.5vh 0.4vw; width: 100%; margin-top: 0.2vh; }
+        .slot { background: rgba(255,255,255,0.7); border: 2.5px dashed #bdbdbd; border-radius: var(--radius-slot); padding: 0.4vh 0.3vw; min-height: 9vh; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.25s; position: relative; gap: 0.2vh; }
+        .slot:hover { border-color: #90a4ae; background: rgba(255,255,255,0.9); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .slot .slot-label { font-size: clamp(16px, 2.6vh, 28px); font-weight: 700; letter-spacing: 0.5px; opacity: 0.85; display: flex; align-items: center; gap: 2px; pointer-events: none; line-height: 1.2; }
+        .slot .slot-content { font-size: clamp(18px, 3vh, 34px); font-weight: 800; color: #37474f; text-align: center; pointer-events: none; line-height: 1.2; min-height: 3vh; display: flex; align-items: center; justify-content: center; transition: all 0.3s; word-break: break-word; }
+        .slot.filled { border-style: solid; border-color: var(--color-success); background: #e8f5e9; box-shadow: 0 2px 8px rgba(46,204,113,0.25); }
+        .slot.filled .slot-content { color: #1b5e20; }
+        .slot.error-flash { animation: slotError 0.5s ease; }
+        .slot.highlight-drop { border-color: #FFD700; background: #fffde7; box-shadow: 0 0 0 4px rgba(255,215,0,0.6); transform: scale(1.06); z-index: 20; }
+        @keyframes slotError { 0%,100% { border-color:#bdbdbd; background:rgba(255,255,255,0.7); } 25% { border-color:var(--color-error); background:#ffebee; } 50% { border-color:var(--color-error); background:#ffcdd2; } 75% { border-color:var(--color-error); background:#ffebee; } }
+        .slot-cat-food { border-color: rgba(255,152,0,0.55); } .slot-cat-food .slot-label { color:#e65100; }
+        .slot-cat-location { border-color: rgba(33,150,243,0.55); } .slot-cat-location .slot-label { color:#0d47a1; }
+        .slot-cat-shape { border-color: rgba(76,175,80,0.55); } .slot-cat-shape .slot-label { color:#1b5e20; }
+        .slot-cat-material { border-color: rgba(156,39,176,0.55); } .slot-cat-material .slot-label { color:#4a148c; }
+        .slot.filled.slot-cat-food { border-color: var(--color-food); background:#fff3e0; }
+        .slot.filled.slot-cat-location { border-color: var(--color-location); background:#e3f2fd; }
+        .slot.filled.slot-cat-shape { border-color: var(--color-shape); background:#e8f5e9; }
+        .slot.filled.slot-cat-material { border-color: var(--color-material); background:#f3e5f5; }
+
+        /* 特征卡片区（增加与上方动物的间距） */
+        .cards-area { width: 96vw; flex-shrink: 0; padding: 6vh 0 0.2vh 0; z-index: 3; display: flex; flex-direction: column; gap: 0.4vh; }
+        .cards-row { display: flex; flex-direction: row; align-items: center; gap: 0.4vw; width: 100%; }
+        .category-tag { flex-shrink: 0; font-size: clamp(16px, 2.4vh, 28px); font-weight: 800; padding: 0.4vh 0.6vw; border-radius: 10px; letter-spacing: 1px; min-width: 8vw; text-align: center; color:#fff; box-shadow: 0 2px 8px rgba(0,0,0,0.15); white-space: nowrap; }
+        .cat-tag-food { background: var(--color-food); } .cat-tag-location { background: var(--color-location); } .cat-tag-shape { background: var(--color-shape); } .cat-tag-material { background: var(--color-material); }
+        .cards-row .feature-cards { display: flex; flex-direction: row; gap: 0.5vw; flex: 1; min-width: 0; }
+        .feature-card { flex: 1; background:#fff; border:3px solid #ddd; border-radius: var(--radius-card); padding:0.6vh 0.4vw; min-height:7vh; display:flex; align-items:center; justify-content:center; font-size:clamp(18px,2.8vh,32px); font-weight:700; color:#37474f; cursor:pointer; transition:all 0.25s; box-shadow:var(--shadow-card); text-align:center; line-height:1.2; position:relative; letter-spacing:0.5px; touch-action:none; }
+        .feature-card:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); }
+        .feature-card.selected { border-color:#FFD700; background:#fffde7; box-shadow:0 0 0 4px rgba(255,215,0,0.45),0 8px 24px rgba(0,0,0,0.18); transform:scale(1.04); z-index:10; animation:cardPulse 1.2s infinite; }
+        @keyframes cardPulse { 0%,100% { box-shadow:0 0 0 4px rgba(255,215,0,0.45),0 8px 24px rgba(0,0,0,0.18); } 50% { box-shadow:0 0 0 7px rgba(255,215,0,0.55),0 8px 28px rgba(0,0,0,0.22); } }
+        .feature-card.matched { opacity:0; pointer-events:none; transform:scale(0.7); box-shadow:none; border-color:transparent; transition:all 0.4s; }
+        .feature-card.error-shake { animation:cardShake 0.5s; border-color:var(--color-error); background:#ffebee; }
+        @keyframes cardShake { 0%,100%{transform:translateX(0)} 15%{transform:translateX(-8px)} 30%{transform:translateX(8px)} 45%{transform:translateX(-5px)} 60%{transform:translateX(5px)} 75%{transform:translateX(-2px)} }
+        .card-cat-food { border-color: rgba(255,152,0,0.5); } .card-cat-food:hover { border-color: var(--color-food); }
+        .card-cat-location { border-color: rgba(33,150,243,0.5); } .card-cat-location:hover { border-color: var(--color-location); }
+        .card-cat-shape { border-color: rgba(76,175,80,0.5); } .card-cat-shape:hover { border-color: var(--color-shape); }
+        .card-cat-material { border-color: rgba(156,39,176,0.5); } .card-cat-material:hover { border-color: var(--color-material); }
+
+        /* 底部状态栏（增加与上方文字的距离） */
+        .footer-bar { width:96vw; flex-shrink:0; display:flex; flex-direction:row; align-items:center; justify-content:space-between; padding:0.3vh 0.2vw; margin-top: 2.5vh; z-index:5; gap:0.5vw; flex-wrap:nowrap; }
+        .progress-section { display:flex; align-items:center; gap:0.6vw; flex:1; min-width:0; }
+        .progress-text { font-size:clamp(16px,2.4vh,28px); font-weight:700; color:#4e342e; white-space:nowrap; }
+        .progress-bar-outer { flex:1; height:1.8vh; min-height:12px; background:#e0e0e0; border-radius:20px; overflow:hidden; box-shadow:inset 0 1px 4px rgba(0,0,0,0.1); max-width:25vw; }
+        .progress-bar-inner { height:100%; background:linear-gradient(90deg,#FF9800,#FFEB3B,#4CAF50); border-radius:20px; transition:width 0.5s; width:0%; position:relative; }
+        .progress-bar-inner::after { content:''; position:absolute; top:0; left:0; right:0; bottom:0; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.4),transparent); animation:shimmer 2s infinite; }
+        @keyframes shimmer { 0%{transform:translateX(-100%)} 100%{transform:translateX(100%)} }
+        .btn { font-size:clamp(16px,2.4vh,28px); font-weight:800; padding:0.6vh 1vw; min-height:4.5vh; border-radius:30px; border:none; cursor:pointer; letter-spacing:1px; box-shadow:0 4px 14px rgba(0,0,0,0.2); transition:all 0.3s; white-space:nowrap; flex-shrink:0; touch-action:manipulation; color:#fff; display:inline-flex; align-items:center; justify-content:center; }
+        .btn:hover { transform:translateY(-2px); } .btn:active { transform:translateY(1px); box-shadow:0 2px 8px rgba(0,0,0,0.2); }
+        .btn-reset { background:linear-gradient(135deg,#FF6F00,#FF9800); }
+        .btn-shuffle { background:linear-gradient(135deg,#00897B,#4CAF50); }
+        .btn-duel { background:linear-gradient(135deg,#5E35B1,#7E57C2); }
+        .btn-challenge { background:linear-gradient(135deg,#C62828,#E53935); animation:challengeGlow 2s infinite; }
+        .btn-complete { background:linear-gradient(135deg,#FFD700,#FFA000); color:#3e2723; text-shadow:1px 1px 0 rgba(255,255,255,0.5); }
+        .btn-science { background:linear-gradient(135deg,#00BCD4,#0097A7); }
+        @keyframes challengeGlow { 0%,100%{box-shadow:0 4px 14px rgba(229,57,53,0.5)} 50%{box-shadow:0 4px 24px rgba(229,57,53,0.8)} }
+
+        /* 庆祝 */
+        .celebration-overlay { position:fixed; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index:100; display:none; overflow:hidden; }
+        .celebration-overlay.active { display:block; pointer-events:auto; }
+        .confetti { position:absolute; font-size:clamp(28px,5vh,60px); animation:confettiFall linear forwards; }
+        @keyframes confettiFall { 0%{transform:translateY(-10vh) rotate(0deg); opacity:1} 100%{transform:translateY(110vh) rotate(720deg); opacity:0} }
+        .celebration-text { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:clamp(32px,7vh,80px); font-weight:900; color:#2e7d32; text-shadow:2px 2px 0 #fff,4px 4px 0 #a5d6a7,6px 6px 0 rgba(0,0,0,0.1); animation:celebrationBounce 1.5s infinite; text-align:center; background:rgba(255,255,255,0.9); padding:2vh 3vw; border-radius:24px; }
+        @keyframes celebrationBounce { 0%,100%{transform:translate(-50%,-50%) scale(1)} 25%{transform:translate(-50%,-50%) scale(1.06)} 50%{transform:translate(-50%,-50%) scale(0.97)} 75%{transform:translate(-50%,-50%) scale(1.03)} }
+        .celebration-sub { font-size:clamp(18px,3vh,36px); font-weight:600; color:#5d4037; margin-top:0.5vh; }
+
+        /* 知识面板（科学原理） - 居中、大字体、浅色遮罩 */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(255, 255, 255, 0.85);
+            z-index: 88;
+            display: none;
+            backdrop-filter: blur(2px);
+        }
+        .modal-overlay.show { display: block; }
+        .knowledge-panel {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 20px;
+            padding: 3vh 4vw;
+            box-shadow: 0 12px 48px rgba(0,0,0,0.25);
+            z-index: 90;
+            display: none;
+            text-align: center;
+            max-width: 80vw;
+            max-height: 60vh;
+            border: 4px solid #FFD54F;
+            overflow-y: auto;
+        }
+        .knowledge-panel.show { display: block; animation: panelFadeIn 0.4s ease; }
+        @keyframes panelFadeIn {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+            100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+        .knowledge-panel p {
+            font-size: clamp(22px, 3.5vh, 42px);
+            color: #3e2723;
+            font-weight: 600;
+            line-height: 1.8;
+            margin: 0;
+        }
+        .knowledge-panel .highlight { color: #E65100; font-weight: 800; }
+        .btn-close-knowledge {
+            margin-top: 1.5vh;
+            font-size: clamp(20px, 3vh, 36px);
+            padding: 0.8vh 2.5vw;
+            border-radius: 25px;
+            border: 3px solid #FF9800;
+            background: #fff;
+            color: #E65100;
+            cursor: pointer;
+            font-weight: 800;
+            transition: all 0.3s;
+            letter-spacing: 2px;
+            touch-action: manipulation;
+        }
+        .btn-close-knowledge:hover { background: #FF9800; color: #fff; }
+
+        /* 对决挑战覆盖层（背景柔和，文字深色） */
+        .challenge-overlay { position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:200; display:none; flex-direction:column; align-items:center; justify-content:center; color:#333; padding:2vh 3vw; }
+        .challenge-overlay.active { display:flex; }
+        .challenge-title { font-size:clamp(32px,6vh,72px); font-weight:900; margin-bottom:1.5vh; text-shadow:0 0 10px rgba(255,255,255,0.5); letter-spacing:3px; color:#2c3e50; }
+        .challenge-question { font-size:clamp(24px,4.5vh,52px); background:rgba(255,255,255,0.85); padding:2.5vh 3vw; border-radius:20px; margin-bottom:3vh; text-align:center; max-width:90%; font-weight:700; line-height:1.4; border:2px solid rgba(0,0,0,0.1); color:#2c3e50; }
+        .challenge-scoreboard { display:flex; width:100%; justify-content:space-around; margin-bottom:3vh; gap:2vw; }
+        .team-score { display:flex; flex-direction:column; align-items:center; background:rgba(255,255,255,0.7); padding:1.5vh 3vw; border-radius:20px; min-width:15vw; font-size:clamp(20px,3.5vh,42px); font-weight:800; color:#2c3e50; }
+        .team-score .score-num { font-size:clamp(36px,6vh,72px); color:#FFD700; text-shadow:0 0 10px rgba(0,0,0,0.3); }
+        .team-left { border:3px solid #4CAF50; } .team-right { border:3px solid #2196F3; }
+        .challenge-options { display:flex; width:100%; justify-content:space-between; gap:2vw; margin-bottom:3vh; }
+        .team-options { flex:1; display:flex; flex-direction:column; align-items:center; gap:1.5vh; background:rgba(255,255,255,0.7); border-radius:20px; padding:2vh 1vw; color:#2c3e50; }
+        .team-options .team-label { font-size:clamp(20px,3.5vh,42px); font-weight:800; }
+        .option-btn { width:85%; padding:1.5vh 0; font-size:clamp(20px,3.5vh,42px); font-weight:800; border-radius:20px; border:3px solid rgba(0,0,0,0.1); background:rgba(255,255,255,0.9); color:#2c3e50; cursor:pointer; transition:all 0.25s; text-align:center; }
+        .option-btn:hover { background:#fff; transform:scale(1.05); }
+        .option-btn.correct-highlight { background:#4CAF50; border-color:#A5D6A7; color:#fff; animation:correctPulse 0.6s; }
+        .option-btn.wrong-highlight { background:#E53935; border-color:#FFCDD2; color:#fff; animation:wrongShake 0.5s; }
+        @keyframes correctPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.1)} }
+        @keyframes wrongShake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
+        .challenge-footer { display:flex; gap:2vw; }
+        .btn-exit-challenge { background:#555; font-size:clamp(18px,2.8vh,34px); padding:0.8vh 2vw; border-radius:20px; border:2px solid #fff; color:#fff; cursor:pointer; font-weight:700; }
+        .challenge-win-text { font-size:clamp(32px,7vh,80px); font-weight:900; color:#FFD700; text-shadow:0 0 20px rgba(0,0,0,0.5); animation:winBounce 1s infinite; }
+        @keyframes winBounce { 0%,100%{transform:scale(1)} 50%{transform:scale(1.1)} }
+
+        /* 双人匹配模式 */
+        .duel-overlay { position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(40, 45, 60, 0.75); z-index:300; display:none; flex-direction:column; align-items:center; justify-content:flex-start; padding:2vh 2vw; backdrop-filter: blur(2px); }
+        .duel-overlay.active { display:flex; }
+        .duel-header { display:flex; width:100%; justify-content:center; align-items:center; margin-bottom:2vh; position:relative; }
+        .duel-title { font-size:clamp(28px,5vh,60px); font-weight:900; text-shadow:0 0 20px #FFD700; letter-spacing:3px; color:#fff; }
+        .btn-exit-duel { position:absolute; bottom:2vh; right:2vw; background:linear-gradient(135deg,#FFD700,#FFA000); color:#3e2723; font-size:clamp(14px,2vh,26px); padding:0.5vh 1.2vw; border-radius:20px; border:2px solid #fff; cursor:pointer; font-weight:700; z-index:310; box-shadow:0 4px 14px rgba(0,0,0,0.3); transition:all 0.3s; }
+        .btn-exit-duel:hover { transform:translateY(-2px); background:linear-gradient(135deg,#FFC400,#FF8F00); }
+        .btn-duel-complete { position:absolute; bottom:7vh; right:2vw; background:linear-gradient(135deg,#FFD700,#FFA000); color:#3e2723; font-size:clamp(14px,2vh,26px); padding:0.5vh 1.2vw; border-radius:20px; border:2px solid #fff; cursor:pointer; font-weight:700; z-index:310; box-shadow:0 4px 14px rgba(0,0,0,0.3); transition:all 0.3s; }
+        .btn-duel-complete:hover { transform:translateY(-2px); background:linear-gradient(135deg,#FFC400,#FF8F00); }
+        .duel-main { display:flex; width:100%; flex:1; gap:1vw; }
+        .duel-panel { flex:1; background:rgba(255,255,255,0.95); border-radius:20px; padding:1.5vh 1vw; display:flex; flex-direction:column; align-items:center; overflow-y:auto; box-shadow:0 8px 32px rgba(0,0,0,0.3); color:#333; }
+        .duel-panel .panel-title { font-size:clamp(20px,3vh,36px); font-weight:800; margin-bottom:1vh; }
+        .duel-animals-wrapper { display:flex; gap:1vw; width:100%; margin-bottom:1vh; }
+        .duel-animal-block { flex:1; display:flex; flex-direction:column; align-items:center; border-right:2px dashed #ccc; padding-right:0.5vw; }
+        .duel-animal-block:last-child { border-right:none; }
+        .duel-animal-info { display:flex; align-items:center; gap:0.5vw; margin-bottom:0.5vh; }
+        .duel-animal-icon { font-size:clamp(32px,5vh,60px); }
+        .duel-animal-name { font-size:clamp(18px,2.8vh,32px); font-weight:700; }
+        .duel-slots-row { display:flex; flex-direction:column; gap:0.5vh; width:100%; }
+        .duel-slot { background:rgba(255,255,255,0.9); border:2px dashed #aaa; border-radius:10px; padding:0.4vh 0.4vw; min-height:6.5vh; width:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; transition:all 0.2s; font-size:clamp(14px,2.2vh,24px); }
+        .duel-slot .slot-label { font-size:clamp(14px,2vh,20px); font-weight:700; display:flex; align-items:center; gap:2px; }
+        .duel-slot .slot-content { font-size:clamp(16px,2.4vh,24px); font-weight:800; text-align:center; word-break:break-word; }
+        .duel-slot.filled { border-style:solid; border-color:#4CAF50; background:#e8f5e9; }
+        .duel-slot.highlight-drop { border-color:#FFD700; background:#fffde7; box-shadow:0 0 0 4px rgba(255,215,0,0.6); }
+        .duel-slot.hint-glow { animation: hintGlow 1.5s ease infinite; border-color: #FF4500 !important; background: #FFF0E0 !important; box-shadow: 0 0 20px #FF4500; }
+        @keyframes hintGlow { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); box-shadow: 0 0 30px #FF4500; } }
+        .duel-cards-container { display:flex; flex-wrap:wrap; gap:0.5vw; justify-content:center; width:100%; margin-top:1vh; }
+        .duel-card { background:#fff; border:2px solid #ddd; border-radius:10px; padding:0.5vh 0.8vw; font-size:clamp(18px,2.8vh,30px); font-weight:700; cursor:pointer; transition:all 0.2s; box-shadow:0 2px 8px rgba(0,0,0,0.1); flex:0 0 48%; text-align:center; }
+        .duel-card.selected { border-color:#FFD700; background:#fffde7; }
+        .duel-card.matched { opacity:0; pointer-events:none; }
+        .duel-timer { font-size:clamp(16px,2.5vh,30px); font-weight:800; margin-bottom:0.5vh; color:#333; }
+        .duel-result-container { width:100%; display:flex; justify-content:center; margin-top:1.5vh; }
+        .duel-result-banner { background:rgba(0,0,0,0.8); color:#FFD700; font-size:clamp(20px,3.5vh,40px); font-weight:900; padding:1vh 2vw; border-radius:15px; text-align:center; letter-spacing:2px; }
+        .drag-clone { position:fixed; z-index:500; pointer-events:none; box-shadow:0 16px 40px rgba(0,0,0,0.35); transform:rotate(2deg) scale(1.1); border-radius:10px; background:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:clamp(16px,2.6vh,28px); padding:1vh 1vw; border:3px solid #FFD700; }
+
+        @media (max-width:800px) {
+            .animal-area { gap:0.4vw; width:98vw; } .animal-card { max-width:24vw; } .animal-icon { font-size:clamp(36px,7vh,70px); }
+            .slot { min-height:8.5vh; } .feature-card { min-height:6vh; font-size:clamp(13px,2vh,22px); }
+            .category-tag { min-width:5vw; font-size:clamp(11px,1.8vh,18px); } .btn { font-size:clamp(12px,1.8vh,20px); }
+            .duel-slot { min-width:10vw; min-height:6vh; } .duel-card { font-size:clamp(13px,2vh,20px); }
+            .knowledge-panel { max-width: 90vw; padding: 2vh 3vw; }
+            .knowledge-panel p { font-size: clamp(18px, 2.6vh, 30px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="top-decor"></div>
+    <div class="header"><h1 id="mainTitle">🌿 寻访动物的家 🌿</h1></div>
+
+    <!-- 动物展示区 -->
+    <div class="animal-area" id="animalArea">
+        <div class="animal-card" data-animal="magpie" id="animal-magpie">
+            <span class="animal-icon">🕊️</span><span class="animal-name name-magpie">喜鹊</span>
+            <div class="slots-grid">
+                <div class="slot slot-cat-food" data-animal="magpie" data-category="food"><span class="slot-label">🍽️ 食物</span><span class="slot-content"></span></div>
+                <div class="slot slot-cat-location" data-animal="magpie" data-category="location"><span class="slot-label">📍 位置</span><span class="slot-content"></span></div>
+                <div class="slot slot-cat-shape" data-animal="magpie" data-category="shape"><span class="slot-label">🏠 外形</span><span class="slot-content"></span></div>
+                <div class="slot slot-cat-material" data-animal="magpie" data-category="material"><span class="slot-label">🌿 材料</span><span class="slot-content"></span></div>
+            </div>
+        </div>
+        <div class="animal-card" data-animal="moorhen" id="animal-moorhen">
+            <span class="animal-icon">🐔</span><span class="animal-name name-moorhen">黑水鸡</span>
+            <div class="slots-grid">
+                <div class="slot slot-cat-food" data-animal="moorhen" data-category="food"><span class="slot-label">🍽️ 食物</span><span class="slot-content"></span></div>
+                <div class="slot slot-cat-location" data-animal="moorhen" data-category="location"><span class="slot-label">📍 位置</span><span class="slot-content"></span></div>
+                <div class="slot slot-cat-shape" data-animal="moorhen" data-category="shape"><span class="slot-label">🏠 外形</span><span class="slot-content"></span></div>
+                <div class="slot slot-cat-material" data-animal="moorhen" data-category="material"><span class="slot-label">🌿 材料</span><span class="slot-content"></span></div>
+            </div>
+        </div>
+        <div class="animal-card" data-animal="rabbit" id="animal-rabbit">
+            <span class="animal-icon">🐰</span><span class="animal-name name-rabbit">野兔</span>
+            <div class="slots-grid">
+                <div class="slot slot-cat-food" data-animal="rabbit" data-category="food"><span class="slot-label">🍽️ 食物</span><span class="slot-content"></span></div>
+                <div class="slot slot-cat-location" data-animal="rabbit" data-category="location"><span class="slot-label">📍 位置</span><span class="slot-content"></span></div>
+                <div class="slot slot-cat-shape" data-animal="rabbit" data-category="shape"><span class="slot-label">🏠 外形</span><span class="slot-content"></span></div>
+                <div class="slot slot-cat-material" data-animal="rabbit" data-category="material"><span class="slot-label">🌿 材料</span><span class="slot-content"></span></div>
+            </div>
+        </div>
+        <div class="animal-card" data-animal="woodpecker" id="animal-woodpecker">
+            <span class="animal-icon">🐦</span><span class="animal-name name-woodpecker">啄木鸟</span>
+            <div class="slots-grid">
+                <div class="slot slot-cat-food" data-animal="woodpecker" data-category="food"><span class="slot-label">🍽️ 食物</span><span class="slot-content"></span></div>
+                <div class="slot slot-cat-location" data-animal="woodpecker" data-category="location"><span class="slot-label">📍 位置</span><span class="slot-content"></span></div>
+                <div class="slot slot-cat-shape" data-animal="woodpecker" data-category="shape"><span class="slot-label">🏠 外形</span><span class="slot-content"></span></div>
+                <div class="slot slot-cat-material" data-animal="woodpecker" data-category="material"><span class="slot-label">🌿 材料</span><span class="slot-content"></span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 特征卡片区 -->
+    <div class="cards-area" id="cardsArea">
+        <div class="cards-row">
+            <span class="category-tag cat-tag-food">🍽️ 食物</span>
+            <div class="feature-cards" data-category="food">
+                <div class="feature-card card-cat-food" data-animal="magpie" data-category="food" data-text="🐛昆虫和🍎果实">🐛昆虫和🍎果实</div>
+                <div class="feature-card card-cat-food" data-animal="moorhen" data-category="food" data-text="🌿水生植物和🐟小鱼虾">🌿水生植物和🐟小鱼虾</div>
+                <div class="feature-card card-cat-food" data-animal="rabbit" data-category="food" data-text="🌱青草和🌿嫩叶">🌱青草和🌿嫩叶</div>
+                <div class="feature-card card-cat-food" data-animal="woodpecker" data-category="food" data-text="🐛树干里的虫子">🐛树干里的虫子</div>
+            </div>
+        </div>
+        <div class="cards-row">
+            <span class="category-tag cat-tag-location">📍 巢穴位置</span>
+            <div class="feature-cards" data-category="location">
+                <div class="feature-card card-cat-location" data-animal="magpie" data-category="location" data-text="🌳大树的树杈上">🌳大树的树杈上</div>
+                <div class="feature-card card-cat-location" data-animal="moorhen" data-category="location" data-text="💧水面的浮草上">💧水面的浮草上</div>
+                <div class="feature-card card-cat-location" data-animal="rabbit" data-category="location" data-text="🌾地面的草丛中">🌾地面的草丛中</div>
+                <div class="feature-card card-cat-location" data-animal="woodpecker" data-category="location" data-text="🕳️树干的树洞里">🕳️树干的树洞里</div>
+            </div>
+        </div>
+        <div class="cards-row">
+            <span class="category-tag cat-tag-shape">🏠 巢穴外形</span>
+            <div class="feature-cards" data-category="shape">
+                <div class="feature-card card-cat-shape" data-animal="magpie" data-category="shape" data-text="⚽球形有顶盖">⚽球形有顶盖</div>
+                <div class="feature-card card-cat-shape" data-animal="moorhen" data-category="shape" data-text="🛶盘状漂浮巢">🛶盘状漂浮巢</div>
+                <div class="feature-card card-cat-shape" data-animal="rabbit" data-category="shape" data-text="🕳️浅坑铺干草">🕳️浅坑铺干草</div>
+                <div class="feature-card card-cat-shape" data-animal="woodpecker" data-category="shape" data-text="🕳️圆形树洞巢">🕳️圆形树洞巢</div>
+            </div>
+        </div>
+        <div class="cards-row">
+            <span class="category-tag cat-tag-material">🌿 筑巢材料</span>
+            <div class="feature-cards" data-category="material">
+                <div class="feature-card card-cat-material" data-animal="magpie" data-category="material" data-text="🌿树枝和🧱泥土">🌿树枝和🧱泥土</div>
+                <div class="feature-card card-cat-material" data-animal="moorhen" data-category="material" data-text="🌿水草和🌾芦苇叶">🌿水草和🌾芦苇叶</div>
+                <div class="feature-card card-cat-material" data-animal="rabbit" data-category="material" data-text="🌾干草和🐰兔毛">🌾干草和🐰兔毛</div>
+                <div class="feature-card card-cat-material" data-animal="woodpecker" data-category="material" data-text="🪵碎木屑垫底">🪵碎木屑垫底</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部状态栏 -->
+    <div class="footer-bar">
+        <div class="progress-section"><span class="progress-text" id="progressText">✅ 0/16</span><div class="progress-bar-outer"><div class="progress-bar-inner" id="progressBar"></div></div></div>
+        <button class="btn btn-shuffle" id="btnShuffle">🎲 随机打乱</button>
+        <button class="btn btn-reset" id="btnReset">🔄 重新开始</button>
+        <button class="btn btn-duel" id="btnDuel">🏆 双人匹配</button>
+        <button class="btn btn-challenge" id="btnChallenge">⚔️ 对决挑战</button>
+        <button class="btn btn-complete" id="btnComplete">✅ 一键完善</button>
+        <button class="btn btn-science" id="btnScience">🔬 科学原理</button>
+    </div>
+
+    <!-- 庆祝 -->
+    <div class="celebration-overlay" id="celebrationOverlay"><div class="celebration-text">🎉 太棒了！全部匹配正确！🎉<div class="celebration-sub">🌟 你帮所有动物找到了家！🌟</div></div></div>
+
+    <!-- 科学原理遮罩与面板 -->
+    <div class="modal-overlay" id="modalOverlay"></div>
+    <div class="knowledge-panel" id="knowledgePanel">
+        <p>🏡 动物的巢穴可以帮它们<span class="highlight">躲避天敌</span>、保护自己；<br>
+        动物们<span class="highlight">睡觉休息</span>、<span class="highlight">繁殖后代</span>、<span class="highlight">御寒取暖</span>都需要巢穴。<br>
+        筑巢的材料很多来自<span class="highlight">植物</span>，如树枝、干草、水草……</p>
+        <button class="btn-close-knowledge" id="btnCloseKnowledge">我知道了 👍</button>
+    </div>
+
+    <!-- 对决挑战覆盖层 -->
+    <div class="challenge-overlay" id="challengeOverlay">
+        <div class="challenge-title" id="challengeTitle">⚔️ 动物家园大对决 ⚔️</div>
+        <div class="challenge-question" id="challengeQuestion">题目加载中...</div>
+        <div class="challenge-scoreboard">
+            <div class="team-score team-left"><span>🌿 绿队</span><span class="score-num" id="scoreLeft">0</span></div>
+            <div class="team-score team-right"><span>💧 蓝队</span><span class="score-num" id="scoreRight">0</span></div>
+        </div>
+        <div class="challenge-options">
+            <div class="team-options" id="teamLeftOptions"><span class="team-label" style="color:#4CAF50;">绿队选择</span><button class="option-btn" data-team="left" data-choice="0">A</button><button class="option-btn" data-team="left" data-choice="1">B</button><button class="option-btn" data-team="left" data-choice="2">C</button></div>
+            <div class="team-options" id="teamRightOptions"><span class="team-label" style="color:#2196F3;">蓝队选择</span><button class="option-btn" data-team="right" data-choice="0">A</button><button class="option-btn" data-team="right" data-choice="1">B</button><button class="option-btn" data-team="right" data-choice="2">C</button></div>
+        </div>
+        <div class="challenge-footer"><button class="btn-exit-challenge" id="btnExitChallenge">✖ 退出挑战</button></div>
+    </div>
+
+    <!-- 双人匹配覆盖层 -->
+    <div class="duel-overlay" id="duelOverlay">
+        <div class="duel-header">
+            <div class="duel-title">🏆 双人匹配赛 🏆</div>
+        </div>
+        <div class="duel-main">
+            <div class="duel-panel" id="duelLeftPanel"></div>
+            <div class="duel-panel" id="duelRightPanel"></div>
+        </div>
+        <div class="duel-result-container" id="duelResultContainer"></div>
+        <button class="btn-duel-complete" id="btnDuelComplete">✅ 一键完成</button>
+        <button class="btn-exit-duel" id="btnExitDuel">✖ 退出匹配</button>
+    </div>
+
+    <script>
+        (function() {
+            // 音频系统
+            let audioCtx = null;
+            function getAudioContext() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); return audioCtx; }
+            function playSound(type) {
+                try {
+                    const ctx = getAudioContext(); if (ctx.state === 'suspended') ctx.resume();
+                    if (type === 'correct') { [523,659,784].forEach((f,i)=>{ setTimeout(()=>{ const o=ctx.createOscillator(),g=ctx.createGain(); o.type='sine'; o.frequency.value=f; g.gain.setValueAtTime(0.35,ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.01,ctx.currentTime+0.25); o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime+0.25); },i*120); }); }
+                    else if (type === 'error') { const o=ctx.createOscillator(),g=ctx.createGain(); o.type='sawtooth'; o.frequency.value=200; o.frequency.exponentialRampToValueAtTime(120,ctx.currentTime+0.4); g.gain.setValueAtTime(0.3,ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.01,ctx.currentTime+0.4); o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime+0.4); }
+                    else if (type === 'win') { [523,659,784,1047,784,1047].forEach((f,i)=>{ setTimeout(()=>{ const o=ctx.createOscillator(),g=ctx.createGain(); o.type='triangle'; o.frequency.value=f; g.gain.setValueAtTime(0.3,ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.01,ctx.currentTime+0.3); o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime+0.3); },i*150); }); }
+                } catch(e) {}
+            }
+
+            // 数据
+            const correctMatches = {
+                magpie: { food: '🐛昆虫和🍎果实', location: '🌳大树的树杈上', shape: '⚽球形有顶盖', material: '🌿树枝和🧱泥土' },
+                moorhen: { food: '🌿水生植物和🐟小鱼虾', location: '💧水面的浮草上', shape: '🛶盘状漂浮巢', material: '🌿水草和🌾芦苇叶' },
+                rabbit: { food: '🌱青草和🌿嫩叶', location: '🌾地面的草丛中', shape: '🕳️浅坑铺干草', material: '🌾干草和🐰兔毛' },
+                woodpecker: { food: '🐛树干里的虫子', location: '🕳️树干的树洞里', shape: '🕳️圆形树洞巢', material: '🪵碎木屑垫底' }
+            };
+            const animalNames = { magpie: '喜鹊', moorhen: '黑水鸡', rabbit: '野兔', woodpecker: '啄木鸟' };
+            const animalEmojis = { magpie: '🕊️', moorhen: '🐔', rabbit: '🐰', woodpecker: '🐦' };
+
+            const challengeQuestions = [
+                { q: '喜鹊的巢穴位置通常在哪里？', options: ['💧水面上', '🌳大树的树杈上', '🕳️地洞里'], answer: 1 },
+                { q: '黑水鸡的巢穴主要用什么材料？', options: ['🌿树枝和🧱泥土', '🌿水草和🌾芦苇叶', '🌾干草和🐰兔毛'], answer: 1 },
+                { q: '野兔的巢穴外形是？', options: ['⚽球形有顶盖', '🛶盘状漂浮巢', '🕳️浅坑铺干草'], answer: 2 },
+                { q: '啄木鸟喜欢吃什么？', options: ['🌿水生植物', '🌱青草和🌿嫩叶', '🐛树干里的虫子'], answer: 2 },
+                { q: '喜鹊的巢穴外形是？', options: ['⚽球形有顶盖', '🛶盘状漂浮巢', '🕳️浅坑铺干草'], answer: 0 },
+                { q: '黑水鸡的巢穴位置在哪里？', options: ['💧水面的浮草上', '🕳️树洞里', '🌾草丛中'], answer: 0 },
+                { q: '野兔筑巢常用的材料是？', options: ['🌿树枝和🧱泥土', '🌿水草', '🌾干草和🐰兔毛'], answer: 2 },
+                { q: '啄木鸟的巢穴位置通常在哪里？', options: ['🌳树杈上', '🕳️树干的树洞里', '🌍地面上'], answer: 1 },
+                { q: '喜鹊的食物主要是？', options: ['🌿水生植物和🐟小鱼虾', '🐛昆虫和🍎果实', '🌱青草和🌿嫩叶'], answer: 1 },
+                { q: '黑水鸡的食物是？', options: ['🌿水生植物和🐟小鱼虾', '🐛昆虫和🍎果实', '🐛树干里的虫子'], answer: 0 },
+                { q: '野兔喜欢住在？', options: ['🕳️树洞里', '💧水面上', '🌾地面的草丛中'], answer: 2 },
+                { q: '啄木鸟筑巢常用？', options: ['🪵碎木屑垫底', '🌿水草和🌾芦苇叶', '🌾干草和🐰兔毛'], answer: 0 },
+            ];
+
+            // DOM
+            const featureCards = document.querySelectorAll('.feature-card');
+            const slots = document.querySelectorAll('.slot');
+            const progressText = document.getElementById('progressText');
+            const progressBar = document.getElementById('progressBar');
+            const btnReset = document.getElementById('btnReset');
+            const btnShuffle = document.getElementById('btnShuffle');
+            const btnDuel = document.getElementById('btnDuel');
+            const btnChallenge = document.getElementById('btnChallenge');
+            const btnComplete = document.getElementById('btnComplete');
+            const btnScience = document.getElementById('btnScience');
+            const celebrationOverlay = document.getElementById('celebrationOverlay');
+            const knowledgePanel = document.getElementById('knowledgePanel');
+            const modalOverlay = document.getElementById('modalOverlay');
+            const btnCloseKnowledge = document.getElementById('btnCloseKnowledge');
+            const animalArea = document.getElementById('animalArea');
+
+            let selectedCard = null;
+            let matchedCount = 0;
+            const totalMatches = 16;
+            let isAnimating = false;
+            let dragData = null;
+
+            // 主匹配
+            function updateProgress() { progressText.textContent = '✅ ' + matchedCount + '/' + totalMatches; progressBar.style.width = (matchedCount/totalMatches*100)+'%'; }
+            function checkAnimalComplete(animalId) { const slots = document.querySelectorAll('.slot[data-animal="'+animalId+'"]'); let all=true; slots.forEach(s=>{ if(!s.classList.contains('filled')) all=false; }); const ac=document.getElementById('animal-'+animalId); if(ac){ if(all) ac.classList.add('complete-animal'); else ac.classList.remove('complete-animal'); } }
+            function performMatch(card, slot) {
+                if (isAnimating) return false;
+                if (!card || !slot || slot.classList.contains('filled') || card.classList.contains('matched')) return false;
+                if (card.dataset.animal === slot.dataset.animal && card.dataset.category === slot.dataset.category) {
+                    isAnimating = true;
+                    slot.classList.add('filled');
+                    slot.querySelector('.slot-content').textContent = card.dataset.text;
+                    card.classList.add('matched'); card.classList.remove('selected');
+                    matchedCount++; updateProgress(); checkAnimalComplete(slot.dataset.animal);
+                    playSound('correct'); selectedCard = null;
+                    setTimeout(()=>{ isAnimating=false; if(matchedCount===totalMatches){ triggerCelebration(); playSound('win'); } },450);
+                    return true;
+                } else {
+                    playSound('error');
+                    card.classList.add('error-shake'); slot.classList.add('error-flash');
+                    setTimeout(()=>{ card.classList.remove('error-shake'); slot.classList.remove('error-flash'); if(selectedCard===card) selectedCard=null; },600);
+                    return false;
+                }
+            }
+            function selectCard(card) { if (isAnimating || card.classList.contains('matched')) return; if(selectedCard) selectedCard.classList.remove('selected'); selectedCard=card; card.classList.add('selected'); }
+            function clickSlot(slot) { if (isAnimating || slot.classList.contains('filled')) return; if(!selectedCard){ slot.classList.add('error-flash'); setTimeout(()=>slot.classList.remove('error-flash'),500); return; } const success=performMatch(selectedCard, slot); if(!success){ selectedCard.classList.remove('selected'); selectedCard=null; } }
+
+            // 一键完善
+            function completeAllMatches() {
+                if (isAnimating) return;
+                featureCards.forEach(card => {
+                    if (!card.classList.contains('matched')) {
+                        const animal = card.dataset.animal;
+                        const category = card.dataset.category;
+                        const text = card.dataset.text;
+                        const slot = document.querySelector(`.slot[data-animal="${animal}"][data-category="${category}"]`);
+                        if (slot && !slot.classList.contains('filled')) {
+                            slot.classList.add('filled');
+                            slot.querySelector('.slot-content').textContent = text;
+                            card.classList.add('matched');
+                            matchedCount++;
+                            checkAnimalComplete(animal);
+                        }
+                    }
+                });
+                updateProgress();
+                if (matchedCount === totalMatches) {
+                    triggerCelebration();
+                    playSound('win');
+                }
+            }
+
+            // 拖拽主界面
+            function startDrag(e, card) {
+                if (isAnimating || card.classList.contains('matched')) return;
+                e.preventDefault();
+                const touch = e.touches ? e.touches[0] : e;
+                const clone = card.cloneNode(true); clone.classList.add('drag-clone');
+                clone.style.width = card.offsetWidth+'px'; clone.style.left = (touch.clientX-card.offsetWidth/2)+'px'; clone.style.top = (touch.clientY-card.offsetHeight/2)+'px';
+                clone.textContent = card.textContent; document.body.appendChild(clone);
+                dragData = { card, clone, offsetX: card.offsetWidth/2, offsetY: card.offsetHeight/2, currentSlot: null };
+                card.style.opacity='0.4';
+                document.addEventListener('pointermove', onDragMove); document.addEventListener('pointerup', onDragEnd);
+                document.addEventListener('touchmove', onDragMove, {passive:false}); document.addEventListener('touchend', onDragEnd); document.addEventListener('touchcancel', onDragEnd);
+            }
+            function onDragMove(e) {
+                if (!dragData) return; e.preventDefault();
+                const touch = e.touches ? e.touches[0] : e;
+                dragData.clone.style.left = (touch.clientX-dragData.offsetX)+'px'; dragData.clone.style.top = (touch.clientY-dragData.offsetY)+'px';
+                let targetSlot=null, minDist=80;
+                slots.forEach(s=>{ if(s.classList.contains('filled')) return; const r=s.getBoundingClientRect(); const d=Math.hypot(touch.clientX-(r.left+r.width/2), touch.clientY-(r.top+r.height/2)); if(d<minDist){ minDist=d; targetSlot=s; } });
+                if(dragData.currentSlot && dragData.currentSlot!==targetSlot) dragData.currentSlot.classList.remove('highlight-drop');
+                if(targetSlot) targetSlot.classList.add('highlight-drop');
+                dragData.currentSlot=targetSlot;
+            }
+            function onDragEnd(e) {
+                if (!dragData) return; e.preventDefault();
+                const touch = e.changedTouches ? e.changedTouches[0] : e;
+                const card = dragData.card, clone = dragData.clone;
+                if(dragData.currentSlot) dragData.currentSlot.classList.remove('highlight-drop');
+                let bestSlot=null, minDist=80;
+                slots.forEach(s=>{ if(s.classList.contains('filled')) return; const r=s.getBoundingClientRect(); const d=Math.hypot(touch.clientX-(r.left+r.width/2), touch.clientY-(r.top+r.height/2)); if(d<minDist){ minDist=d; bestSlot=s; } });
+                if(bestSlot){ if(!performMatch(card, bestSlot)) card.style.opacity='1'; } else card.style.opacity='1';
+                clone.remove(); dragData=null;
+                document.removeEventListener('pointermove', onDragMove); document.removeEventListener('pointerup', onDragEnd);
+                document.removeEventListener('touchmove', onDragMove); document.removeEventListener('touchend', onDragEnd); document.removeEventListener('touchcancel', onDragEnd);
+            }
+
+            // 挑战模式
+            const challengeOverlay = document.getElementById('challengeOverlay');
+            const challengeTitle = document.getElementById('challengeTitle');
+            const challengeQuestion = document.getElementById('challengeQuestion');
+            const scoreLeft = document.getElementById('scoreLeft'); const scoreRight = document.getElementById('scoreRight');
+            const teamLeftOptions = document.getElementById('teamLeftOptions'); const teamRightOptions = document.getElementById('teamRightOptions');
+            const btnExitChallenge = document.getElementById('btnExitChallenge');
+            let challengeState = { currentQuestionIndex:0, scoreLeft:0, scoreRight:0, questions:[], answered:false, leftAnswered:false, rightAnswered:false, totalQuestions:6 };
+            const challengeBackgrounds = [
+                'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)',
+                'linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%)',
+                'linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%)',
+                'linear-gradient(135deg, #fddb92 0%, #d1fdff 100%)',
+                'linear-gradient(135deg, #f6d365 0%, #fda085 100%)'
+            ];
+            function openChallenge() {
+                challengeState.questions = shuffleArray([...challengeQuestions]).slice(0, challengeState.totalQuestions);
+                challengeState.currentQuestionIndex=0; challengeState.scoreLeft=0; challengeState.scoreRight=0; challengeState.answered=false; challengeState.leftAnswered=false; challengeState.rightAnswered=false;
+                challengeOverlay.style.background = challengeBackgrounds[Math.floor(Math.random()*challengeBackgrounds.length)];
+                updateChallengeScore(); showChallengeQuestion();
+                challengeOverlay.classList.add('active');
+                document.querySelectorAll('.option-btn').forEach(btn=>{ btn.disabled=false; btn.classList.remove('correct-highlight','wrong-highlight'); btn.textContent=btn.textContent.replace(/^[✅❌]\s*/, ''); });
+                challengeTitle.textContent='⚔️ 动物家园大对决 ⚔️';
+            }
+            function closeChallenge() { challengeOverlay.classList.remove('active'); }
+            function showChallengeQuestion() {
+                if(challengeState.currentQuestionIndex >= challengeState.questions.length){ endChallenge(); return; }
+                const q = challengeState.questions[challengeState.currentQuestionIndex];
+                challengeQuestion.textContent = q.q;
+                challengeState.answered=false; challengeState.leftAnswered=false; challengeState.rightAnswered=false;
+                document.querySelectorAll('.option-btn').forEach(btn=>{ btn.disabled=false; btn.classList.remove('correct-highlight','wrong-highlight'); });
+                const leftBtns=teamLeftOptions.querySelectorAll('.option-btn'); const rightBtns=teamRightOptions.querySelectorAll('.option-btn');
+                for(let i=0;i<3;i++){ const t=String.fromCharCode(65+i)+'. '+q.options[i]; leftBtns[i].textContent=t; rightBtns[i].textContent=t; }
+            }
+            function updateChallengeScore(){ scoreLeft.textContent=challengeState.scoreLeft; scoreRight.textContent=challengeState.scoreRight; }
+            function handleTeamAnswer(team, choice) {
+                if(challengeState.answered) return;
+                const q = challengeState.questions[challengeState.currentQuestionIndex];
+                const correct = choice === q.answer;
+                const options = team==='left' ? teamLeftOptions : teamRightOptions;
+                const btns = options.querySelectorAll('.option-btn');
+                if(team==='left' && challengeState.leftAnswered) return; if(team==='right' && challengeState.rightAnswered) return;
+                if(team==='left') challengeState.leftAnswered=true; else challengeState.rightAnswered=true;
+                btns.forEach(b=>b.disabled=true);
+                if(correct){
+                    playSound('correct'); btns[choice].classList.add('correct-highlight'); btns[choice].textContent='✅ '+btns[choice].textContent;
+                    if(team==='left') challengeState.scoreLeft++; else challengeState.scoreRight++;
+                    updateChallengeScore(); challengeState.answered=true;
+                    setTimeout(()=>{ challengeState.currentQuestionIndex++; showChallengeQuestion(); },1000);
+                } else {
+                    playSound('error'); btns[choice].classList.add('wrong-highlight'); btns[choice].textContent='❌ '+btns[choice].textContent;
+                    btns[q.answer].classList.add('correct-highlight'); btns[q.answer].textContent='✅ '+btns[q.answer].textContent;
+                    if(challengeState.leftAnswered && challengeState.rightAnswered){ challengeState.answered=true; setTimeout(()=>{ challengeState.currentQuestionIndex++; showChallengeQuestion(); },1000); }
+                }
+            }
+            function endChallenge() {
+                let winner = challengeState.scoreLeft>challengeState.scoreRight ? '🌿 绿队胜利！' : challengeState.scoreRight>challengeState.scoreLeft ? '💧 蓝队胜利！' : '🤝 平局！';
+                challengeQuestion.innerHTML = '<span class="challenge-win-text">'+winner+'</span>';
+                playSound('win');
+                for(let i=0;i<30;i++){ const c=document.createElement('span'); c.classList.add('confetti'); c.textContent=['🎉','⭐','🏆','🥇','🎊','✨'][Math.floor(Math.random()*6)]; c.style.left=Math.random()*90+'%'; c.style.top='-10%'; c.style.fontSize=(Math.random()*3+2)+'vh'; c.style.animationDuration=(Math.random()*2+2)+'s'; c.style.animationDelay=(Math.random()*1.5)+'s'; challengeOverlay.appendChild(c); }
+                setTimeout(()=>challengeOverlay.querySelectorAll('.confetti').forEach(c=>c.remove()),5000);
+                setTimeout(closeChallenge,6000);
+            }
+
+            // 双人匹配模式
+            const duelOverlay = document.getElementById('duelOverlay');
+            const btnExitDuel = document.getElementById('btnExitDuel');
+            const btnDuelComplete = document.getElementById('btnDuelComplete');
+            const duelLeftPanel = document.getElementById('duelLeftPanel');
+            const duelRightPanel = document.getElementById('duelRightPanel');
+            const duelResultContainer = document.getElementById('duelResultContainer');
+            let duelState = {
+                leftMatched: 0, rightMatched: 0,
+                leftDone: false, rightDone: false,
+                leftStartTime: 0, rightStartTime: 0,
+                leftPenalty: 0, rightPenalty: 0,
+                leftFinishTime: 0, rightFinishTime: 0,
+                timers: {left: null, right: null},
+                selectedCard: null, dragData: null
+            };
+            const categories = ['food','location','shape','material'];
+            const categoryLabels = { food:'🍽️ 食物', location:'📍 位置', shape:'🏠 外形', material:'🌿 材料' };
+            function openDuel() {
+                duelState = { leftMatched: 0, rightMatched: 0, leftDone: false, rightDone: false, leftStartTime: 0, rightStartTime: 0, leftPenalty: 0, rightPenalty: 0, leftFinishTime: 0, rightFinishTime: 0, timers: {left: null, right: null}, selectedCard: null, dragData: null };
+                duelLeftPanel.innerHTML=''; duelRightPanel.innerHTML=''; duelResultContainer.innerHTML='';
+                buildDuelPanel('left', ['magpie','moorhen']);
+                buildDuelPanel('right', ['rabbit','woodpecker']);
+                duelOverlay.classList.add('active');
+            }
+            function closeDuel() {
+                duelOverlay.classList.remove('active');
+                if(duelState.timers.left) clearInterval(duelState.timers.left);
+                if(duelState.timers.right) clearInterval(duelState.timers.right);
+            }
+            function buildDuelPanel(side, animalIds) {
+                const panel = side==='left' ? duelLeftPanel : duelRightPanel;
+                panel.innerHTML = '';
+                const titleDiv = document.createElement('div'); titleDiv.className='panel-title';
+                titleDiv.textContent = side==='left' ? '🌿 绿队 · 喜鹊 & 黑水鸡' : '💧 蓝队 · 野兔 & 啄木鸟';
+                panel.appendChild(titleDiv);
+                const timerDiv = document.createElement('div'); timerDiv.className='duel-timer'; timerDiv.id = side==='left' ? 'duelLeftTimer' : 'duelRightTimer'; timerDiv.textContent='⏱️ 00.0s'; panel.appendChild(timerDiv);
+                const animalsWrapper = document.createElement('div'); animalsWrapper.className='duel-animals-wrapper';
+                animalIds.forEach(animalId => {
+                    const block = document.createElement('div'); block.className='duel-animal-block';
+                    const info = document.createElement('div'); info.className='duel-animal-info';
+                    info.innerHTML = `<span class="duel-animal-icon">${animalEmojis[animalId]}</span><span class="duel-animal-name">${animalNames[animalId]}</span>`;
+                    block.appendChild(info);
+                    const slotsRow = document.createElement('div'); slotsRow.className='duel-slots-row';
+                    categories.forEach(cat => {
+                        const slot = document.createElement('div'); slot.className='duel-slot'; slot.dataset.animal=animalId; slot.dataset.category=cat; slot.dataset.side=side;
+                        slot.innerHTML = `<span class="slot-label">${categoryLabels[cat]}</span><span class="slot-content"></span>`;
+                        slot.addEventListener('click', onDuelSlotClick);
+                        slot.addEventListener('touchstart', onDuelSlotTouch, {passive:false});
+                        slotsRow.appendChild(slot);
+                    });
+                    block.appendChild(slotsRow);
+                    animalsWrapper.appendChild(block);
+                });
+                panel.appendChild(animalsWrapper);
+                const cardsContainer = document.createElement('div'); cardsContainer.className='duel-cards-container';
+                const allCards = [];
+                animalIds.forEach(animalId => { categories.forEach(cat => allCards.push({ animalId, cat, text: correctMatches[animalId][cat] })); });
+                shuffleArray(allCards);
+                allCards.forEach(item => {
+                    const card = document.createElement('div'); card.className='duel-card'; card.dataset.animal=item.animalId; card.dataset.category=item.cat; card.dataset.text=item.text; card.dataset.side=side; card.textContent=item.text; card.dataset.failCount = '0';
+                    card.addEventListener('click', onDuelCardClick);
+                    card.addEventListener('touchstart', onDuelCardTouch, {passive:false});
+                    card.addEventListener('mousedown', onDuelCardMouseDown);
+                    cardsContainer.appendChild(card);
+                });
+                panel.appendChild(cardsContainer);
+            }
+            function onDuelCardClick(e) { const card=e.currentTarget; if(card.classList.contains('matched')) return; if(duelState.selectedCard) duelState.selectedCard.classList.remove('selected'); duelState.selectedCard=card; card.classList.add('selected'); }
+            function onDuelCardTouch(e) { e.preventDefault(); onDuelCardClick(e); }
+            function onDuelCardMouseDown(e) { e.preventDefault(); startDuelDrag(e, e.currentTarget); }
+            function onDuelSlotClick(e) { const slot=e.currentTarget; if(slot.classList.contains('filled')) return; if(!duelState.selectedCard) return; if(slot.dataset.side !== duelState.selectedCard.dataset.side) return; attemptDuelMatch(duelState.selectedCard, slot); }
+            function onDuelSlotTouch(e) { e.preventDefault(); onDuelSlotClick(e); }
+            function startDuelDrag(e, card) {
+                if(card.classList.contains('matched')) return;
+                e.preventDefault();
+                const touch = e.touches ? e.touches[0] : e;
+                const clone = card.cloneNode(true); clone.classList.add('drag-clone');
+                clone.style.width=card.offsetWidth+'px'; clone.style.left=(touch.clientX-card.offsetWidth/2)+'px'; clone.style.top=(touch.clientY-card.offsetHeight/2)+'px';
+                clone.textContent=card.textContent; document.body.appendChild(clone);
+                duelState.dragData = { card, clone, offsetX:card.offsetWidth/2, offsetY:card.offsetHeight/2, currentSlot:null };
+                card.style.opacity='0.4';
+                document.addEventListener('pointermove', onDuelDragMove); document.addEventListener('pointerup', onDuelDragEnd);
+                document.addEventListener('touchmove', onDuelDragMove, {passive:false}); document.addEventListener('touchend', onDuelDragEnd); document.addEventListener('touchcancel', onDuelDragEnd);
+            }
+            function onDuelDragMove(e) {
+                const drag = duelState.dragData; if(!drag) return; e.preventDefault();
+                const touch = e.touches ? e.touches[0] : e;
+                drag.clone.style.left=(touch.clientX-drag.offsetX)+'px'; drag.clone.style.top=(touch.clientY-drag.offsetY)+'px';
+                let targetSlot=null, minDist=150;
+                document.querySelectorAll('.duel-slot').forEach(s=>{ if(s.classList.contains('filled')) return; const r=s.getBoundingClientRect(); const d=Math.hypot(touch.clientX-(r.left+r.width/2), touch.clientY-(r.top+r.height/2)); if(d<minDist){ minDist=d; targetSlot=s; } });
+                if(drag.currentSlot && drag.currentSlot!==targetSlot) drag.currentSlot.classList.remove('highlight-drop');
+                if(targetSlot) targetSlot.classList.add('highlight-drop');
+                drag.currentSlot=targetSlot;
+            }
+            function onDuelDragEnd(e) {
+                const drag = duelState.dragData; if(!drag) return; e.preventDefault();
+                const touch = e.changedTouches ? e.changedTouches[0] : e;
+                const card=drag.card, clone=drag.clone;
+                if(drag.currentSlot) drag.currentSlot.classList.remove('highlight-drop');
+                let bestSlot=null, minDist=150;
+                document.querySelectorAll('.duel-slot').forEach(s=>{ if(s.classList.contains('filled')) return; const r=s.getBoundingClientRect(); const d=Math.hypot(touch.clientX-(r.left+r.width/2), touch.clientY-(r.top+r.height/2)); if(d<minDist){ minDist=d; bestSlot=s; } });
+                if(bestSlot){ if(!attemptDuelMatch(card, bestSlot)) card.style.opacity='1'; } else card.style.opacity='1';
+                clone.remove(); duelState.dragData=null;
+                document.removeEventListener('pointermove', onDuelDragMove); document.removeEventListener('pointerup', onDuelDragEnd);
+                document.removeEventListener('touchmove', onDuelDragMove); document.removeEventListener('touchend', onDuelDragEnd); document.removeEventListener('touchcancel', onDuelDragEnd);
+            }
+            function attemptDuelMatch(card, slot) {
+                if(card.dataset.animal === slot.dataset.animal && card.dataset.category === slot.dataset.category) {
+                    slot.classList.add('filled'); slot.querySelector('.slot-content').textContent = card.dataset.text;
+                    card.classList.add('matched'); card.classList.remove('selected');
+                    if(duelState.selectedCard===card) duelState.selectedCard=null;
+                    card.dataset.failCount = '0';
+                    playSound('correct');
+                    const side = slot.dataset.side;
+                    if(side==='left'){ duelState.leftMatched++; if(!duelState.leftDone && duelState.leftMatched===1) startDuelTimer('left'); if(duelState.leftMatched===8) finishDuel('left'); }
+                    else { duelState.rightMatched++; if(!duelState.rightDone && duelState.rightMatched===1) startDuelTimer('right'); if(duelState.rightMatched===8) finishDuel('right'); }
+                    return true;
+                } else {
+                    playSound('error'); card.classList.add('error-shake'); slot.classList.add('error-flash');
+                    if(slot.dataset.side==='left') duelState.leftPenalty += 2; else duelState.rightPenalty += 2;
+                    let failCount = parseInt(card.dataset.failCount) + 1;
+                    card.dataset.failCount = failCount;
+                    if (failCount >= 3) {
+                        const correctSlot = document.querySelector(`.duel-slot[data-side="${card.dataset.side}"][data-animal="${card.dataset.animal}"][data-category="${card.dataset.category}"]`);
+                        if (correctSlot) {
+                            correctSlot.classList.add('hint-glow');
+                            setTimeout(() => correctSlot.classList.remove('hint-glow'), 2500);
+                            card.dataset.failCount = '0';
+                        }
+                    }
+                    setTimeout(()=>{ card.classList.remove('error-shake'); slot.classList.remove('error-flash'); if(duelState.selectedCard===card){ duelState.selectedCard=null; card.classList.remove('selected'); } },500);
+                    return false;
+                }
+            }
+            function startDuelTimer(side) {
+                const timerEl = side==='left' ? document.getElementById('duelLeftTimer') : document.getElementById('duelRightTimer');
+                const startTime = Date.now();
+                if(side==='left') duelState.leftStartTime=startTime; else duelState.rightStartTime=startTime;
+                const interval = setInterval(()=>{ if((side==='left'&&duelState.leftDone)||(side==='right'&&duelState.rightDone)){ clearInterval(interval); return; } const elapsed=(Date.now()-startTime)/1000; timerEl.textContent='⏱️ '+elapsed.toFixed(1)+'s'; },100);
+                if(side==='left') duelState.timers.left=interval; else duelState.timers.right=interval;
+            }
+            function finishDuel(side) {
+                if(side==='left'){
+                    duelState.leftDone=true; clearInterval(duelState.timers.left);
+                    duelState.leftFinishTime = (Date.now()-duelState.leftStartTime)/1000 + duelState.leftPenalty;
+                    document.getElementById('duelLeftTimer').textContent='✅ 完成！用时 '+duelState.leftFinishTime.toFixed(1)+'s';
+                } else {
+                    duelState.rightDone=true; clearInterval(duelState.timers.right);
+                    duelState.rightFinishTime = (Date.now()-duelState.rightStartTime)/1000 + duelState.rightPenalty;
+                    document.getElementById('duelRightTimer').textContent='✅ 完成！用时 '+duelState.rightFinishTime.toFixed(1)+'s';
+                }
+                if(duelState.leftDone && duelState.rightDone) showDuelWinner();
+            }
+            function showDuelWinner() {
+                const leftTime = duelState.leftFinishTime;
+                const rightTime = duelState.rightFinishTime;
+                let winnerText = '';
+                if(leftTime < rightTime) winnerText = '🌿 绿队获胜！ 用时更短';
+                else if(rightTime < leftTime) winnerText = '💧 蓝队获胜！ 用时更短';
+                else winnerText = '🤝 平局！ 双方用时相同';
+                const resultHTML = `<div class="duel-result-banner">${winnerText}<br>🌿 绿队 ${leftTime.toFixed(1)}s (错误惩罚+${duelState.leftPenalty}s) | 💧 蓝队 ${rightTime.toFixed(1)}s (错误惩罚+${duelState.rightPenalty}s)</div>`;
+                duelResultContainer.innerHTML = resultHTML;
+                playSound('win');
+            }
+            function completeDuelAll() {
+                document.querySelectorAll('.duel-card[data-side="left"]:not(.matched)').forEach(card => {
+                    const slot = document.querySelector(`.duel-slot[data-side="left"][data-animal="${card.dataset.animal}"][data-category="${card.dataset.category}"]`);
+                    if (slot && !slot.classList.contains('filled')) { slot.classList.add('filled'); slot.querySelector('.slot-content').textContent = card.dataset.text; card.classList.add('matched'); card.dataset.failCount = '0'; duelState.leftMatched++; }
+                });
+                document.querySelectorAll('.duel-card[data-side="right"]:not(.matched)').forEach(card => {
+                    const slot = document.querySelector(`.duel-slot[data-side="right"][data-animal="${card.dataset.animal}"][data-category="${card.dataset.category}"]`);
+                    if (slot && !slot.classList.contains('filled')) { slot.classList.add('filled'); slot.querySelector('.slot-content').textContent = card.dataset.text; card.classList.add('matched'); card.dataset.failCount = '0'; duelState.rightMatched++; }
+                });
+                if (!duelState.leftDone && duelState.leftMatched >= 8) { duelState.leftDone = true; clearInterval(duelState.timers.left); duelState.leftFinishTime = (Date.now()-duelState.leftStartTime)/1000 + duelState.leftPenalty; document.getElementById('duelLeftTimer').textContent='✅ 完成！用时 '+duelState.leftFinishTime.toFixed(1)+'s'; }
+                if (!duelState.rightDone && duelState.rightMatched >= 8) { duelState.rightDone = true; clearInterval(duelState.timers.right); duelState.rightFinishTime = (Date.now()-duelState.rightStartTime)/1000 + duelState.rightPenalty; document.getElementById('duelRightTimer').textContent='✅ 完成！用时 '+duelState.rightFinishTime.toFixed(1)+'s'; }
+                if (duelState.leftDone && duelState.rightDone) showDuelWinner();
+            }
+
+            // 工具
+            function shuffleArray(arr) { for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; } return arr; }
+            function shuffleCards() { document.querySelectorAll('.feature-cards').forEach(c=>{ const cards=Array.from(c.children); shuffleArray(cards).forEach(card=>c.appendChild(card)); }); shuffleAnimals(); }
+            function shuffleAnimals() { const cards=Array.from(animalArea.children); shuffleArray(cards).forEach(card=>animalArea.appendChild(card)); }
+
+            // 主界面事件
+            featureCards.forEach(card=>{
+                card.addEventListener('click',(e)=>{ e.preventDefault(); if(!dragData) selectCard(card); });
+                card.addEventListener('touchstart',(e)=>{ if(e.touches.length===1) startDrag(e,card); },{passive:false});
+                card.addEventListener('mousedown',(e)=>{ startDrag(e,card); });
+            });
+            slots.forEach(slot=>{
+                slot.addEventListener('click',(e)=>{ e.preventDefault(); if(!dragData) clickSlot(slot); });
+                slot.addEventListener('touchstart',(e)=>{ e.preventDefault(); if(!dragData) clickSlot(slot); },{passive:false});
+            });
+            btnReset.addEventListener('click', resetGame);
+            btnShuffle.addEventListener('click', shuffleCards);
+            btnDuel.addEventListener('click', openDuel);
+            btnChallenge.addEventListener('click', openChallenge);
+            btnComplete.addEventListener('click', completeAllMatches);
+            btnScience.addEventListener('click', ()=>{ knowledgePanel.classList.add('show'); modalOverlay.classList.add('show'); });
+            btnCloseKnowledge.addEventListener('click', closeKnowledgePanel);
+            modalOverlay.addEventListener('click', closeKnowledgePanel);
+            btnExitChallenge.addEventListener('click', closeChallenge);
+            btnExitDuel.addEventListener('click', closeDuel);
+            btnDuelComplete.addEventListener('click', completeDuelAll);
+            document.querySelectorAll('.option-btn').forEach(btn=>btn.addEventListener('click',(e)=>{ handleTeamAnswer(btn.dataset.team, parseInt(btn.dataset.choice)); }));
+
+            function closeKnowledgePanel() {
+                knowledgePanel.classList.remove('show');
+                modalOverlay.classList.remove('show');
+            }
+
+            function resetGame() {
+                featureCards.forEach(card=>{ card.classList.remove('matched','selected','error-shake'); card.style.opacity='1'; card.style.pointerEvents='auto'; });
+                slots.forEach(slot=>{ slot.classList.remove('filled','error-flash','highlight-drop'); slot.querySelector('.slot-content').textContent=''; });
+                animalArea.querySelectorAll('.animal-card').forEach(ac=>ac.classList.remove('complete-animal'));
+                selectedCard=null; matchedCount=0; isAnimating=false; dragData=null; updateProgress();
+                if(celebrationOverlay.classList.contains('active')) celebrationOverlay.classList.remove('active');
+                closeKnowledgePanel();
+            }
+            function triggerCelebration() {
+                celebrationOverlay.classList.add('active');
+                const emojis=['🎉','⭐','🌟','🎊','✨','💚','🧡','💙','💜','🌈','🦋','🌸','🌺','🍀','🐦','🐰','🦆','🏡','🌿','🍽️'];
+                for(let i=0;i<45;i++){ const c=document.createElement('span'); c.classList.add('confetti'); c.textContent=emojis[Math.floor(Math.random()*emojis.length)]; c.style.left=Math.random()*85+'%'; c.style.top='-5%'; c.style.fontSize=(Math.random()*3+2.5)+'vh'; c.style.animationDuration=(Math.random()*2+2.5)+'s'; c.style.animationDelay=(Math.random()*2.5)+'s'; celebrationOverlay.appendChild(c); }
+                setTimeout(()=>{ celebrationOverlay.classList.remove('active'); celebrationOverlay.querySelectorAll('.confetti').forEach(c=>c.remove()); }, 2500);
+            }
+
+            // 初始化
+            resetGame(); shuffleCards();
+        })();
+    </script>
+<!-- ================= 开物AI科学 · 版权模块（单击显示 / 双击打开官网） ================= -->
+<style id="kaiming-copyright-style">
+  #kaiming-copyright {
+    position: fixed;
+    bottom: 26px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    pointer-events: none;
+    z-index: 999999;
+    transition: opacity 0.45s ease;
+    opacity: 0;
+    display: none;
+  }
+  #kaiming-copyright .inner {
+    display: inline-block;
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #eafaf2;
+    padding: 9px 26px;
+    border-radius: 60px;
+    /* 原稿为 14px；此处改为 16px 以符合本机 verify_html.py 的「字号不得小于 16px」硬规则 */
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.6px;
+    border: 1px solid rgba(255, 245, 210, 0.3);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+    font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+    white-space: nowrap;
+  }
+</style>
+
+<div id="kaiming-copyright">
+  <div class="inner">© 2026 开物AI科学 ｜ AI 赋能 · 教育公平</div>
+</div>
+
+<script id="kaiming-copyright-script">
+(function () {
+  "use strict";
+
+  /* 目标：单击标题 → 显示版权 3.5 秒；双击标题 → 打开 www.kaiwuaiscience.com */
+
+  const HOMEPAGE = "https://www.kaiwuaiscience.com";
+  const SHOW_MS = 3500;      // 版权显示时长
+  const DBL_WINDOW = 280;    // 双击判定的时间窗（毫秒）
+  const FADE_MS = 450;       // 淡出时长，与 CSS transition 一致
+
+  function bindCopyright() {
+    // 首选 #mainTitle（注入脚本会保证它存在）；后三个选择器是手写粘贴时的兜底
+    const title = document.getElementById("mainTitle") ||
+                  document.querySelector("h1, .title, .page-title, .main-title");
+    const box = document.getElementById("kaiming-copyright");
+    if (!title || !box) return;
+
+    title.style.cursor = "pointer";
+    title.style.userSelect = "none";
+    title.style.webkitUserSelect = "none";
+
+    let clickTimer = null;
+    let hideTimer = null;
+    let seq = 0;   // 每次显示/隐藏都 +1，用来作废在飞的定时器
+
+    function showCopyright() {
+      const my = ++seq;
+      if (hideTimer) clearTimeout(hideTimer);
+      box.style.display = "block";
+      /* 强制重绘，让 0 → 1 的淡入真的发生。
+         这里刻意不用 requestAnimationFrame：rAF 在页面不产生新帧时（后台标签页、
+         无头渲染、大屏久置）不保证触发——一旦它晚于下方的隐藏定时器回调，
+         就会把 opacity 又设成 1，导致版权条永久停在屏幕上。 */
+      void box.offsetHeight;
+      box.style.opacity = "1";
+      hideTimer = setTimeout(function () {
+        if (my !== seq) return;      // 期间又被点过，交给新的那一次收尾
+        box.style.opacity = "0";
+        setTimeout(function () {
+          if (my === seq) box.style.display = "none";
+        }, FADE_MS);
+      }, SHOW_MS);
+    }
+
+    function hideCopyright() {
+      const my = ++seq;              // 作废所有在飞的定时器，避免"淡出到一半又被点亮"卡住
+      if (hideTimer) clearTimeout(hideTimer);
+      if (box.style.display !== "block") return;
+      box.style.opacity = "0";
+      setTimeout(function () {
+        if (my === seq) box.style.display = "none";
+      }, FADE_MS);
+    }
+
+    function openHomepage() {
+      // 双击时隐藏版权，并跳转官网
+      hideCopyright();
+      window.open(HOMEPAGE, "_blank", "noopener,noreferrer");
+    }
+
+    title.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (clickTimer) return;   // 已在等待双击窗口，忽略这次单击
+      clickTimer = setTimeout(function () {
+        clickTimer = null;
+        showCopyright();        // 确认是单击
+      }, DBL_WINDOW);
+    });
+
+    title.addEventListener("dblclick", function (e) {
+      e.stopPropagation();
+      if (clickTimer) {         // 取消挂起的单击
+        clearTimeout(clickTimer);
+        clickTimer = null;
+      }
+      openHomepage();
+    });
+
+    // 点击页面其它地方，立即隐藏版权
+    document.addEventListener("click", function (e) {
+      if (e.target === title) return;
+      hideCopyright();
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bindCopyright);
+  } else {
+    bindCopyright();
+  }
+})();
+</script>
+<!-- ================= 开物AI科学 · 版权模块 结束 ================= -->
+
+</body>
+</html>

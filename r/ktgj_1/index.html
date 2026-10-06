@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>蛟龙舰队互动积分系统</title>
+    <style>
+        :root {
+            --wave-color-1: rgba(0, 119, 190, 0.2);
+            --wave-color-2: rgba(0, 153, 255, 0.2);
+        }
+
+        body {
+            background: linear-gradient(to bottom, #e6f7ff, #b3e0ff);
+            font-family: 'Microsoft YaHei', sans-serif;
+            color: #1a237e;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            margin: 0;
+        }
+
+        .ocean-waves {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 200px;
+            z-index: 0;
+        }
+
+        .wave {
+            position: absolute;
+            bottom: 0;
+            width: 6400px;
+            height: 198px;
+            animation: wave 7s cubic-bezier(0.36,0.45,0.63,0.53) infinite;
+            transform: translate3d(0, 0, 0);
+        }
+
+        .wave:nth-of-type(1) {
+            background: url("data:image/svg+xml,%3Csvg viewBox='0 0 1200 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 70L1200 30V100H0z' fill='%230077be'/%3E%3C/svg%3E") repeat-x;
+            bottom: 20px;
+            opacity: 0.4;
+        }
+
+        .wave:nth-of-type(2) {
+            background: url("data:image/svg+xml,%3Csvg viewBox='0 0 1200 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 50L1200 30V100H0z' fill='%230099ff'/%3E%3C/svg%3E") repeat-x;
+            bottom: 0;
+            animation-duration: 10s;
+            opacity: 0.3;
+        }
+
+        @keyframes wave {
+            0% { margin-left: 0; }
+            100% { margin-left: -1600px; }
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.5em;
+            color: #0059b3;
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 89, 179, 0.1);
+        }
+
+        .groups-container {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .group-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 89, 179, 0.1);
+            transition: transform 0.3s;
+            border: 2px solid #1a237e;
+            position: relative;
+            backdrop-filter: blur(5px);
+        }
+
+        .group-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0, 89, 179, 0.2);
+        }
+
+        .group-number {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: #0059b3;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .group-name {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #1a237e;
+            text-align: center;
+            margin: 30px 0 10px;
+            padding: 5px;
+        }
+
+        .score {
+            font-size: 28px;
+            text-align: center;
+            margin: 15px 0;
+            color: #0059b3;
+            font-weight: bold;
+        }
+
+        .add-btn {
+            background: #0059b3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            display: block;
+            margin: 0 auto;
+            transition: all 0.3s;
+            font-size: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .add-btn:hover {
+            background: #0073e6;
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(0, 89, 179, 0.3);
+        }
+
+        .navy-icon {
+            font-size: 30px;
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        .water-effect {
+            position: fixed;
+            pointer-events: none;
+            background: rgba(0, 89, 179, 0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        @keyframes ripple {
+            to {
+                transform: scale(2);
+                opacity: 0;
+            }
+        }
+
+        /* 新增动画样式 */
+        @keyframes shipJump {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+            100% { transform: translateY(0); }
+        }
+
+        @keyframes护航浪花 {
+            0% { transform: scale(0); opacity: 1; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+
+        .ship-animation {
+            animation: shipJump 0.6s ease;
+        }
+
+        .护航特效 {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+        }
+
+        .护航粒子 {
+            position: absolute;
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%230059b3' d='M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z'/%3E%3C/svg%3E");
+            width: 20px;
+            height: 20px;
+            animation: 护航浪花 1s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="ocean-waves">
+        <div class="wave"></div>
+        <div class="wave"></div>
+    </div>
+    
+    <div class="container">
+        <h1 id="mainTitle">⛴️ 四六班舰队积分指挥系统 🌊</h1>
+        <div class="groups-container" id="groupsContainer"></div>
+    </div>
+
+    <script>
+        // 中国军舰/航母命名列表
+        const shipNames = [
+            "辽宁舰", "山东舰", "福建舰", 
+            "南昌舰", "拉萨舰", "大连舰",
+            "海南舰", "广西舰", "重庆舰", 
+            "延安舰"
+        ];
+
+        // 初始化小组
+        const groupsContainer = document.getElementById('groupsContainer');
+        let scores = Array(10).fill(0);
+
+        shipNames.forEach((name, index) => {
+            const group = document.createElement('div');
+            group.className = 'group-card';
+            group.innerHTML = `
+                <div class="group-number">${index+1}</div>
+                <div class="navy-icon">🚢</div>
+                <div class="group-name">${name}</div>
+                <div class="score">0 分</div>
+                <button class="add-btn" onclick="addScore(${index})">+1 分⚓</button>
+            `;
+            groupsContainer.appendChild(group);
+        });
+
+        // 积分功能
+        function addScore(index) {
+            scores[index]++;
+            updateDisplay();
+            createWaterEffect(event);
+            playShipAnimation(index);
+            createEscortEffect(index);
+        }
+
+        function updateDisplay() {
+            document.querySelectorAll('.score').forEach((el, i) => {
+                el.textContent = `${scores[i]} 分`;
+            });
+        }
+
+        // 水波纹特效
+        function createWaterEffect(event) {
+            const effect = document.createElement('div');
+            effect.className = 'water-effect';
+            effect.style.left = `${event.clientX}px`;
+            effect.style.top = `${event.clientY}px`;
+            document.body.appendChild(effect);
+
+            const animation = effect.animate([
+                { transform: 'scale(0.5)', opacity: 1 },
+                { transform: 'scale(2)', opacity: 0 }
+            ], {
+                duration: 800,
+                easing: 'ease-out'
+            });
+
+            animation.onfinish = () => effect.remove();
+        }
+
+        // 新增动画函数
+        function playShipAnimation(index) {
+            const ships = document.querySelectorAll('.navy-icon');
+            const ship = ships[index];
+            ship.classList.add('ship-animation');
+            setTimeout(() => {
+                ship.classList.remove('ship-animation');
+            }, 600);
+        }
+
+        function createEscortEffect(index) {
+            const card = document.querySelectorAll('.group-card')[index];
+            const effect = document.createElement('div');
+            effect.className = '护航特效';
+            
+            for(let i=0; i<6; i++){
+                const particle = document.createElement('div');
+                particle.className = '护航粒子';
+                particle.style.left = `${Math.random()*80+10}%`;
+                particle.style.top = `${Math.random()*80+10}%`;
+                particle.style.animationDelay = `${i*0.1}s`;
+                effect.appendChild(particle);
+            }
+            
+            card.appendChild(effect);
+            setTimeout(() => effect.remove(), 1000);
+        }
+    </script>
+
+
+<!-- ================= 开物AI科学 · 版权模块（单击显示 / 双击打开官网） ================= -->
+<style id="kaiming-copyright-style">
+  #kaiming-copyright {
+    position: fixed;
+    bottom: 26px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    pointer-events: none;
+    z-index: 999999;
+    transition: opacity 0.45s ease;
+    opacity: 0;
+    display: none;
+  }
+  #kaiming-copyright .inner {
+    display: inline-block;
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #eafaf2;
+    padding: 9px 26px;
+    border-radius: 60px;
+    /* 原稿为 14px；此处改为 16px 以符合本机 verify_html.py 的「字号不得小于 16px」硬规则 */
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.6px;
+    border: 1px solid rgba(255, 245, 210, 0.3);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+    font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+    white-space: nowrap;
+  }
+</style>
+
+<div id="kaiming-copyright">
+  <div class="inner">© 2026 开物AI科学 ｜ AI 赋能 · 教育公平</div>
+</div>
+
+<script id="kaiming-copyright-script">
+(function () {
+  "use strict";
+
+  /* 目标：单击标题 → 显示版权 3.5 秒；双击标题 → 打开 www.kaiwuaiscience.com */
+
+  const HOMEPAGE = "https://www.kaiwuaiscience.com";
+  const SHOW_MS = 3500;      // 版权显示时长
+  const DBL_WINDOW = 280;    // 双击判定的时间窗（毫秒）
+  const FADE_MS = 450;       // 淡出时长，与 CSS transition 一致
+
+  function bindCopyright() {
+    // 首选 #mainTitle（注入脚本会保证它存在）；后三个选择器是手写粘贴时的兜底
+    const title = document.getElementById("mainTitle") ||
+                  document.querySelector("h1, .title, .page-title, .main-title");
+    const box = document.getElementById("kaiming-copyright");
+    if (!title || !box) return;
+
+    title.style.cursor = "pointer";
+    title.style.userSelect = "none";
+    title.style.webkitUserSelect = "none";
+
+    let clickTimer = null;
+    let hideTimer = null;
+    let seq = 0;   // 每次显示/隐藏都 +1，用来作废在飞的定时器
+
+    function showCopyright() {
+      const my = ++seq;
+      if (hideTimer) clearTimeout(hideTimer);
+      box.style.display = "block";
+      /* 强制重绘，让 0 → 1 的淡入真的发生。
+         这里刻意不用 requestAnimationFrame：rAF 在页面不产生新帧时（后台标签页、
+         无头渲染、大屏久置）不保证触发——一旦它晚于下方的隐藏定时器回调，
+         就会把 opacity 又设成 1，导致版权条永久停在屏幕上。 */
+      void box.offsetHeight;
+      box.style.opacity = "1";
+      hideTimer = setTimeout(function () {
+        if (my !== seq) return;      // 期间又被点过，交给新的那一次收尾
+        box.style.opacity = "0";
+        setTimeout(function () {
+          if (my === seq) box.style.display = "none";
+        }, FADE_MS);
+      }, SHOW_MS);
+    }
+
+    function hideCopyright() {
+      const my = ++seq;              // 作废所有在飞的定时器，避免"淡出到一半又被点亮"卡住
+      if (hideTimer) clearTimeout(hideTimer);
+      if (box.style.display !== "block") return;
+      box.style.opacity = "0";
+      setTimeout(function () {
+        if (my === seq) box.style.display = "none";
+      }, FADE_MS);
+    }
+
+    function openHomepage() {
+      // 双击时隐藏版权，并跳转官网
+      hideCopyright();
+      window.open(HOMEPAGE, "_blank", "noopener,noreferrer");
+    }
+
+    title.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (clickTimer) return;   // 已在等待双击窗口，忽略这次单击
+      clickTimer = setTimeout(function () {
+        clickTimer = null;
+        showCopyright();        // 确认是单击
+      }, DBL_WINDOW);
+    });
+
+    title.addEventListener("dblclick", function (e) {
+      e.stopPropagation();
+      if (clickTimer) {         // 取消挂起的单击
+        clearTimeout(clickTimer);
+        clickTimer = null;
+      }
+      openHomepage();
+    });
+
+    // 点击页面其它地方，立即隐藏版权
+    document.addEventListener("click", function (e) {
+      if (e.target === title) return;
+      hideCopyright();
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bindCopyright);
+  } else {
+    bindCopyright();
+  }
+})();
+</script>
+<!-- ================= 开物AI科学 · 版权模块 结束 ================= -->
+
+</body>
+</html>

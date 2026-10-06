@@ -1,0 +1,1458 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>动物与四季变化 | 大象版科学·四年级上册 第三单元第4课</title>
+<style>
+/* ================= 基础与配色（自然生态风：草木绿/暖黄/大圆角） ================= */
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;height:100%;overflow:hidden;font-family:"KaiTi","STKaiti","楷体","Microsoft YaHei",sans-serif;background:linear-gradient(165deg,#eef7ec 0%,#fdf6e3 55%,#f7efd2 100%);color:#2f4a33}
+body{display:flex;flex-direction:column}
+button{font-family:"SimHei","黑体","Microsoft YaHei",sans-serif;cursor:pointer;border:none;border-radius:14px}
+/* ===== 字体分层：标题黑体、正文楷体、副标题宋体 ===== */
+header h1,.mod-title,.result-big,.modal-card h3,.solo-q,.duel-q,.duel-name,.duel-score,.duel-result-title,.wheel-label,.temp-read,.quiz-result,#fillDone{font-family:"SimHei","黑体","Microsoft YaHei",sans-serif}
+header .sub,.mod-sub,.pair-col h4,.duel-progress,.result-sub{font-family:"SimSun","宋体","NSimSun",serif}
+
+/* ================= 顶栏 ================= */
+header{display:flex;align-items:center;gap:12px;padding:8px 16px;flex-wrap:wrap}
+header h1{font-size:28px;color:#2e6b3d;white-space:nowrap}
+header .sub{font-size:18px;color:#7a8f7c;white-space:nowrap}
+nav.top{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
+.nav-btn{min-width:104px;height:52px;font-size:20px;font-weight:700;background:#fff;color:#3e6b4a;border:2px solid #b9d4bb;border-radius:16px}
+.nav-btn.on{background:#3e7d4f;color:#fff;border-color:#3e7d4f}
+.top-btn{height:52px;padding:0 18px;font-size:20px;font-weight:700;border-radius:16px;white-space:nowrap}
+#principleBtn{background:#f2c14e;color:#5b4a12}
+#globalReset{background:#fff;color:#b3543a;border:2px solid #e3b9a8}
+
+/* ================= 主区与模块 ================= */
+main{flex:1;position:relative;overflow:hidden;padding:4px 14px 8px;min-height:0}
+.module{display:none;width:100%;height:100%;flex-direction:column;gap:10px;background:rgba(255,255,255,.55);border-radius:24px;padding:14px 18px;box-shadow:0 6px 24px rgba(62,125,79,.10)}
+.module.active{display:flex}
+.mod-title{font-size:28px;font-weight:800;color:#2e6b3d}
+.mod-sub{font-size:20px;color:#5d735f}
+.mod-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+
+/* ================= 模块1 情境 ================= */
+.scene-grid{flex:1;display:grid;grid-template-columns:repeat(4,1fr);gap:14px;align-content:center}
+.scene-card{background:#fff;border-radius:22px;padding:14px;text-align:center;box-shadow:0 4px 14px rgba(0,0,0,.06);display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:center}
+.scene-card .emoji{font-size:54px}
+.scene-card .q{font-size:26px;font-weight:700;line-height:1.4;min-height:64px;display:flex;align-items:center;justify-content:center}
+.scene-card .a{display:none;font-size:23px;color:#4d6b52;line-height:1.55;min-height:100px}
+.scene-card.reveal .a{display:block}
+.scene-card .look{height:52px;padding:0 16px;font-size:20px;background:#eef7ec;color:#2e6b3d;border:2px solid #a9d0ac}
+.m0-btns{display:flex;gap:14px;justify-content:center}
+.tts-btn{height:56px;padding:0 26px;font-size:22px;font-weight:700;background:#fff4d6;color:#8a6d1c;border:2px solid #ecd9a0;border-radius:16px}
+
+/* ================= 模块2 四季转盘 ================= */
+.m2-body{flex:1;display:grid;grid-template-columns:1fr 1.1fr;gap:16px;min-height:0}
+.wheel-col{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:0}
+.wheel-wrap{position:relative;width:min(52vh,480px);aspect-ratio:1/1;flex:none}
+#wheel{position:absolute;inset:0;border-radius:50%;background:conic-gradient(#9fd9a2 0deg 90deg,#f7d774 90deg 180deg,#e8a25a 180deg 270deg,#9fc4e8 270deg 360deg);box-shadow:0 10px 30px rgba(0,0,0,.18),inset 0 0 0 10px rgba(255,255,255,.55);will-change:transform}
+/* 标签独立于转盘，由 JS 每帧跟随色块定位：字永远正立、与色块一一对应 */
+.wheel-label{position:absolute;left:50%;top:50%;font-size:36px;font-weight:900;color:#274435;text-shadow:0 1px 0 #fff;white-space:nowrap;pointer-events:none;z-index:4}
+#wheelCenter{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:112px;height:112px;border-radius:50%;background:#fff;border:5px solid #f2c14e;font-size:24px;font-weight:900;color:#7a5a12;box-shadow:0 4px 12px rgba(0,0,0,.15);z-index:5}
+#wheelCenter:active{transform:translate(-50%,-50%) scale(.94)}
+.pointer{position:absolute;left:50%;top:-16px;transform:translateX(-50%);font-size:40px;color:#c0392b;z-index:6;text-shadow:0 2px 4px rgba(0,0,0,.3)}
+.hist{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;min-height:44px}
+.hist-chip{background:#fff;border:2px solid #b9d4bb;border-radius:20px;padding:8px 14px;font-size:20px}
+.tool-btn{height:52px;padding:0 20px;font-size:20px;font-weight:700;background:#fff;border:2px solid #b9d4bb;color:#3e6b4a;border-radius:14px}
+.result-col{background:#fff;border-radius:22px;padding:14px 18px;display:flex;flex-direction:column;gap:8px;min-height:0;border:2px solid #dde9da}
+.result-big{font-size:72px;font-weight:900;color:#3e7d4f;text-align:center;line-height:1.1}
+.result-sub{text-align:center;font-size:24px;font-weight:700;color:#8a6d1c}
+.adapt-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;flex:1;align-content:start;min-height:0}
+.adapt-card{background:#f3f9f0;border:2px solid #cfe3cd;border-radius:16px;padding:10px 12px;font-size:25px;line-height:1.5}
+.adapt-card b{font-size:27px;color:#2e6b3d}
+.adapt-card .t{display:none;margin-top:6px;animation:popIn .4s}
+@keyframes popIn{0%{transform:scale(.7);opacity:0}100%{transform:scale(1);opacity:1}}
+.reveal-btn{height:58px;width:100%;font-size:24px;font-weight:900;background:#f2c14e;color:#5b4a12;border-radius:16px}
+.reveal-btn:disabled{opacity:.45;cursor:not-allowed}
+.result-note{font-size:21px;background:#fff7e0;border:2px solid #f0dfa4;border-radius:14px;padding:8px 14px;line-height:1.55}
+
+/* ================= 模块3 蚯蚓温度实验 ================= */
+.m3-body{flex:1;display:grid;grid-template-columns:58% 42%;gap:14px;min-height:0}
+.lab-left{display:flex;flex-direction:column;gap:10px;min-height:0}
+#wormCanvas{flex:1;width:100%;border-radius:18px;background:#eaf3e8;border:2px solid #cfe3cd;touch-action:none}
+.ctrl-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.temp-btn{height:52px;min-width:84px;font-size:24px;font-weight:800;background:#fff;border:2px solid #b9d4bb;color:#3e6b4a;border-radius:14px}
+.temp-btn.on{background:#3e7d4f;color:#fff;border-color:#3e7d4f}
+#tempSlider{flex:1;min-width:180px;height:28px;accent-color:#3e7d4f}
+.temp-read{font-size:58px;font-weight:900;color:#d2691e;white-space:nowrap}
+.temp-read span{font-size:30px}
+.lab-right{display:flex;flex-direction:column;gap:6px;min-height:0;background:#fff;border-radius:18px;padding:10px;border:2px solid #dde9da;align-content:flex-start;justify-content:flex-start}
+table.rec{width:100%;border-collapse:collapse;font-size:22px}
+table.rec th,table.rec td{border:1px solid #cfe3cd;padding:5px 8px;text-align:center}
+table.rec th{background:#eaf5e8;color:#2e6b3d;font-size:22px}
+#barCanvas{width:100%;height:120px;display:block}
+.concl{display:none;background:#fff7e0;border:2px solid #f0dfa4;border-radius:14px;padding:8px 12px;font-size:22px;line-height:1.6}
+.tip-card{background:#eef6ff;border:2px solid #c9dcff;border-radius:14px;padding:8px 12px;font-size:20px;line-height:1.5}
+
+/* ================= 模块4 归纳配对 + 填空 ================= */
+.head-stats{display:flex;gap:10px;flex-wrap:wrap}
+.stat-pill{background:#fff;border:2px solid #b9d4bb;border-radius:18px;padding:6px 14px;font-size:21px;font-weight:700;color:#2e6b3d}
+.pair-area{flex:1;position:relative;display:flex;justify-content:center;align-items:center;gap:min(20vw,260px);min-height:0;padding:4px 0}
+.pair-col{flex:0 0 min(340px,38vw);display:flex;flex-direction:column;gap:8px}
+.pair-col h4{font-size:24px;color:#5d735f;text-align:center}
+.pair-card{background:#fff;border:3px solid #b9d4bb;border-radius:14px;padding:9px 14px;font-size:25px;font-weight:700;color:#2f4a33;display:flex;align-items:center;gap:8px;min-height:56px;transition:border-color .2s,background .2s}
+.pair-card.sel{border-color:#f2a03c;background:#fff7e0}
+.pair-card.done{border-color:#3e7d4f;background:#e8f5e9;color:#2e6b3d}
+.pair-card.shake{animation:shake .45s}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+#lineSvg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
+.m4-bottom{display:flex;flex-direction:column;gap:8px}
+.action-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.action-btn{height:52px;padding:0 20px;font-size:20px;font-weight:700;background:#fff;border:2px solid #b9d4bb;color:#3e6b4a;border-radius:14px}
+.fill-area{background:#fff;border-radius:18px;padding:10px 16px;border:2px solid #dde9da}
+.sentence{font-size:26px;font-weight:800;color:#2f4a33;line-height:2.1;text-align:center}
+.blank{display:inline-block;min-width:124px;height:50px;border:3px dashed #8fb995;border-radius:12px;vertical-align:middle;margin:0 6px;font-size:24px;line-height:44px;text-align:center;color:#2e6b3d;background:#f7fbf6}
+.blank.filled{border-style:solid;background:#e8f5e9;border-color:#3e7d4f}
+.blank.shake{animation:shake .45s;border-color:#d9534f}
+.chip-bar{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:8px;min-height:60px}
+.chip{background:#fff4d6;border:2px solid #e8c76a;border-radius:16px;padding:12px 20px;font-size:24px;font-weight:800;color:#7a5a12;cursor:grab;touch-action:none;user-select:none;position:relative}
+.chip.picked{border-color:#3e7d4f;background:#e8f5e9;color:#2e6b3d}
+.chip.dragging{transition:none;z-index:60;box-shadow:0 8px 20px rgba(0,0,0,.25)}
+.chip.used{visibility:hidden}
+#fillDone{display:none;text-align:center;font-size:26px;font-weight:900;color:#2e6b3d;background:#e8f5e9;border:2px solid #3e7d4f;border-radius:16px;padding:8px}
+
+/* ================= 模块5 检测挑战（单题 / 双人对决） ================= */
+.quiz-mode{display:flex;gap:10px}
+.mode-btn{height:52px;padding:0 22px;font-size:21px;font-weight:800;background:#fff;border:2px solid #b9d4bb;color:#3e6b4a;border-radius:14px}
+.mode-btn.on{background:#3e7d4f;color:#fff;border-color:#3e7d4f}
+.solo-area{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:4vh;gap:12px;min-height:0}
+.solo-card{width:min(940px,94%);background:#fff;border:2px solid #dde9da;border-radius:24px;padding:20px 28px;display:flex;flex-direction:column;gap:16px;align-items:stretch}
+.solo-q{font-size:32px;font-weight:800;text-align:center;line-height:1.5}
+.solo-opts{display:flex;flex-direction:column;gap:14px}
+.solo-opt{min-height:66px;font-size:26px;text-align:center;background:#f4f9f2;border:2px solid #cfe3cd;border-radius:14px;color:#2f4a33;font-weight:700}
+.solo-opt.ok{background:#d9f0da;border-color:#3e7d4f;color:#2e6b3d}
+.solo-opt.bad{background:#fdeaea;border-color:#d9534f;color:#a33}
+.solo-fb{font-size:24px;min-height:32px;text-align:center;color:#2e6b3d}
+.quiz-result{display:none;text-align:center;font-size:30px;font-weight:900;color:#2e6b3d;background:#e8f5e9;border:2px solid #3e7d4f;border-radius:16px;padding:12px}
+.duel-area{flex:1;display:flex;flex-direction:column;gap:10px;min-height:0;position:relative}
+/* 胜负庆祝框：覆盖在题目棋盘上居中显示 */
+.duel-overlay{position:absolute;inset:0;background:rgba(30,50,30,.35);display:none;align-items:center;justify-content:center;z-index:10;border-radius:20px}
+.duel-overlay.show{display:flex}
+.duel-result-card{background:#fff;border-radius:24px;padding:20px 30px;text-align:center;max-width:1300px;width:98%;max-height:90vh;display:flex;flex-direction:column;gap:8px}
+.duel-result-title{font-size:42px;font-weight:900;color:#2e6b3d;margin-bottom:4px}
+.duel-result-stats{font-size:26px;margin-bottom:4px;line-height:1.6}
+.duel-wrongs{text-align:left;font-size:26px;line-height:1.7;background:#fff7e0;border:2px solid #f0dfa4;border-radius:14px;padding:14px 18px;margin-top:4px;overflow:auto;max-height:64vh;flex:0 1 auto}
+.wrong-item{padding:6px 0;border-bottom:1px dashed #e0d3a8}
+.wrong-item:last-child{border-bottom:none}
+.duel-grid{flex:1;display:grid;grid-template-columns:1fr 1.3fr 1fr;gap:14px;min-height:0}
+.duel-side{border-radius:20px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:10px;border:3px solid;position:relative}
+.duel-side.red{background:#fdeeee;border-color:#e17b7b}
+.duel-side.blue{background:#eef4fd;border-color:#7ba3e0}
+.duel-name{font-size:28px;font-weight:900;color:#333}
+.duel-score{font-size:54px;font-weight:900;color:#2f4a33;line-height:1.1}
+.duel-opts{display:flex;flex-direction:column;gap:10px;width:100%;margin-top:26px}
+.duel-opt{min-height:58px;font-size:25px;font-weight:800;background:#fff;border:2px solid #d9c7b8;border-radius:12px;color:#2f4a33}
+.duel-opt.locked{opacity:.35;pointer-events:none}
+.duel-opt.ok{background:#d9f0da;border-color:#3e7d4f;color:#2e6b3d}
+.duel-mid{background:#fff;border-radius:20px;border:2px solid #dde9da;padding:16px;display:flex;flex-direction:column;align-items:center;gap:10px;justify-content:center}
+.duel-progress{font-size:21px;color:#7a8f7c;font-weight:700}
+.duel-q{font-size:34px;font-weight:900;text-align:center;line-height:1.45}
+.duel-msg{font-size:24px;font-weight:800;min-height:34px;color:#d2691e;text-align:center}
+@keyframes floatUp{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-46px)}}
+.plus{position:absolute;right:18px;top:96px;font-size:38px;font-weight:900;color:#e0a020;animation:floatUp .9s forwards;pointer-events:none}
+
+/* ================= 底部导航（左右两侧都能翻页） ================= */
+footer{display:flex;align-items:center;gap:14px;padding:8px 18px}
+.foot-arrows{display:flex;gap:10px}
+.arrow-btn{height:56px;width:64px;font-size:26px;font-weight:800;background:#fff;border:2px solid #b9d4bb;color:#3e6b4a;border-radius:14px}
+.arrow-btn:disabled{opacity:.35;pointer-events:none}
+.foot-group{display:flex;gap:12px;margin-left:auto}
+.foot-btn{height:56px;min-width:150px;font-size:22px;font-weight:800;border-radius:16px}
+#prevBtn{background:#fff;color:#3e6b4a;border:2px solid #b9d4bb}
+#nextBtn{background:#3e7d4f;color:#fff}
+#prevBtn:disabled,#nextBtn:disabled{opacity:.35;pointer-events:none}
+.dots{display:flex;gap:8px;margin:0 auto}
+.dot{width:14px;height:14px;border-radius:50%;background:#cfe3cd}
+.dot.on{background:#3e7d4f}
+
+/* ================= 弹窗 / 撒花 ================= */
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;align-items:center;justify-content:center}
+.modal.show{display:flex}
+.modal-card{background:#fff;border-radius:24px;max-width:900px;width:92%;max-height:80vh;overflow:auto;padding:30px 38px;font-size:28px;line-height:1.9}
+.modal-card h3{font-size:36px;color:#2e6b3d;margin-bottom:14px}
+.modal-card .hl{color:#d2691e;font-weight:800}
+.modal-close{margin-top:20px;height:60px;padding:0 34px;font-size:24px;font-weight:700;background:#3e7d4f;color:#fff;border-radius:14px}
+#confetti{position:fixed;inset:0;pointer-events:none;z-index:200}
+
+/* ================= 窄屏折叠 ================= */
+@media(max-width:900px){
+  header h1{font-size:22px}
+  .m2-body,.m3-body,.scene-grid{grid-template-columns:1fr}
+  main{overflow-y:auto}
+  .module{height:auto;min-height:560px}
+  .pair-area{flex-direction:column;gap:10px}
+  .duel-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ================= 顶栏 ================= -->
+<header>
+  <h1 id="mainTitle">🐾 动物与四季变化</h1>
+  <span class="sub">大象版科学 · 四年级上册 · 第三单元第4课</span>
+  <nav class="top" id="topNav">
+    <button class="nav-btn on" data-m="0">🌤️ 情境</button>
+    <button class="nav-btn" data-m="1">🎡 四季转盘</button>
+    <button class="nav-btn" data-m="2">🔬 温度实验</button>
+    <button class="nav-btn" data-m="3">🧩 归纳配对</button>
+    <button class="nav-btn" data-m="4">🏆 检测挑战</button>
+  </nav>
+  <button class="top-btn" id="principleBtn">📖 科学原理</button>
+  <button class="top-btn" id="globalReset">🔄 重新开始</button>
+</header>
+
+<main>
+  <!-- ============ 模块1 情境 ============ -->
+  <section class="module active" id="m0">
+    <div><span class="mod-title">🌤️ 情境：它们都去哪儿了？</span></div>
+    <div class="scene-grid">
+      <div class="scene-card">
+        <div class="emoji">🦟</div>
+        <div class="q">夏天嗡嗡叫的蚊子，天冷了去哪儿了？</div>
+        <div class="a">气温变低，蚊子躲到温暖避风处越冬（有的以卵越冬），天气回暖后再次出现。</div>
+        <button class="look">🔍 看看答案</button>
+      </div>
+      <div class="scene-card">
+        <div class="emoji">🐸</div>
+        <div class="q">池塘边呱呱叫的青蛙，冬天怎么不见了？</div>
+        <div class="a">青蛙钻进泥土或水底淤泥里冬眠，不吃不动，等春天回暖再醒来。</div>
+        <button class="look">🔍 看看答案</button>
+      </div>
+      <div class="scene-card">
+        <div class="emoji">🐶</div>
+        <div class="q">小狗夏天掉毛、冬天毛变厚，这是为什么？</div>
+        <div class="a">小狗在换毛：夏天换薄毛散热，冬天换厚毛保暖，适应气温变化。</div>
+        <button class="look">🔍 看看答案</button>
+      </div>
+      <div class="scene-card">
+        <div class="emoji">🕊️</div>
+        <div class="q">秋天大雁排着队飞走了，它们要去哪儿？</div>
+        <div class="a">大雁秋天排着队从北方飞往南方越冬，春天再飞回北方繁殖。</div>
+        <button class="look">🔍 看看答案</button>
+      </div>
+    </div>
+    <div class="m0-btns">
+      <button class="tts-btn" onclick="speakQuestions()">🎙️ 播放问题</button>
+      <button class="tts-btn" onclick="speakAnswers()">🎙️ 播放答案</button>
+    </div>
+  </section>
+
+  <!-- ============ 模块2 四季大转盘 ============ -->
+  <section class="module" id="m1">
+    <div><span class="mod-title">🎡 四季大转盘</span></div>
+    <div class="m2-body">
+      <div class="wheel-col">
+        <div class="wheel-wrap" id="wheelWrap">
+          <div class="pointer">▼</div>
+          <div id="wheel"></div>
+          <div class="wheel-label" data-s="0">🌸 春</div>
+          <div class="wheel-label" data-s="1">☀️ 夏</div>
+          <div class="wheel-label" data-s="2">🍂 秋</div>
+          <div class="wheel-label" data-s="3">❄️ 冬</div>
+          <button id="wheelCenter">🎡<br>转动</button>
+        </div>
+        <div class="hist" id="hist"></div>
+        <div class="wheel-tools">
+          <button class="tool-btn" id="resetWheelBtn">🔄 重置转盘</button>
+        </div>
+      </div>
+      <div class="result-col" id="resultCol">
+        <div class="result-big" id="resBig">❓</div>
+        <div class="result-sub" id="resSub">转动转盘，先猜猜这个季节的动物有什么本领</div>
+        <div class="adapt-grid" id="adaptGrid">
+          <div class="adapt-card">转盘停下后，这里会显示该季节的动物。先让学生猜一猜它们的行为，再点「✨ 各显神通」看答案。</div>
+        </div>
+        <button class="reveal-btn" id="revealBtn" disabled>✨ 各显神通</button>
+        <div class="result-note" id="resNote">💡 想一想：动物的这些行为和什么有关？</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 模块3 蚯蚓温度实验 ============ -->
+  <section class="module" id="m2">
+    <div><span class="mod-title">🔬 实验：蚯蚓在不同温度的土壤里会怎样？</span></div>
+    <div class="m3-body">
+      <div class="lab-left">
+        <canvas id="wormCanvas"></canvas>
+        <div class="ctrl-row">
+          <button class="temp-btn" data-t="5">5℃</button>
+          <button class="temp-btn" data-t="15">15℃</button>
+          <button class="temp-btn on" data-t="25">25℃</button>
+          <input type="range" id="tempSlider" min="5" max="25" step="1" value="25">
+          <div class="temp-read" id="tempVal">25<span>℃</span></div>
+        </div>
+      </div>
+      <div class="lab-right">
+        <table class="rec">
+          <thead><tr><th>温度</th><th>蚯蚓表现</th><th>活动程度</th></tr></thead>
+          <tbody id="recBody"><tr><td colspan="3">试试 5℃ / 15℃ / 25℃ 三个温度吧！</td></tr></tbody>
+        </table>
+        <canvas id="barCanvas"></canvas>
+        <div class="concl" id="wormConcl">
+          📌 <b>我们的发现：</b>温度对蚯蚓的活动影响很大——25℃ 时蚯蚓活跃蠕动；5℃ 时活动减少、接近休眠。<b>动物会随着气温变化改变自己的活动。</b>
+        </div>
+        <div class="tip-card">💚 温馨提示：观察真蚯蚓要轻拿轻放，实验后放回土壤，爱护小动物。</div>
+        <button class="action-btn" id="resetExpBtn" style="height:52px">🔄 重置实验</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 模块4 归纳配对 + 填空 ============ -->
+  <section class="module" id="m3">
+    <div class="mod-head">
+      <span class="mod-title">🧩 归纳：动物用什么办法适应季节变化？</span>
+      <div class="head-stats">
+        <div class="stat-pill">⏱️ <span id="timer">00:00</span></div>
+        <div class="stat-pill">❌ 错误 <span id="errCount">0</span> 次</div>
+        <div class="stat-pill">✅ 连对 <span id="okCount">0</span>/4</div>
+      </div>
+    </div>
+    <div class="pair-area" id="pairArea">
+      <svg id="lineSvg"></svg>
+      <div class="pair-col" id="leftCol"><h4>适应方式</h4></div>
+      <div class="pair-col" id="rightCol"><h4>动物行为</h4></div>
+    </div>
+    <div class="m4-bottom">
+      <div class="action-row">
+        <button class="action-btn" id="showAnsBtn">✨ 显示答案</button>
+        <button class="action-btn" id="shuffleBtn">🎲 随机打乱</button>
+        <button class="action-btn" id="resetPairBtn">🔄 重新开始</button>
+      </div>
+      <div class="fill-area" id="fillArea" style="display:none">
+        <div class="sentence">动物用 <span class="blank"></span><span class="blank"></span><span class="blank"></span><span class="blank"></span> 等方式适应 <span class="blank"></span> 的变化。</div>
+        <div class="chip-bar" id="chipBar"></div>
+        <div id="fillDone">🎉 归纳完成！动物的这些行为都是为了适应气温（季节）的变化。</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 模块5 检测挑战 ============ -->
+  <section class="module" id="m4">
+    <div class="mod-head">
+      <span class="mod-title">🏆 检测挑战</span>
+      <div class="quiz-mode">
+        <button class="mode-btn on" id="modeSoloBtn">🧑 单人挑战</button>
+        <button class="mode-btn" id="modeDuelBtn">⚔️ 双人对决</button>
+      </div>
+    </div>
+    <!-- 单人：每次一题，居中大字 -->
+    <div class="solo-area" id="soloArea">
+      <div class="solo-card">
+        <div class="solo-q" id="soloQ"></div>
+        <div class="solo-opts" id="soloOpts"></div>
+        <div class="solo-fb" id="soloFb"></div>
+        <div style="text-align:center"><button class="foot-btn" id="soloNext" style="display:none;min-width:200px">下一题 →</button></div>
+      </div>
+      <div class="quiz-result" id="soloResult"></div>
+      <div style="text-align:center"><button class="tool-btn" id="soloRetry" style="display:none">🔄 再来一遍</button></div>
+    </div>
+    <!-- 双人：左右分屏同题竞速 -->
+    <div class="duel-area" id="duelArea" style="display:none">
+      <div class="duel-grid" id="duelGrid">
+        <div class="duel-side red" id="duelP1">
+          <div class="duel-name">🔴 1号同学</div>
+          <div class="duel-score" id="duelS1">0</div>
+          <div class="duel-opts" id="duelOpts1"></div>
+        </div>
+        <div class="duel-mid">
+          <div class="duel-progress" id="duelProg">第 1/6 题</div>
+          <div class="duel-q" id="duelQ"></div>
+          <div class="duel-msg" id="duelMsg"></div>
+          <button class="foot-btn" id="duelNext" style="display:none;min-width:200px">下一题 →</button>
+        </div>
+        <div class="duel-side blue" id="duelP2">
+          <div class="duel-name">🔵 2号同学</div>
+          <div class="duel-score" id="duelS2">0</div>
+          <div class="duel-opts" id="duelOpts2"></div>
+        </div>
+      </div>
+      <!-- 胜负庆祝框：覆盖在题目棋盘上显示 -->
+      <div class="duel-overlay" id="duelOverlay">
+        <div class="duel-result-card">
+          <!-- 视图一：胜利总结 -->
+          <div id="duelWinView">
+            <div class="duel-result-title" id="duelResultTitle"></div>
+            <div class="duel-result-stats" id="duelResultStats"></div>
+            <button class="tool-btn" id="duelWrongBtn" style="display:none">📋 查看错题</button>
+            <div style="margin-top:10px"><button class="tool-btn" id="duelRestart" style="background:#3e7d4f;color:#fff;border-color:#3e7d4f;height:56px;font-size:22px">🔄 再来一局</button></div>
+          </div>
+          <!-- 视图二：错题回顾（只显示错题，全部展开） -->
+          <div id="duelWrongView" style="display:none">
+            <div class="duel-result-title" style="font-size:36px">📋 错题回顾</div>
+            <div class="duel-wrongs" id="duelWrongs"></div>
+            <div style="margin-top:10px"><button class="tool-btn" id="duelWrongBack" style="height:56px;font-size:22px">🙈 返回胜利界面</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="foot-arrows">
+    <button class="arrow-btn" id="prevArrow">◀</button>
+    <button class="arrow-btn" id="nextArrow">▶</button>
+  </div>
+  <div class="dots" id="dots"></div>
+  <div class="foot-group">
+    <button class="foot-btn" id="prevBtn">← 上一步</button>
+    <button class="foot-btn" id="nextBtn">下一步 →</button>
+  </div>
+</footer>
+
+<!-- 科学原理弹窗 -->
+<div class="modal" id="principleModal">
+  <div class="modal-card">
+    <h3>📖 科学原理：动物与四季变化</h3>
+    <p>四季的气温在变化，动物有自己适应季节变化的本领。动物适应季节变化的常见方式有四种：</p>
+    <p>① <span class="hl">迁徙</span>——大雁秋天飞往南方越冬，春天飞回北方；<br>
+    ② <span class="hl">冬眠</span>——蛇、青蛙钻进洞里或泥土里，不吃不动度过寒冬；<br>
+    ③ <span class="hl">储存食物</span>——松鼠秋天忙着储存松果和坚果过冬；<br>
+    ④ <span class="hl">换毛换羽</span>——绵羊、小狗夏天换薄毛散热，冬天换厚毛保暖。</p>
+    <p>💡 <b>核心结论：动物的这些行为都与气温（季节）的变化有关，都是为了更好地生存。</b></p>
+    <button class="modal-close" onclick="closeModal('principleModal')">知道了，关闭</button>
+  </div>
+</div>
+
+<!-- 配对完成弹窗 -->
+<div class="modal" id="finishModal">
+  <div class="modal-card" style="text-align:center">
+    <h3>🎉 配对完成！</h3>
+    <p id="finishText">用时 00:00 · 错误 0 次</p>
+    <button class="modal-close" onclick="closeModal('finishModal')">👍 真棒</button>
+    <button class="modal-close" style="background:#f2c14e;color:#5b4a12" onclick="closeModal('finishModal');resetPair()">🔄 再玩一次</button>
+  </div>
+</div>
+
+<canvas id="confetti"></canvas>
+
+<script>
+/* =====================================================================
+ * 《动物与四季变化》大象版科学 四年级上册 第三单元第4课
+ * 综合多模块探究课件：情境 → 四季转盘 → 蚯蚓温度实验 → 归纳配对 → 检测
+ * 纯原生实现，无任何外部资源；音效 Web Audio 合成；适配希沃白板触屏
+ * ===================================================================== */
+
+/* ================= 模块路由 ================= */
+const MOD_NUM = 5;
+let cur = 0;
+const navBtns = document.querySelectorAll('.nav-btn');
+const modules = document.querySelectorAll('.module');
+const dotsBox = document.getElementById('dots');
+for (let i = 0; i < MOD_NUM; i++) {
+  const d = document.createElement('div'); d.className = 'dot'; dotsBox.appendChild(d);
+}
+const dots = dotsBox.querySelectorAll('.dot');
+
+function go(i) {
+  cur = i;
+  modules.forEach((m, idx) => m.classList.toggle('active', idx === i));
+  navBtns.forEach((b, idx) => b.classList.toggle('on', idx === i));
+  dots.forEach((d, idx) => d.classList.toggle('on', idx === i));
+  document.getElementById('prevBtn').disabled = (i === 0);
+  document.getElementById('nextBtn').disabled = (i === MOD_NUM - 1);
+  document.getElementById('prevArrow').disabled = (i === 0);
+  document.getElementById('nextArrow').disabled = (i === MOD_NUM - 1);
+  if (i === 1) layoutWheel();    // 转盘标签：进入模块时按当前尺寸重新定位
+  if (i === 2) resizeCanvases(); // 蚯蚓实验画布：进入模块时按当前尺寸重新适配
+}
+navBtns.forEach(b => b.addEventListener('click', () => go(+b.dataset.m)));
+document.getElementById('prevBtn').addEventListener('click', () => { if (cur > 0) go(cur - 1); });
+document.getElementById('nextBtn').addEventListener('click', () => { if (cur < MOD_NUM - 1) go(cur + 1); });
+document.getElementById('prevArrow').addEventListener('click', () => { if (cur > 0) go(cur - 1); });
+document.getElementById('nextArrow').addEventListener('click', () => { if (cur < MOD_NUM - 1) go(cur + 1); });
+
+/* ================= 弹窗 ================= */
+function openModal(id) { document.getElementById(id).classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+document.getElementById('principleBtn').addEventListener('click', () => openModal('principleModal'));
+document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e => { if (e.target === m) closeModal(m.id); }));
+
+/* ================= Web Audio 合成音效（无外部音频） ================= */
+let AC = null;
+function audio() {
+  if (!AC) { const C = window.AudioContext || window.webkitAudioContext; if (!C) return null; AC = new C(); }
+  if (AC.state === 'suspended') AC.resume();
+  return AC;
+}
+function tone(freq, dur, type, vol, delay) {
+  const a = audio(); if (!a) return;
+  const t = a.currentTime + (delay || 0);
+  const o = a.createOscillator(), g = a.createGain();
+  o.type = type || 'sine'; o.frequency.value = freq;
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.linearRampToValueAtTime(vol || 0.18, t + 0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g); g.connect(a.destination);
+  o.start(t); o.stop(t + dur + 0.05);
+}
+function sTick() { tone(880, 0.06, 'triangle', 0.08); }
+function sDing() { tone(523.25, 0.35, 'sine', 0.2); tone(659.25, 0.35, 'sine', 0.2, 0.1); tone(783.99, 0.5, 'sine', 0.2, 0.2); }
+function sOk() { tone(523.25, 0.18, 'sine', 0.18); tone(783.99, 0.25, 'sine', 0.18, 0.12); }
+function sErr() { tone(220, 0.2, 'square', 0.1); tone(150, 0.25, 'square', 0.1, 0.12); }
+function sWin() { tone(523.25, 0.22, 'sine', 0.22); tone(659.25, 0.22, 'sine', 0.22, 0.14); tone(783.99, 0.22, 'sine', 0.22, 0.28); tone(1046.5, 0.55, 'sine', 0.24, 0.42); }
+
+/* ================= 语音播报（按 voice 名选声） ================= */
+let voicesCache = [];
+function loadVoices() {
+  if (!('speechSynthesis' in window)) return;
+  const v = speechSynthesis.getVoices();
+  if (v && v.length) voicesCache = v;
+}
+if ('speechSynthesis' in window) {
+  loadVoices();
+  speechSynthesis.onvoiceschanged = loadVoices; // 语音列表异步加载
+}
+const FEMALE_KW = ['huihui', 'yaoyao', 'xiaoxiao', 'xiaoyi', 'female', '女'];
+const MALE_KW = ['kangkang', 'yunxi', 'yunjian', 'male', '男'];
+function pickVoice(kw) {
+  let zh = voicesCache.filter(v => (v.lang || '').toLowerCase().replace('_', '-').startsWith('zh'));
+  if (!zh.length) zh = voicesCache;
+  let pool = zh.filter(v => kw.some(k => v.name.toLowerCase().includes(k)));
+  if (!pool.length) pool = zh;
+  const neural = pool.find(v => /natural|neural/i.test(v.name));
+  return neural || pool[0] || null;
+}
+function speak(text, gender) {
+  if (!('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'zh-CN'; u.rate = 0.95;
+  const v = pickVoice(gender === 'male' ? MALE_KW : FEMALE_KW);
+  if (v) u.voice = v;
+  speechSynthesis.speak(u);
+}
+/* 问题与答案分两次单独播放，便于课堂穿插导入 */
+function speakQuestions() {
+  speak('夏天嗡嗡叫的蚊子，天冷了去哪儿了？池塘边呱呱叫的青蛙，冬天怎么不见了？小狗夏天掉毛、冬天毛变厚，这是为什么？秋天大雁排着队飞走了，它们要去哪儿？');
+}
+function speakAnswers() {
+  speak('蚊子躲到温暖避风处越冬，天气回暖后再出现。青蛙钻进泥土或水底淤泥里冬眠，春天再醒来。小狗换毛：夏天换薄毛散热，冬天换厚毛保暖。大雁秋天飞往南方越冬，春天再飞回北方繁殖。');
+}
+
+/* ================= 模块1 情境卡片 ================= */
+document.querySelectorAll('.scene-card').forEach(card => {
+  card.querySelector('.look').addEventListener('click', () => {
+    card.classList.toggle('reveal');
+    card.querySelector('.look').textContent = card.classList.contains('reveal') ? '🙈 收起答案' : '🔍 看看答案';
+  });
+});
+
+/* ================= 模块2 四季大转盘（标签正立、先猜后看） ================= */
+const SEASONS = [
+  { name: '春', emoji: '🌸', sub: '万物复苏，动物们重新活跃起来',
+    items: [
+      { a: '大雁', e: '🕊️', t: '从南方飞回北方繁殖' },
+      { a: '青蛙', e: '🐸', t: '从冬眠中醒来，回到水边' },
+      { a: '绵羊', e: '🐑', t: '褪去厚毛，换上薄毛' },
+      { a: '燕子', e: '🐦', t: '飞回北方筑巢安家' } ],
+    note: '气温回升，动物结束冬眠、从越冬地返回，开始新一年的生活。' },
+  { name: '夏', emoji: '☀️', sub: '天气炎热，动物各有降温妙招',
+    items: [
+      { a: '小狗', e: '🐶', t: '伸出舌头散热、换薄毛' },
+      { a: '青蛙', e: '🐸', t: '傍晚呱呱叫，躲阴凉处' },
+      { a: '蚊子', e: '🦟', t: '天气热时最活跃' },
+      { a: '知了', e: '🦗', t: '在树上大声鸣叫' } ],
+    note: '夏天高温多雨，动物活动旺盛，用各种方式散热避暑。' },
+  { name: '秋', emoji: '🍂', sub: '天气转凉，动物忙着做准备',
+    items: [
+      { a: '大雁', e: '🕊️', t: '排成"人"字飞往南方越冬' },
+      { a: '松鼠', e: '🐿️', t: '忙着储存松果和坚果' },
+      { a: '小狗', e: '🐶', t: '换上厚厚的毛' },
+      { a: '青蛙', e: '🐸', t: '吃得胖胖的，准备冬眠' } ],
+    note: '📋 大雁调查：大雁秋季从北方飞到南方（越冬地）过冬，春天再飞回北方（繁殖地）。' },
+  { name: '冬', emoji: '❄️', sub: '天寒地冻，动物各显神通',
+    items: [
+      { a: '蛇', e: '🐍', t: '钻进洞里冬眠' },
+      { a: '青蛙', e: '🐸', t: '躲进泥土里冬眠' },
+      { a: '绵羊', e: '🐑', t: '靠厚厚的毛保暖' },
+      { a: '松鼠', e: '🐿️', t: '吃秋天储存的食物' } ],
+    note: '冬天寒冷，动物靠冬眠、厚毛、储存的食物度过严寒。' }
+];
+
+const wheelWrap = document.getElementById('wheelWrap');
+const wheelEl = document.getElementById('wheel');
+const wheelLabels = document.querySelectorAll('.wheel-label');
+let wheelAngle = 0, spinning = false;
+const hist = [];
+
+/* 标签按当前转盘角度定位在对应色块中心：字永远正立，与色块一一对应，停稳不回弹 */
+function placeLabels(rot) {
+  const r = wheelWrap.clientWidth / 2;
+  wheelLabels.forEach(l => {
+    const s = +l.dataset.s;
+    const th = (s * 90 + 45 + rot) * Math.PI / 180; // 色块中心角（顺时针从正上方起）
+    const x = Math.sin(th) * r * 0.62, y = -Math.cos(th) * r * 0.62;
+    l.style.transform = `translate(-50%,-50%) translate(${x}px,${y}px)`;
+  });
+}
+function layoutWheel() { placeLabels(((wheelAngle % 360) + 360) % 360); }
+layoutWheel();
+window.addEventListener('resize', layoutWheel);
+
+/* cubic-bezier(0.33,0,0.15,1) 缓动函数（二分法求解） */
+function bezierEase(p) {
+  const x1 = 0.33, y1 = 0, x2 = 0.15, y2 = 1;
+  const bx = t => 3 * (1 - t) * (1 - t) * t * x1 + 3 * (1 - t) * t * t * x2 + t * t * t;
+  const by = t => 3 * (1 - t) * (1 - t) * t * y1 + 3 * (1 - t) * t * t * y2 + t * t * t;
+  let lo = 0, hi = 1;
+  for (let i = 0; i < 14; i++) {
+    const mid = (lo + hi) / 2;
+    if (bx(mid) < p) lo = mid; else hi = mid;
+  }
+  return by((lo + hi) / 2);
+}
+
+function spinWheel() {
+  if (spinning) return;
+  spinning = true;
+  audio(); // 在点击手势内创建 AudioContext，确保转盘音效可播放
+  const extra = 4 + Math.random() * 2;            // 至少转 4 圈
+  const target = Math.floor(Math.random() * 360); // 随机落点角度
+  const base = wheelAngle % 360;
+  const delta = extra * 360 + ((target - base + 360) % 360);
+  const startA = wheelAngle, totalD = delta, startT = performance.now(), DUR = 4000;
+  let lastDeg = 0;
+  /* 整个转动由 JS 逐帧驱动：色块与文字同步转、同步停，落点与指针严格对应 */
+  const frame = now => {
+    const p = Math.min((now - startT) / DUR, 1);
+    const eased = bezierEase(p);
+    const ang = startA + totalD * eased;
+    wheelEl.style.transform = `rotate(${ang}deg)`;
+    placeLabels(((ang % 360) + 360) % 360);
+    const d = totalD * eased;
+    if (d - lastDeg >= 60) { lastDeg = d; sTick(); } // 每转约 60° 滴答一声
+    if (p < 1) requestAnimationFrame(frame);
+    else {
+      spinning = false;
+      wheelAngle = ang;
+      const wheelCoord = (270 - ((ang % 360) + 360) % 360 + 360) % 360; // 指针正上方对应转盘坐标
+      const idx = Math.floor(wheelCoord / 90) % 4;
+      showResult(idx);
+      sDing();
+    }
+  };
+  requestAnimationFrame(frame);
+}
+
+document.getElementById('wheelCenter').addEventListener('click', spinWheel);
+
+const revealBtn = document.getElementById('revealBtn');
+function showResult(idx) {
+  const s = SEASONS[idx];
+  document.getElementById('resBig').innerHTML = `${s.emoji} ${s.name}`;
+  document.getElementById('resSub').textContent = s.sub;
+  /* 先只显示动物卡片，行为隐藏——让学生先猜，再点「各显神通」看本领 */
+  document.getElementById('adaptGrid').innerHTML = s.items
+    .map(it => `<div class="adapt-card"><b>${it.e} ${it.a}</b><div class="t">${it.t}</div></div>`).join('');
+  document.getElementById('resNote').textContent = s.note;
+  revealBtn.disabled = false;
+  hist.unshift(idx); if (hist.length > 4) hist.pop();
+  renderHist();
+}
+revealBtn.addEventListener('click', () => {
+  document.querySelectorAll('#adaptGrid .t').forEach(t => t.style.display = 'block');
+  revealBtn.disabled = true;
+  sOk();
+});
+function renderHist() {
+  document.getElementById('hist').innerHTML = hist.length
+    ? hist.map(i => `<span class="hist-chip">${SEASONS[i].emoji} ${SEASONS[i].name}</span>`).join('')
+    : '';
+}
+function resetWheelPanel() {
+  hist.length = 0; renderHist();
+  document.getElementById('resBig').innerHTML = '❓';
+  document.getElementById('resSub').textContent = '转动转盘，先猜猜这个季节的动物有什么本领';
+  document.getElementById('adaptGrid').innerHTML = '<div class="adapt-card">转盘停下后，这里会显示该季节的动物。先让学生猜一猜它们的行为，再点「✨ 各显神通」看答案。</div>';
+  document.getElementById('resNote').textContent = '💡 想一想：动物的这些行为和什么有关？';
+  revealBtn.disabled = true;
+}
+document.getElementById('resetWheelBtn').addEventListener('click', resetWheelPanel);
+
+/* ================= 模块3 蚯蚓温度实验（Canvas + rAF + 随机爬行 + 自动记录） ================= */
+const wormCanvas = document.getElementById('wormCanvas'), wctx = wormCanvas.getContext('2d');
+const barCanvas = document.getElementById('barCanvas'), bctx = barCanvas.getContext('2d');
+/* 温度→表现 连续映射：滑块任意温度都不会崩（5~8℃休眠档、9~18℃缓慢档、19~25℃活跃档） */
+function perfOf(t) {
+  if (t <= 8)  return { lvl: 1, txt: '蜷缩不动，接近休眠', stars: '★☆☆' };
+  if (t <= 18) return { lvl: 2, txt: '缓慢爬动', stars: '★★☆' };
+  return { lvl: 3, txt: '活跃蠕动', stars: '★★★' };
+}
+let wormTemp = 25;
+const records = {};
+/* 土壤颗粒（固定比例生成，窗口缩放后依然稳定） */
+const STONES = Array.from({ length: 40 }, (_, i) => ({ fx: (i * 137.5) % 100 / 100, fy: ((i * 61.3) % 100) / 100, r: 2 + (i % 3) }));
+/* 蚯蚓随机游走：在土壤演示区内随机选目标点爬行 */
+let wPos = { x: 0.5, y: 0.55 }, wTarget = { x: 0.5, y: 0.55 }, wDir = 0, lastT = 0;
+
+function resizeCanvases() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2); // 高清屏抗锯齿
+  [[wormCanvas, wctx], [barCanvas, bctx]].forEach(([c, ctx]) => {
+    c.width = Math.max(1, Math.round(c.clientWidth * dpr));
+    c.height = Math.max(1, Math.round(c.clientHeight * dpr));
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  });
+  drawBars();
+}
+resizeCanvases();
+window.addEventListener('resize', resizeCanvases);
+
+function roundRect(c, x, y, w, h, r) {
+  c.beginPath();
+  c.moveTo(x + r, y);
+  c.arcTo(x + w, y, x + w, y + h, r);
+  c.arcTo(x + w, y + h, x, y + h, r);
+  c.arcTo(x, y + h, x, y, r);
+  c.arcTo(x, y, x + w, y, r);
+  c.closePath();
+}
+function pickTarget() {
+  wTarget = { x: 0.12 + Math.random() * 0.76, y: 0.16 + Math.random() * 0.72 };
+}
+/* 蜷缩程度连续变化：≤8℃ 全蜷(1)，≥18℃ 全展(0)，中间平滑过渡（不再瞬间切换） */
+function curlOf(t) { return Math.max(0, Math.min(1, (18 - t) / 10)); }
+/* 统一身体模型：头在前。curl=1 盘成圈，curl=0 直线爬行+波浪摆动，中间值平滑过渡 */
+function drawWormBody(cx, cy, dir, curl, t) {
+  const n = 16, segLen = 7.5;
+  const amp = (1 - curl) * 6;                       // 摆动幅度随展开程度增加
+  const ph = t * (2 + 3 * (1 - curl));
+  let x = cx, y = cy, a = dir + Math.PI;            // 身体向头的后方延伸
+  for (let i = 0; i < n; i++) {
+    const s = i / (n - 1);
+    wctx.beginPath();
+    wctx.arc(x, y, 6.5 - s * 3, 0, 7);
+    wctx.fillStyle = i === 0 ? '#b25b5b' : '#d98a8a'; // 头部深一点
+    wctx.fill();
+    if (i === 0) { // 眼睛（头部两侧）
+      const qx = -Math.sin(dir), qy = Math.cos(dir);
+      const fx = Math.cos(dir), fy = Math.sin(dir);
+      wctx.fillStyle = '#fff';
+      wctx.beginPath(); wctx.arc(x + qx * 2.2 + fx * 1.8, y + qy * 2.2 + fy * 1.8, 1.6, 0, 7); wctx.fill();
+      wctx.beginPath(); wctx.arc(x - qx * 2.2 + fx * 1.8, y - qy * 2.2 + fy * 1.8, 1.6, 0, 7); wctx.fill();
+    }
+    const off = Math.sin(ph + i * 0.9) * amp;
+    x += Math.cos(a) * segLen - Math.sin(a) * off * 0.7;
+    y += Math.sin(a) * segLen + Math.cos(a) * off * 0.7;
+    a += curl * 0.42 + (1 - curl) * Math.sin(ph + i * 0.5) * 0.06; // 蜷缩时每段转角加大，盘成圈
+  }
+}
+
+const wormStart = performance.now();
+function drawWormScene(now) {
+  const W = wormCanvas.clientWidth, H = wormCanvas.clientHeight;
+  if (W && H) {
+    const t = (now - wormStart) / 1000;
+    const dt = Math.min(t - lastT, 0.1); lastT = t;
+    wctx.clearRect(0, 0, W, H);
+    const sy = H * 0.04, sh = H * 0.90;                                // 土壤观察箱占满演示区
+    const g = wctx.createLinearGradient(0, sy, 0, sy + sh);
+    g.addColorStop(0, '#8a5a33'); g.addColorStop(1, '#5f3d22');
+    wctx.fillStyle = g;
+    roundRect(wctx, W * 0.03, sy, W * 0.94, sh, 14); wctx.fill();
+    wctx.fillStyle = 'rgba(255,255,255,.14)';
+    STONES.forEach(s => {
+      const x = W * 0.03 + s.fx * W * 0.94, y = sy + 6 + s.fy * (sh - 12);
+      wctx.beginPath(); wctx.arc(x, y, s.r, 0, 7); wctx.fill();
+    });
+    /* 蚯蚓随机游走 + 蜷缩程度连续过渡：温度越高爬得越快、身体越舒展 */
+    const curl = curlOf(wormTemp);
+    const spd = 4 + 28 * (1 - curl); // px/s
+    const tdx = wTarget.x * W - wPos.x * W, tdy = wTarget.y * H - wPos.y * H;
+    const dist = Math.hypot(tdx, tdy);
+    if (dist < 16) { pickTarget(); }
+    else {
+      const step = Math.min(spd * dt, dist);
+      const ang = Math.atan2(tdy, tdx);
+      wPos.x += Math.cos(ang) * step / W;
+      wPos.y += Math.sin(ang) * step / H;
+      wDir = ang;
+    }
+    drawWormBody(wPos.x * W, wPos.y * H, wDir, curl, t);
+    const txt = curl > 0.66 ? '蜷缩不动，接近休眠' : (curl > 0.15 ? '活动减少，缓慢爬动' : '活跃蠕动');
+    wctx.font = '700 18px "KaiTi","楷体","Microsoft YaHei"'; wctx.textAlign = 'center';
+    wctx.fillStyle = 'rgba(255,255,255,.92)';
+    wctx.fillText(txt, W / 2, sy + sh - 14);
+  }
+  requestAnimationFrame(drawWormScene); // 主循环
+}
+requestAnimationFrame(drawWormScene);
+
+function setTemp(t) {
+  wormTemp = t;
+  document.getElementById('tempVal').innerHTML = `${t}<span>℃</span>`;
+  document.getElementById('tempSlider').value = t;
+  document.querySelectorAll('.temp-btn').forEach(b => b.classList.toggle('on', +b.dataset.t === t));
+  /* 只有三个档位温度（5/15/25℃）记入表格，滑块中间值只改变动画与读数 */
+  if (t === 5 || t === 15 || t === 25) records[t] = perfOf(t);
+  renderTable();
+  drawBars();
+  if (records[5] && records[15] && records[25]) document.getElementById('wormConcl').style.display = 'block';
+}
+document.querySelectorAll('.temp-btn').forEach(b => b.addEventListener('click', () => setTemp(+b.dataset.t)));
+document.getElementById('tempSlider').addEventListener('input', e => setTemp(+e.target.value));
+
+function renderTable() {
+  const tb = document.getElementById('recBody');
+  tb.innerHTML = '';
+  [5, 15, 25].forEach(k => {
+    if (!records[k]) return;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${k}℃</td><td>${records[k].txt}</td><td>${records[k].stars}</td>`;
+    tb.appendChild(tr);
+  });
+  if (!tb.children.length) tb.innerHTML = '<tr><td colspan="3">试试 5℃ / 15℃ / 25℃ 三个温度吧！</td></tr>';
+}
+/* 活动程度柱状图：已测温度绿色实柱，未测灰色 */
+function drawBars() {
+  const W = barCanvas.clientWidth, H = barCanvas.clientHeight;
+  bctx.clearRect(0, 0, W, H);
+  const bw = W * 0.2, gap = W * 0.06, base = H - 28;
+  [5, 15, 25].forEach((k, i) => {
+    const lvl = records[k] ? perfOf(k).lvl : 0;
+    const h = lvl / 3 * (H - 60);
+    const x = W * 0.1 + i * (bw + gap);
+    bctx.fillStyle = records[k] ? '#3e7d4f' : '#c9d8c9';
+    roundRect(bctx, x, base - h, bw, h, 8); bctx.fill();
+    if (lvl) {
+      bctx.fillStyle = '#fff'; bctx.font = '700 22px "SimHei","黑体","Microsoft YaHei"'; bctx.textAlign = 'center';
+      bctx.fillText('★'.repeat(lvl), x + bw / 2, base - h - 6);
+    }
+    bctx.fillStyle = '#2f4a33'; bctx.font = '700 19px "SimSun","宋体","Microsoft YaHei"';
+    bctx.fillText(k + '℃', x + bw / 2, H - 8);
+  });
+}
+document.getElementById('resetExpBtn').addEventListener('click', () => {
+  Object.keys(records).forEach(k => delete records[k]);
+  wormTemp = 25;
+  document.getElementById('tempVal').innerHTML = '25<span>℃</span>';
+  document.getElementById('tempSlider').value = 25;
+  document.querySelectorAll('.temp-btn').forEach(b => b.classList.toggle('on', +b.dataset.t === 25));
+  document.getElementById('wormConcl').style.display = 'none';
+  renderTable(); drawBars();
+});
+
+/* ================= 模块4 归纳配对（两段式点选 + SVG 曲线） ================= */
+const PAIRS = [
+  ['储存食物', '🐿️ 松鼠忙着藏坚果过冬'],
+  ['换毛换羽', '🐑 绵羊换上厚厚的毛'],
+  ['冬眠',     '🐍 蛇钻到洞里睡大觉'],
+  ['迁徙',     '🕊️ 大雁排着队飞往南方']
+];
+const methodOf = {}; PAIRS.forEach(p => methodOf[p[1]] = p[0]);
+let selLeft = null, pairLines = [], pairErrors = 0, pairOk = 0, shownAnswer = false;
+let timerId = null, timerSec = 0, timerRunning = false;
+
+const leftCol = document.getElementById('leftCol'), rightCol = document.getElementById('rightCol');
+const lineSvg = document.getElementById('lineSvg');
+
+/* 建卡片 */
+PAIRS.forEach(p => {
+  const lc = document.createElement('div');
+  lc.className = 'pair-card'; lc.textContent = p[0]; lc.dataset.k = p[0];
+  leftCol.appendChild(lc);
+  const rc = document.createElement('div');
+  rc.className = 'pair-card'; rc.textContent = p[1]; rc.dataset.k = p[1];
+  rightCol.appendChild(rc);
+});
+const leftCards = Array.from(leftCol.querySelectorAll('.pair-card'));
+const rightCards = Array.from(rightCol.querySelectorAll('.pair-card'));
+
+function shuffleRight() {
+  const arr = Array.from(rightCol.children).filter(el => el.classList.contains('pair-card'));
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    rightCol.insertBefore(arr[j], arr[i]);
+    rightCol.insertBefore(arr[i], arr[j]);
+  }
+}
+shuffleRight();
+
+function startTimer() {
+  if (timerRunning) return;
+  timerRunning = true;
+  timerId = setInterval(() => {
+    timerSec++;
+    const m = String(Math.floor(timerSec / 60)).padStart(2, '0'), s = String(timerSec % 60).padStart(2, '0');
+    document.getElementById('timer').textContent = `${m}:${s}`;
+  }, 1000);
+}
+function stopTimer() { clearInterval(timerId); timerRunning = false; }
+function fmtTime() { const m = String(Math.floor(timerSec / 60)).padStart(2, '0'), s = String(timerSec % 60).padStart(2, '0'); return `${m}:${s}`; }
+
+/* 曲线端点算到卡片边缘，避免线穿过文字 */
+function cardPoints(lc, rc) {
+  const a = lc.getBoundingClientRect(), b = rc.getBoundingClientRect(), s = lineSvg.getBoundingClientRect();
+  return {
+    x1: a.right - s.left, y1: (a.top + a.bottom) / 2 - s.top,
+    x2: b.left - s.left, y2: (b.top + b.bottom) / 2 - s.top
+  };
+}
+function drawLine(lc, rc, color, temp) {
+  const p = cardPoints(lc, rc);
+  const mx = (p.x1 + p.x2) / 2, my = (p.y1 + p.y2) / 2 - 24;
+  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  path.setAttribute('d', `M ${p.x1} ${p.y1} Q ${mx} ${my} ${p.x2} ${p.y2}`);
+  path.setAttribute('stroke', color || '#3e7d4f');
+  path.setAttribute('stroke-width', '4');
+  path.setAttribute('fill', 'none');
+  path.setAttribute('stroke-linecap', 'round');
+  lineSvg.appendChild(path);
+  if (!temp) pairLines.push({ lc, rc, path });
+  else { path.classList.add('temp'); setTimeout(() => path.remove(), 650); }
+}
+function redrawLines() { lineSvg.querySelectorAll('path').forEach(p => p.remove()); pairLines.forEach(l => drawLine(l.lc, l.rc, '#3e7d4f')); }
+window.addEventListener('resize', redrawLines);
+
+leftCards.forEach(c => c.addEventListener('click', () => {
+  if (c.classList.contains('done')) return;
+  leftCards.forEach(x => x.classList.remove('sel'));
+  selLeft = c; c.classList.add('sel');
+  startTimer();
+}));
+rightCards.forEach(c => c.addEventListener('click', () => {
+  if (!selLeft || c.classList.contains('done')) return;
+  const isOk = methodOf[c.dataset.k] === selLeft.dataset.k;
+  if (isOk) {
+    selLeft.classList.remove('sel'); selLeft.classList.add('done');
+    c.classList.add('done');
+    pairOk++;
+    document.getElementById('okCount').textContent = pairOk + '/4';
+    drawLine(selLeft, c, '#3e7d4f');
+    selLeft = null;
+    sOk();
+    if (pairOk === 4) {
+      stopTimer();
+      document.getElementById('finishText').textContent =
+        `用时 ${fmtTime()} · 错误 ${pairErrors} 次${shownAnswer ? ' ·（看过答案）' : ''}`;
+      openModal('finishModal');
+      confetti(140);
+      showFill(); // 连线完成后才弹出总结填空题
+    }
+  } else {
+    pairErrors++;
+    document.getElementById('errCount').textContent = pairErrors;
+    drawLine(selLeft, c, '#d9534f', true); // 错误红线闪现
+    c.classList.add('shake'); setTimeout(() => c.classList.remove('shake'), 500);
+    sErr();
+  }
+}));
+
+document.getElementById('showAnsBtn').addEventListener('click', () => {
+  shownAnswer = true;
+  leftCards.forEach(lc => {
+    if (lc.classList.contains('done')) return;
+    const rc = rightCards.find(c => c.dataset.k && methodOf[c.dataset.k] === lc.dataset.k);
+    if (rc) { lc.classList.add('done'); rc.classList.add('done'); drawLine(lc, rc, '#3e7d4f'); }
+  });
+  pairOk = 4; document.getElementById('okCount').textContent = '4/4';
+  stopTimer();
+  document.getElementById('finishText').textContent = `用时 ${fmtTime()} · 错误 ${pairErrors} 次 ·（看过答案）`;
+  openModal('finishModal');
+  showFill();
+});
+document.getElementById('shuffleBtn').addEventListener('click', () => {
+  shuffleRight();
+  pairLines = []; lineSvg.querySelectorAll('path').forEach(p => p.remove());
+  leftCards.forEach(c => { c.classList.remove('done', 'sel'); });
+  rightCards.forEach(c => c.classList.remove('done'));
+  selLeft = null; pairOk = 0; shownAnswer = false;
+  document.getElementById('okCount').textContent = '0/4';
+  hideFill();
+});
+function resetPair() {
+  shuffleRight();
+  pairLines = []; lineSvg.querySelectorAll('path').forEach(p => p.remove());
+  leftCards.forEach(c => { c.classList.remove('done', 'sel'); });
+  rightCards.forEach(c => c.classList.remove('done'));
+  selLeft = null; pairOk = 0; pairErrors = 0; shownAnswer = false;
+  document.getElementById('okCount').textContent = '0/4';
+  document.getElementById('errCount').textContent = '0';
+  stopTimer(); timerSec = 0;
+  document.getElementById('timer').textContent = '00:00';
+  hideFill();
+}
+document.getElementById('resetPairBtn').addEventListener('click', () => resetPair());
+
+/* ================= 模块4 拖拽/点击 词块填空（pointer 事件 + 点击双通道） ================= */
+const CHIPS = ['储存食物', '换毛换羽', '冬眠', '迁徙', '气温'];
+const chipBar = document.getElementById('chipBar');
+const blanks = Array.from(document.querySelectorAll('.blank'));
+CHIPS.forEach(w => {
+  const ch = document.createElement('div');
+  ch.className = 'chip'; ch.textContent = w; ch.dataset.word = w;
+  chipBar.appendChild(ch);
+});
+const chips = Array.from(chipBar.querySelectorAll('.chip'));
+const BLANKS = [null, null, null, null, null];
+let selChip = null, lastDragEnd = 0;
+
+/* 通道一：拖拽（pointer 事件 + touch-action:none，触屏可用） */
+chips.forEach(ch => {
+  ch.addEventListener('pointerdown', e => {
+    if (ch.classList.contains('used')) return;
+    e.preventDefault();
+    ch.setPointerCapture(e.pointerId);
+    ch.classList.add('dragging');
+    const move = ev => { ch.style.transform = `translate(${ev.clientX - e.clientX}px,${ev.clientY - e.clientY}px)`; };
+    const up = ev => {
+      ch.removeEventListener('pointermove', move);
+      ch.removeEventListener('pointerup', up);
+      ch.removeEventListener('pointercancel', up);
+      ch.classList.remove('dragging');
+      lastDragEnd = Date.now();
+      tryDrop(ch, ev.clientX, ev.clientY); // 先按松手坐标判定，再复位
+      ch.style.transform = '';
+    };
+    ch.addEventListener('pointermove', move);
+    ch.addEventListener('pointerup', up);
+    ch.addEventListener('pointercancel', up);
+  });
+  /* 通道二：点击词块选中 → 点击空格填入（拖拽后的误触忽略） */
+  ch.addEventListener('click', () => {
+    if (Date.now() - lastDragEnd < 350) return;
+    if (ch.classList.contains('used')) return;
+    if (selChip === ch) { selChip = null; ch.classList.remove('picked'); return; }
+    chips.forEach(c => c.classList.remove('picked'));
+    selChip = ch; ch.classList.add('picked');
+  });
+});
+blanks.forEach((b, i) => b.addEventListener('click', () => { if (selChip) placeChip(selChip, i); }));
+
+/* 判定落点：拖拽用松手坐标，点击用空格序号 */
+function tryDrop(chip, px, py) {
+  let target = -1;
+  blanks.forEach((b, i) => {
+    const br = b.getBoundingClientRect();
+    if (px > br.left - 24 && px < br.right + 24 && py > br.top - 24 && py < br.bottom + 24) target = i;
+  });
+  if (target >= 0) placeChip(chip, target);
+}
+function placeChip(chip, target) {
+  if (BLANKS[target] !== null) {
+    blanks[target].classList.add('shake'); setTimeout(() => blanks[target].classList.remove('shake'), 500);
+    sErr(); return;
+  }
+  const w = chip.dataset.word, isLast = (target === 4);
+  const okPlace = isLast ? (w === '气温') : (w !== '气温'); // 前四格放适应方式，最后一格放"气温"
+  if (okPlace) {
+    BLANKS[target] = w;
+    blanks[target].textContent = w;
+    blanks[target].classList.add('filled');
+    chip.classList.add('used');
+    if (selChip === chip) { selChip = null; chip.classList.remove('picked'); }
+    sOk();
+    if (BLANKS.every(x => x !== null)) {
+      document.getElementById('fillDone').style.display = 'block';
+      confetti(120);
+    }
+  } else {
+    blanks[target].classList.add('shake'); setTimeout(() => blanks[target].classList.remove('shake'), 500);
+    if (selChip === chip) { selChip = null; chip.classList.remove('picked'); }
+    sErr();
+  }
+}
+function showFill() {
+  document.getElementById('fillArea').style.display = 'block';
+  requestAnimationFrame(() => redrawLines()); // 卡片上移后重画连线，位置对应
+}
+function hideFill() {
+  document.getElementById('fillArea').style.display = 'none';
+  requestAnimationFrame(() => redrawLines());
+}
+function resetFill() {
+  BLANKS.fill(null);
+  blanks.forEach(b => { b.textContent = ''; b.classList.remove('filled'); });
+  chips.forEach(c => c.classList.remove('used', 'picked'));
+  selChip = null;
+  document.getElementById('fillDone').style.display = 'none';
+}
+
+/* ================= 模块5 检测挑战（单人单题 + 双人对决） ================= */
+const QUIZ = [
+  { q: '夏天嗡嗡叫的蚊子，到了秋冬就不见了。它去哪了？',
+    o: ['都飞到南方去了', '气温变低，躲起来越冬了', '被青蛙全吃光了'], r: 1,
+    why: '气温变低后，蚊子躲到温暖避风处越冬（有些以卵越冬），天气回暖后再出现。' },
+  { q: '大雁秋天排着队飞往南方，是为了什么？',
+    o: ['去南方找食物越冬', '去南方看风景', '躲避老鹰'], r: 0,
+    why: '北方冬天寒冷、食物少，大雁迁徙到温暖的南方越冬，春天再飞回北方。' },
+  { q: '松鼠秋天忙个不停，它是在做什么？',
+    o: ['玩耍', '储存食物准备过冬', '搬家'], r: 1,
+    why: '冬天食物少，松鼠秋天把松果、坚果储存起来，冬天吃储存的食物。' },
+  { q: '小狗夏天掉毛、冬天毛变厚，这说明什么？',
+    o: ['小狗生病了', '小狗喜欢冬天', '动物会换毛适应气温变化'], r: 2,
+    why: '换毛换羽是动物适应气温变化的办法：夏天薄毛散热，冬天厚毛保暖。' },
+  { q: '青蛙冬天躲进泥土里，不吃不动，这是？',
+    o: ['在玩耍', '冬眠', '迁徙'], r: 1,
+    why: '冬天寒冷，青蛙用冬眠度过严寒，春天回暖后再醒来。' },
+  { q: '绵羊冬天毛变厚、夏天毛变薄，这属于哪种适应方式？',
+    o: ['储存食物', '迁徙', '换毛换羽'], r: 2,
+    why: '换毛换羽：夏天薄毛散热，冬天厚毛保暖，适应气温变化。' }
+];
+
+/* ---------- 单人挑战：每次一题，居中大字 ---------- */
+let soloIdx = 0, soloScore = 0;
+function showSolo() {
+  const q = QUIZ[soloIdx];
+  document.getElementById('soloQ').textContent = `第 ${soloIdx + 1}/${QUIZ.length} 题　${q.q}`;
+  const box = document.getElementById('soloOpts');
+  box.innerHTML = '';
+  document.getElementById('soloFb').textContent = '';
+  document.getElementById('soloNext').style.display = 'none';
+  let answered = false;
+  q.o.forEach((op, oi) => {
+    const b = document.createElement('button');
+    b.className = 'solo-opt'; b.textContent = `${'ABC'[oi]}. ${op}`;
+    b.addEventListener('click', () => {
+      if (answered) return;
+      answered = true;
+      if (oi === q.r) { b.classList.add('ok'); b.textContent += ' ✓'; soloScore++; sOk(); }
+      else { b.classList.add('bad'); b.textContent += ' ✗'; box.querySelectorAll('.solo-opt')[q.r].classList.add('ok'); sErr(); }
+      document.getElementById('soloFb').textContent = '💡 ' + q.why;
+      document.getElementById('soloNext').style.display = 'inline-block';
+    });
+    box.appendChild(b);
+  });
+}
+document.getElementById('soloNext').addEventListener('click', () => {
+  soloIdx++;
+  if (soloIdx < QUIZ.length) showSolo();
+  else {
+    const res = document.getElementById('soloResult');
+    res.style.display = 'block';
+    if (soloScore === QUIZ.length) { res.textContent = '🎉 全对！你是动物小专家！'; confetti(160); sWin(); }
+    else res.textContent = `答对 ${soloScore}/${QUIZ.length}，再来一遍吧！`;
+    document.getElementById('soloRetry').style.display = 'inline-block';
+    document.getElementById('soloNext').style.display = 'none';
+  }
+});
+document.getElementById('soloRetry').addEventListener('click', () => {
+  soloIdx = 0; soloScore = 0;
+  document.getElementById('soloResult').style.display = 'none';
+  document.getElementById('soloRetry').style.display = 'none';
+  showSolo();
+});
+
+/* ---------- 双人对决：左右分屏同题竞速，先答对者得分 ---------- */
+let duelIdx = 0, duelS1 = 0, duelS2 = 0, duelDone = false, p1Lock = false, p2Lock = false, duelTimer = null;
+let duelWrongs = []; // 错题记录：{qi, q, ans, p1, p2}
+function recordWrong(qi, player) {
+  let rec = duelWrongs.find(w => w.qi === qi);
+  if (!rec) { rec = { qi: qi, q: QUIZ[qi].q, ans: 'ABC'[QUIZ[qi].r], p1: false, p2: false }; duelWrongs.push(rec); }
+  if (player === 1) rec.p1 = true; else rec.p2 = true;
+}
+function showDuel() {
+  const q = QUIZ[duelIdx];
+  duelDone = false; p1Lock = false; p2Lock = false;
+  document.getElementById('duelProg').textContent = `第 ${duelIdx + 1}/${QUIZ.length} 题`;
+  document.getElementById('duelQ').textContent = q.q;
+  document.getElementById('duelMsg').textContent = '';
+  document.getElementById('duelNext').style.display = 'none';
+  buildDuelOpts('duelOpts1', 1);
+  buildDuelOpts('duelOpts2', 2);
+}
+function buildDuelOpts(boxId, player) {
+  const q = QUIZ[duelIdx];
+  const box = document.getElementById(boxId);
+  box.innerHTML = '';
+  q.o.forEach((op, oi) => {
+    const b = document.createElement('button');
+    b.className = 'duel-opt'; b.textContent = `${'ABC'[oi]}. ${op}`;
+    b.addEventListener('click', () => {
+      if (duelDone) return;
+      if (player === 1 && p1Lock) return;
+      if (player === 2 && p2Lock) return;
+      if (oi === q.r) {
+        // 答对：得分 + 特效 + 音效，本题结束
+        if (player === 1) { duelS1++; document.getElementById('duelS1').textContent = duelS1; floatPlus('duelP1'); }
+        else { duelS2++; document.getElementById('duelS2').textContent = duelS2; floatPlus('duelP2'); }
+        b.classList.add('ok');
+        duelDone = true;
+        document.getElementById('duelMsg').textContent = `${player === 1 ? '🔴 1号同学' : '🔵 2号同学'} 答对！+1 分`;
+        sOk();
+        duelTimer = setTimeout(() => duelNext(), 1600); // 自动进入下一题
+      } else {
+        // 答错：锁定该选手，对方可继续
+        b.classList.add('bad');
+        recordWrong(duelIdx, player);
+        if (player === 1) p1Lock = true; else p2Lock = true;
+        document.getElementById('duelMsg').textContent = `${player === 1 ? '🔴 1号' : '🔵 2号'} 答错，本题锁定`;
+        sErr();
+        if (p1Lock && p2Lock) {
+          // 双方都错：显示答案，手动下一题
+          duelDone = true;
+          document.getElementById('duelMsg').textContent = '双方都答错了，答案是 ' + 'ABC'[q.r];
+          [document.getElementById('duelOpts1'), document.getElementById('duelOpts2')].forEach(bx => {
+            bx.querySelectorAll('.duel-opt')[q.r].classList.add('ok');
+          });
+          document.getElementById('duelNext').style.display = 'inline-block';
+        }
+      }
+    });
+    box.appendChild(b);
+  });
+}
+function floatPlus(sideId) {
+  const side = document.getElementById(sideId);
+  const p = document.createElement('span');
+  p.className = 'plus'; p.textContent = '+1';
+  side.appendChild(p);
+  setTimeout(() => p.remove(), 950);
+}
+function duelNext() {
+  clearTimeout(duelTimer);
+  duelIdx++;
+  if (duelIdx < QUIZ.length) showDuel();
+  else finishDuel();
+}
+document.getElementById('duelNext').addEventListener('click', duelNext);
+function finishDuel() {
+  /* 胜负庆祝框覆盖在题目棋盘上：比分 + 错题查看 */
+  const title = document.getElementById('duelResultTitle');
+  const stats = document.getElementById('duelResultStats');
+  if (duelS1 === duelS2) { title.textContent = `🤝 平局！${duelS1} : ${duelS2}`; sDing(); }
+  else {
+    const w = duelS1 > duelS2 ? '🔴 1号同学' : '🔵 2号同学';
+    title.textContent = `🏆 ${w} 获胜！${duelS1} : ${duelS2}`;
+    sWin(); confetti(200);
+  }
+  stats.innerHTML = `🔴 1号答对 <b>${duelS1}</b> 题　🔵 2号答对 <b>${duelS2}</b> 题` +
+    (duelWrongs.length ? `<br>有 ${duelWrongs.length} 道题有人答错，点下方「📋 查看错题」` : '<br>没有答错的题，太棒了！');
+  const wb = document.getElementById('duelWrongs');
+  wb.innerHTML = duelWrongs.map(w => {
+    const who = [w.p1 ? '🔴1号' : '', w.p2 ? '🔵2号' : ''].filter(Boolean).join('、');
+    return `<div class="wrong-item">第 ${w.qi + 1} 题（${who} 答错）：${w.q}<br>✅ 正确答案：${w.ans}</div>`;
+  }).join('');
+  document.getElementById('duelWrongBtn').style.display = duelWrongs.length ? 'inline-block' : 'none';
+  document.getElementById('duelWinView').style.display = 'block';
+  document.getElementById('duelWrongView').style.display = 'none';
+  document.getElementById('duelOverlay').classList.add('show');
+  document.getElementById('duelNext').style.display = 'none';
+}
+/* 查看错题：切换到只显示错题的视图；返回：回到胜利总结 */
+document.getElementById('duelWrongBtn').addEventListener('click', () => {
+  document.getElementById('duelWinView').style.display = 'none';
+  document.getElementById('duelWrongView').style.display = 'block';
+});
+document.getElementById('duelWrongBack').addEventListener('click', () => {
+  document.getElementById('duelWrongView').style.display = 'none';
+  document.getElementById('duelWinView').style.display = 'block';
+});
+/* 点击遮罩空白处：收起错题与获胜页面 */
+document.getElementById('duelOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('duelOverlay')) {
+    document.getElementById('duelOverlay').classList.remove('show');
+    document.getElementById('duelWinView').style.display = 'block';
+    document.getElementById('duelWrongView').style.display = 'none';
+  }
+});
+document.getElementById('duelRestart').addEventListener('click', () => {
+  duelIdx = 0; duelS1 = 0; duelS2 = 0; duelWrongs.length = 0;
+  document.getElementById('duelS1').textContent = '0';
+  document.getElementById('duelS2').textContent = '0';
+  document.getElementById('duelOverlay').classList.remove('show');
+  showDuel();
+});
+
+/* ---------- 模式切换 ---------- */
+function setQuizMode(mode) {
+  document.getElementById('modeSoloBtn').classList.toggle('on', mode === 'solo');
+  document.getElementById('modeDuelBtn').classList.toggle('on', mode === 'duel');
+  document.getElementById('soloArea').style.display = mode === 'solo' ? 'flex' : 'none';
+  document.getElementById('duelArea').style.display = mode === 'duel' ? 'flex' : 'none';
+  if (mode === 'solo') { soloIdx = 0; soloScore = 0; document.getElementById('soloResult').style.display = 'none'; document.getElementById('soloRetry').style.display = 'none'; showSolo(); }
+  else { duelIdx = 0; duelS1 = 0; duelS2 = 0; duelWrongs.length = 0; document.getElementById('duelS1').textContent = '0'; document.getElementById('duelS2').textContent = '0'; document.getElementById('duelOverlay').classList.remove('show'); showDuel(); }
+}
+document.getElementById('modeSoloBtn').addEventListener('click', () => setQuizMode('solo'));
+document.getElementById('modeDuelBtn').addEventListener('click', () => setQuizMode('duel'));
+
+/* 撒花特效（Canvas 彩色方块，重力下落） */
+const cf = document.getElementById('confetti'), cctx = cf.getContext('2d');
+function sizeConfetti() {
+  const d = Math.min(window.devicePixelRatio || 1, 2);
+  cf.width = Math.round(innerWidth * d); cf.height = Math.round(innerHeight * d);
+  cctx.setTransform(d, 0, 0, d, 0, 0);
+}
+sizeConfetti();
+window.addEventListener('resize', sizeConfetti);
+let parts = [], cfOn = false;
+function confetti(n) {
+  const colors = ['#3e7d4f', '#f2c14e', '#e8a25a', '#9fc4e8', '#e17b7b', '#ffffff'];
+  for (let i = 0; i < (n || 140); i++) {
+    parts.push({
+      x: Math.random() * innerWidth, y: -20 - Math.random() * innerHeight * 0.3,
+      vx: (Math.random() - 0.5) * 2, vy: 2 + Math.random() * 3,
+      w: 6 + Math.random() * 6, h: 10 + Math.random() * 8,
+      rot: Math.random() * Math.PI, vr: (Math.random() - 0.5) * 0.2,
+      color: colors[i % colors.length]
+    });
+  }
+  if (!cfOn) { cfOn = true; requestAnimationFrame(cfLoop); }
+}
+function cfLoop() {
+  cctx.clearRect(0, 0, innerWidth, innerHeight);
+  parts.forEach(p => {
+    p.x += p.vx; p.y += p.vy; p.vy += 0.04; p.rot += p.vr;
+    cctx.save(); cctx.translate(p.x, p.y); cctx.rotate(p.rot);
+    cctx.fillStyle = p.color; cctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+    cctx.restore();
+  });
+  parts = parts.filter(p => p.y < innerHeight + 40);
+  if (parts.length) requestAnimationFrame(cfLoop);
+  else { cfOn = false; cctx.clearRect(0, 0, innerWidth, innerHeight); }
+}
+
+/* ================= 全局重新开始 ================= */
+document.getElementById('globalReset').addEventListener('click', () => {
+  resetWheelPanel();
+  Object.keys(records).forEach(k => delete records[k]);
+  document.getElementById('wormConcl').style.display = 'none';
+  renderTable(); drawBars();
+  resetPair();
+  resetFill();
+  setQuizMode('solo');
+  go(0);
+});
+
+/* 初始化：底部指示点 + 首屏 + 单人挑战首题 */
+go(0);
+showSolo();
+</script>
+<!-- ================= 开物AI科学 · 版权模块（单击显示 / 双击打开官网） ================= -->
+<style id="kaiming-copyright-style">
+  #kaiming-copyright {
+    position: fixed;
+    bottom: 26px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    pointer-events: none;
+    z-index: 999999;
+    transition: opacity 0.45s ease;
+    opacity: 0;
+    display: none;
+  }
+  #kaiming-copyright .inner {
+    display: inline-block;
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #eafaf2;
+    padding: 9px 26px;
+    border-radius: 60px;
+    /* 原稿为 14px；此处改为 16px 以符合本机 verify_html.py 的「字号不得小于 16px」硬规则 */
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.6px;
+    border: 1px solid rgba(255, 245, 210, 0.3);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+    font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+    white-space: nowrap;
+  }
+</style>
+
+<div id="kaiming-copyright">
+  <div class="inner">© 2026 开物AI科学 ｜ AI 赋能 · 教育公平</div>
+</div>
+
+<script id="kaiming-copyright-script">
+(function () {
+  "use strict";
+
+  /* 目标：单击标题 → 显示版权 3.5 秒；双击标题 → 打开 www.kaiwuaiscience.com */
+
+  const HOMEPAGE = "https://www.kaiwuaiscience.com";
+  const SHOW_MS = 3500;      // 版权显示时长
+  const DBL_WINDOW = 280;    // 双击判定的时间窗（毫秒）
+  const FADE_MS = 450;       // 淡出时长，与 CSS transition 一致
+
+  function bindCopyright() {
+    // 首选 #mainTitle（注入脚本会保证它存在）；后三个选择器是手写粘贴时的兜底
+    const title = document.getElementById("mainTitle") ||
+                  document.querySelector("h1, .title, .page-title, .main-title");
+    const box = document.getElementById("kaiming-copyright");
+    if (!title || !box) return;
+
+    title.style.cursor = "pointer";
+    title.style.userSelect = "none";
+    title.style.webkitUserSelect = "none";
+
+    let clickTimer = null;
+    let hideTimer = null;
+    let seq = 0;   // 每次显示/隐藏都 +1，用来作废在飞的定时器
+
+    function showCopyright() {
+      const my = ++seq;
+      if (hideTimer) clearTimeout(hideTimer);
+      box.style.display = "block";
+      /* 强制重绘，让 0 → 1 的淡入真的发生。
+         这里刻意不用 requestAnimationFrame：rAF 在页面不产生新帧时（后台标签页、
+         无头渲染、大屏久置）不保证触发——一旦它晚于下方的隐藏定时器回调，
+         就会把 opacity 又设成 1，导致版权条永久停在屏幕上。 */
+      void box.offsetHeight;
+      box.style.opacity = "1";
+      hideTimer = setTimeout(function () {
+        if (my !== seq) return;      // 期间又被点过，交给新的那一次收尾
+        box.style.opacity = "0";
+        setTimeout(function () {
+          if (my === seq) box.style.display = "none";
+        }, FADE_MS);
+      }, SHOW_MS);
+    }
+
+    function hideCopyright() {
+      const my = ++seq;              // 作废所有在飞的定时器，避免"淡出到一半又被点亮"卡住
+      if (hideTimer) clearTimeout(hideTimer);
+      if (box.style.display !== "block") return;
+      box.style.opacity = "0";
+      setTimeout(function () {
+        if (my === seq) box.style.display = "none";
+      }, FADE_MS);
+    }
+
+    function openHomepage() {
+      // 双击时隐藏版权，并跳转官网
+      hideCopyright();
+      window.open(HOMEPAGE, "_blank", "noopener,noreferrer");
+    }
+
+    title.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (clickTimer) return;   // 已在等待双击窗口，忽略这次单击
+      clickTimer = setTimeout(function () {
+        clickTimer = null;
+        showCopyright();        // 确认是单击
+      }, DBL_WINDOW);
+    });
+
+    title.addEventListener("dblclick", function (e) {
+      e.stopPropagation();
+      if (clickTimer) {         // 取消挂起的单击
+        clearTimeout(clickTimer);
+        clickTimer = null;
+      }
+      openHomepage();
+    });
+
+    // 点击页面其它地方，立即隐藏版权
+    document.addEventListener("click", function (e) {
+      if (e.target === title) return;
+      hideCopyright();
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bindCopyright);
+  } else {
+    bindCopyright();
+  }
+})();
+</script>
+<!-- ================= 开物AI科学 · 版权模块 结束 ================= -->
+
+</body>
+</html>

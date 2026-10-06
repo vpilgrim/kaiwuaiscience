@@ -1,0 +1,1434 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>空气受热体积变化实验</title>
+    <style>
+        :root {
+            --bg: #fef9e7;
+            --card-bg: #ffffff;
+            --primary: #2c3e50;
+            --accent: #e67e22;
+            --cold-color: #4a90d9;
+            --warm-color: #f5a623;
+            --hot-color: #e74c3c;
+            --font-large: 28px;
+            --font-medium: 22px;
+            --font-small: 18px;
+            --border-radius: 14px;
+            --touch-target: 64px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: var(--bg);
+            font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", "Helvetica Neue", sans-serif;
+            font-size: var(--font-medium);
+            color: var(--primary);
+            touch-action: manipulation;
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            padding: 12px 16px 10px;
+            gap: 8px;
+            max-width: 1920px;
+            margin: 0 auto;
+        }
+
+        .header {
+            flex-shrink: 0;
+            text-align: center;
+            padding: 6px 0 2px;
+            line-height: 1.2;
+        }
+        .header h1 {
+            font-size: clamp(32px, 3.6vw, 48px);
+            font-weight: 800;
+            color: #1a5276;
+            letter-spacing: 2px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .header .icon {
+            font-size: clamp(34px, 3.8vw, 50px);
+        }
+
+        .main-area {
+            flex: 1;
+            display: flex;
+            gap: 14px;
+            min-height: 0;
+            width: 100%;
+        }
+
+        .left-panel {
+            flex: 1.55;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-height: 0;
+        }
+
+        .animation-panel {
+            flex: 1;
+            min-height: 0;
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+        .animation-panel canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+
+        .temp-panel {
+            flex-shrink: 0;
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.07);
+            padding: 12px 14px;
+        }
+        .temp-panel .card-title {
+            font-size: var(--font-medium);
+            font-weight: 700;
+            color: #1a5276;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            letter-spacing: 1px;
+        }
+        .temp-panel .card-title .emoji {
+            font-size: 26px;
+        }
+
+        .temp-control {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        /* 第一行：温度按钮 + 滑块 */
+        .temp-top-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .temp-buttons {
+            display: flex;
+            gap: 8px;
+            flex: 0 0 auto;
+        }
+        .temp-btn {
+            min-width: 90px;
+            min-height: 52px;
+            padding: 8px 16px;
+            font-size: var(--font-medium);
+            font-weight: 700;
+            border: 3px solid #b0bec5;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.25s;
+            letter-spacing: 1px;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+        .temp-btn:active {
+            transform: scale(0.93);
+        }
+        .temp-btn.cold-btn {
+            background: #eaf4ff;
+            color: #357abd;
+            border-color: #b0d4f0;
+        }
+        .temp-btn.cold-btn.selected {
+            background: #4a90d9;
+            color: #fff;
+            border-color: #357abd;
+            box-shadow: 0 4px 14px rgba(74, 144, 217, 0.45);
+        }
+        .temp-btn.warm-btn {
+            background: #fff8e8;
+            color: #e67e22;
+            border-color: #f0d5a0;
+        }
+        .temp-btn.warm-btn.selected {
+            background: #f5a623;
+            color: #fff;
+            border-color: #d68910;
+            box-shadow: 0 4px 14px rgba(245, 166, 35, 0.45);
+        }
+        .temp-btn.hot-btn {
+            background: #ffecec;
+            color: #c0392b;
+            border-color: #f0b0a8;
+        }
+        .temp-btn.hot-btn.selected {
+            background: #e74c3c;
+            color: #fff;
+            border-color: #c0392b;
+            box-shadow: 0 4px 14px rgba(231, 76, 60, 0.45);
+        }
+
+        .slider-container {
+            flex: 1;
+            min-width: 150px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 0 2px;
+        }
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: var(--font-small);
+            font-weight: 600;
+            color: #666;
+        }
+        .temp-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 18px;
+            border-radius: 12px;
+            background: linear-gradient(to right, #4a90d9, #f5a623, #e74c3c);
+            outline: none;
+            cursor: pointer;
+            touch-action: none;
+        }
+        .temp-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: #fff;
+            border: 4px solid #2c3e50;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+            transition: transform 0.15s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .temp-slider::-webkit-slider-thumb:active {
+            transform: scale(1.15);
+        }
+        .temp-slider::-moz-range-thumb {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: #fff;
+            border: 4px solid #2c3e50;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        }
+
+        /* 第二行：当前水温 + 模拟速度（字体统一） */
+        .temp-bottom-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+        .temp-display {
+            font-size: var(--font-medium);
+            font-weight: 700;
+            color: #1a5276;
+            letter-spacing: 1px;
+            white-space: nowrap;
+        }
+        .temp-display .temp-value {
+            font-size: var(--font-large);
+            font-weight: 900;
+            transition: color 0.3s;
+            display: inline-block;
+            margin: 0 4px;
+            vertical-align: middle;
+        }
+        .temp-display .temp-value.cold {
+            color: #4a90d9;
+        }
+        .temp-display .temp-value.warm {
+            color: #f5a623;
+        }
+        .temp-display .temp-value.hot {
+            color: #e74c3c;
+        }
+
+        .speed-buttons {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .speed-label {
+            font-weight: 700;
+            color: #1a5276;
+            font-size: var(--font-medium);
+            white-space: nowrap;
+        }
+        .speed-btn {
+            padding: 6px 16px;
+            font-size: var(--font-medium);
+            font-weight: 700;
+            border: 2.5px solid #b0bec5;
+            border-radius: 8px;
+            cursor: pointer;
+            background: #fff;
+            color: #2c3e50;
+            transition: all 0.25s;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .speed-btn:active {
+            transform: scale(0.93);
+        }
+        .speed-btn.selected {
+            background: #2c3e50;
+            color: #fff;
+            border-color: #2c3e50;
+        }
+
+        .right-panel {
+            flex: 1;
+            min-width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding-right: 2px;
+        }
+        .right-panel::-webkit-scrollbar {
+            width: 4px;
+        }
+        .right-panel::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 4px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.07);
+            padding: 12px 14px;
+            flex-shrink: 0;
+        }
+        .card-title {
+            font-size: var(--font-medium);
+            font-weight: 700;
+            color: #1a5276;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            letter-spacing: 1px;
+        }
+        .card-title .emoji {
+            font-size: 26px;
+        }
+
+        .record-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: var(--font-medium);
+            table-layout: fixed;
+            margin-bottom: 12px;
+        }
+        .record-table th,
+        .record-table td {
+            border: 2.5px solid #b0bec5;
+            padding: 8px 6px;
+            text-align: center;
+            vertical-align: middle;
+            font-weight: 600;
+            border-radius: 0;
+        }
+        .record-table th {
+            background: #e8f0f8;
+            font-size: var(--font-medium);
+            letter-spacing: 1px;
+            color: #1a5276;
+        }
+        .record-table td {
+            background: #fffdf7;
+            font-size: var(--font-large);
+            font-weight: 700;
+        }
+        .record-table .label-cell {
+            background: #f5f9fd;
+            font-size: var(--font-medium);
+            font-weight: 700;
+            color: #2c3e50;
+            white-space: nowrap;
+        }
+        .record-table .value-before {
+            color: #2c3e50;
+        }
+        .record-table .value-after {
+            color: #e74c3c;
+            font-size: var(--font-large);
+            transition: color 0.4s;
+        }
+        .record-table .value-after.hot {
+            color: #e74c3c;
+        }
+        .record-table .value-after.cold {
+            color: #4a90d9;
+        }
+        .record-table .value-after.warm {
+            color: #f5a623;
+        }
+
+        .conclusion-area {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            background: #f8fbfe;
+            border-radius: 10px;
+            padding: 10px 12px;
+            border: 2px dashed #b0bec5;
+        }
+        .conclusion-label {
+            font-size: var(--font-medium);
+            font-weight: 700;
+            color: #1a5276;
+            letter-spacing: 1px;
+            white-space: nowrap;
+        }
+        .conclusion-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        .conclusion-btn {
+            padding: 10px 24px;
+            font-size: var(--font-medium);
+            font-weight: 700;
+            border: 3px solid #b0bec5;
+            border-radius: 10px;
+            cursor: pointer;
+            background: #fff;
+            color: #2c3e50;
+            transition: all 0.25s;
+            touch-action: manipulation;
+            min-width: 100px;
+            letter-spacing: 2px;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .conclusion-btn:active {
+            transform: scale(0.93);
+        }
+        .conclusion-btn.expand-btn.selected {
+            background: #e74c3c;
+            color: #fff;
+            border-color: #c0392b;
+            box-shadow: 0 4px 14px rgba(231, 76, 60, 0.4);
+        }
+        .conclusion-btn.shrink-btn.selected {
+            background: #4a90d9;
+            color: #fff;
+            border-color: #357abd;
+            box-shadow: 0 4px 14px rgba(74, 144, 217, 0.4);
+        }
+
+        .chart-card {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 200px;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            flex: 1;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #fafbfc;
+            border: 2px solid #e8ecf0;
+        }
+        .chart-container canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        @media (max-width: 1100px) {
+            :root {
+                --font-large: 22px;
+                --font-medium: 18px;
+                --font-small: 15px;
+                --touch-target: 52px;
+            }
+            .main-area {
+                flex-direction: column;
+                gap: 8px;
+            }
+            .left-panel {
+                flex: 1.2;
+                min-height: 0;
+            }
+            .animation-panel {
+                min-height: 220px;
+            }
+            .right-panel {
+                flex: 0.8;
+                flex-direction: row;
+                flex-wrap: wrap;
+                overflow-y: visible;
+                gap: 8px;
+            }
+            .right-panel .card {
+                flex: 1;
+                min-width: 45%;
+            }
+            .chart-card {
+                min-height: 150px;
+            }
+            .temp-slider::-webkit-slider-thumb {
+                width: 36px;
+                height: 36px;
+            }
+            .temp-slider::-moz-range-thumb {
+                width: 36px;
+                height: 36px;
+            }
+            .header h1 {
+                font-size: 24px;
+            }
+            .record-table th,
+            .record-table td {
+                padding: 5px 4px;
+                font-size: 16px;
+            }
+            .conclusion-btn {
+                padding: 6px 14px;
+                font-size: 16px;
+                min-width: 80px;
+            }
+            .temp-top-row {
+                gap: 10px;
+            }
+            .temp-bottom-row {
+                gap: 15px;
+            }
+            .temp-btn {
+                min-height: 44px;
+                font-size: 16px;
+                padding: 6px 12px;
+            }
+        }
+        @media (max-width: 600px) {
+            .right-panel {
+                flex-direction: column;
+                flex-wrap: nowrap;
+            }
+            .right-panel .card {
+                min-width: 100%;
+            }
+            .animation-panel {
+                min-height: 180px;
+            }
+            .temp-buttons {
+                gap: 6px;
+            }
+            .temp-btn {
+                min-height: 42px;
+                padding: 5px 8px;
+                font-size: 14px;
+                min-width: 60px;
+            }
+            .chart-card {
+                min-height: 160px;
+            }
+            .temp-top-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .temp-bottom-row {
+                flex-direction: column;
+                gap: 8px;
+            }
+            .temp-slider::-webkit-slider-thumb {
+                width: 32px;
+                height: 32px;
+            }
+            .temp-slider::-moz-range-thumb {
+                width: 32px;
+                height: 32px;
+            }
+        }
+        @media (min-height: 900px) {
+            .chart-container {
+                min-height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="header">
+            <h1 id="mainTitle">
+                <span class="icon">💨</span> 空气受热体积变化实验
+                <span class="icon">🌡️</span>
+            </h1>
+        </div>
+
+        <div class="main-area">
+            <div class="left-panel">
+                <div class="animation-panel" id="animPanel">
+                    <canvas id="mainCanvas"></canvas>
+                </div>
+                <div class="temp-panel">
+                    <div class="card-title"><span class="emoji">🌡️</span> 温度控制</div>
+                    <div class="temp-control">
+                        <div class="temp-top-row">
+                            <div class="temp-buttons">
+                                <button class="temp-btn cold-btn" id="btnCold">❄️ 冷水</button>
+                                <button class="temp-btn warm-btn" id="btnWarm">🌤️ 温水</button>
+                                <button class="temp-btn hot-btn" id="btnHot">🔥 热水</button>
+                            </div>
+                            <div class="slider-container">
+                                <div class="slider-labels">
+                                    <span>❄️ 5°C</span>
+                                    <span>🔥 80°C</span>
+                                </div>
+                                <input type="range" class="temp-slider" id="tempSlider" min="5" max="80" value="25" step="1" aria-label="温度滑块">
+                            </div>
+                        </div>
+                        <div class="temp-bottom-row">
+                            <div class="temp-display">
+                                当前水温：<span class="temp-value warm" id="tempDisplayValue">25</span> °C
+                            </div>
+                            <div class="speed-buttons">
+                                <span class="speed-label">模拟速度：</span>
+                                <button class="speed-btn" data-speed="1">1x</button>
+                                <button class="speed-btn" data-speed="2">2x</button>
+                                <button class="speed-btn" data-speed="4">4x</button>
+                                <button class="speed-btn" data-speed="8">8x</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="right-panel" id="rightPanel">
+                <div class="card">
+                    <div class="card-title"><span class="emoji">📋</span> 实验记录表</div>
+                    <table class="record-table">
+                        <thead>
+                            <tr>
+                                <th style="width:28%;">项目</th>
+                                <th style="width:32%;">放入前<br>(室温)</th>
+                                <th style="width:40%;">放入后<br>(当前水温)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="label-cell">活塞位置</td>
+                                <td class="value-before" id="beforeVolume">20 毫升</td>
+                                <td class="value-after warm" id="afterVolume">20 毫升</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="conclusion-area">
+                        <span class="conclusion-label">空气受热体积</span>
+                        <div class="conclusion-buttons">
+                            <button class="conclusion-btn expand-btn" id="btnExpand">膨胀</button>
+                            <button class="conclusion-btn shrink-btn" id="btnShrink">收缩</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card chart-card">
+                    <div class="card-title"><span class="emoji">📊</span> 体积-温度关系图</div>
+                    <div class="chart-container" id="chartContainer">
+                        <canvas id="chartCanvas"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            const ROOM_TEMP = 25;
+            const INITIAL_VOLUME = 20;
+            const ROOM_TEMP_K = 273.15 + ROOM_TEMP;
+            const MIN_TEMP = 5;
+            const MAX_TEMP = 80;
+            const TEMP_LAG_RATE = 1 / 40;
+            const DT = 1 / 60;
+
+            let targetTemp = ROOM_TEMP;
+            let displayTemp = ROOM_TEMP;
+            let airTemp = ROOM_TEMP;
+            let displayVolume = INITIAL_VOLUME;
+            let timeScale = 1;
+            let animationId = null;
+            let sliderDragging = false;
+
+            let molecules = [];
+            const MOL_COUNT = 18;
+            const MOL_RADIUS = 4;
+
+            const mainCanvas = document.getElementById('mainCanvas');
+            const chartCanvas = document.getElementById('chartCanvas');
+            const tempSlider = document.getElementById('tempSlider');
+            const tempDisplayValue = document.getElementById('tempDisplayValue');
+            const beforeVolumeEl = document.getElementById('beforeVolume');
+            const afterVolumeEl = document.getElementById('afterVolume');
+            const btnExpand = document.getElementById('btnExpand');
+            const btnShrink = document.getElementById('btnShrink');
+            const btnCold = document.getElementById('btnCold');
+            const btnWarm = document.getElementById('btnWarm');
+            const btnHot = document.getElementById('btnHot');
+            const animPanel = document.getElementById('animPanel');
+            const chartContainer = document.getElementById('chartContainer');
+            const speedBtns = document.querySelectorAll('.speed-btn');
+
+            function calcVolume(tempC) {
+                const T = tempC + 273.15;
+                return INITIAL_VOLUME * (T / ROOM_TEMP_K);
+            }
+
+            function getTempCategory(tempC) {
+                if (tempC < 20) return 'cold';
+                if (tempC <= 38) return 'warm';
+                return 'hot';
+            }
+
+            function initMolecules(airLeft, airRight, airTop, airBottom) {
+                molecules = [];
+                for (let i = 0; i < MOL_COUNT; i++) {
+                    molecules.push({
+                        x: airLeft + Math.random() * (airRight - airLeft),
+                        y: airTop + Math.random() * (airBottom - airTop),
+                        vx: (Math.random() - 0.5) * 1.0,
+                        vy: (Math.random() - 0.5) * 1.0
+                    });
+                }
+            }
+
+            function updateMolecules(airLeft, airRight, airTop, airBottom) {
+                if (molecules.length === 0) {
+                    initMolecules(airLeft, airRight, airTop, airBottom);
+                }
+                const tempFactor = Math.max(0.4, airTemp / ROOM_TEMP);
+                const maxSpeed = 1.8 * tempFactor;
+                const noiseStrength = 0.25 * tempFactor;
+
+                for (let m of molecules) {
+                    m.x += m.vx;
+                    m.y += m.vy;
+
+                    if (m.x < airLeft + MOL_RADIUS) {
+                        m.x = airLeft + MOL_RADIUS;
+                        m.vx = Math.abs(m.vx);
+                    } else if (m.x > airRight - MOL_RADIUS) {
+                        m.x = airRight - MOL_RADIUS;
+                        m.vx = -Math.abs(m.vx);
+                    }
+                    if (m.y < airTop + MOL_RADIUS) {
+                        m.y = airTop + MOL_RADIUS;
+                        m.vy = Math.abs(m.vy);
+                    } else if (m.y > airBottom - MOL_RADIUS) {
+                        m.y = airBottom - MOL_RADIUS;
+                        m.vy = -Math.abs(m.vy);
+                    }
+
+                    m.vx += (Math.random() - 0.5) * noiseStrength;
+                    m.vy += (Math.random() - 0.5) * noiseStrength;
+
+                    const speed = Math.sqrt(m.vx * m.vx + m.vy * m.vy);
+                    if (speed > maxSpeed) {
+                        m.vx = (m.vx / speed) * maxSpeed;
+                        m.vy = (m.vy / speed) * maxSpeed;
+                    }
+                }
+            }
+
+            function drawMainScene() {
+                const container = animPanel;
+                const rect = container.getBoundingClientRect();
+                const dpr = window.devicePixelRatio || 1;
+                const cssW = Math.max(280, rect.width - 16);
+                const cssH = Math.max(200, rect.height - 16);
+                const canvasW = cssW;
+                const canvasH = cssH;
+
+                if (mainCanvas.width !== Math.floor(canvasW * dpr) || mainCanvas.height !== Math.floor(canvasH * dpr)) {
+                    mainCanvas.width = Math.floor(canvasW * dpr);
+                    mainCanvas.height = Math.floor(canvasH * dpr);
+                    mainCanvas.style.width = canvasW + 'px';
+                    mainCanvas.style.height = canvasH + 'px';
+                }
+
+                const ctx = mainCanvas.getContext('2d');
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                ctx.clearRect(0, 0, canvasW, canvasH);
+
+                const W = canvasW;
+                const H = canvasH;
+
+                const centerX = W * 0.5;
+                const syringeWidth = Math.min(W * 0.28, 155);
+                const syringeHeight = Math.min(H * 0.52, 270);
+                const syringeBottomY = H * 0.80;
+                const syringeTopY = syringeBottomY - syringeHeight;
+                const syringeLeftX = centerX - syringeWidth / 2;
+                const syringeRightX = centerX + syringeWidth / 2;
+
+                const beakerWidth = syringeWidth * 3.0;
+                const beakerHeight = H * 0.50;
+                const beakerLeftX = centerX - beakerWidth / 2;
+                const beakerRightX = centerX + beakerWidth / 2;
+                const beakerBottomY = H * 0.90;
+                const beakerTopY = beakerBottomY - beakerHeight;
+                const waterLevelY = beakerBottomY - beakerHeight * 0.72;
+
+                const tempCat = getTempCategory(displayTemp);
+
+                // 水槽
+                ctx.save();
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = '#8d9db0';
+                ctx.fillStyle = 'rgba(255,255,255,0.3)';
+                ctx.lineJoin = 'round';
+                ctx.beginPath();
+                ctx.moveTo(beakerLeftX, beakerTopY);
+                ctx.lineTo(beakerLeftX, beakerBottomY);
+                ctx.lineTo(beakerRightX, beakerBottomY);
+                ctx.lineTo(beakerRightX, beakerTopY);
+                ctx.stroke();
+                ctx.fill();
+                ctx.lineWidth = 1.5;
+                ctx.strokeStyle = 'rgba(141,157,176,0.5)';
+                ctx.beginPath();
+                ctx.moveTo(beakerLeftX + 10, beakerTopY + 6);
+                ctx.lineTo(beakerLeftX + 10, beakerBottomY - 4);
+                ctx.lineTo(beakerRightX - 10, beakerBottomY - 4);
+                ctx.lineTo(beakerRightX - 10, beakerTopY + 6);
+                ctx.stroke();
+                ctx.restore();
+
+                // 水
+                ctx.save();
+                const waterGrad = ctx.createLinearGradient(0, waterLevelY, 0, beakerBottomY);
+                if (tempCat === 'cold') {
+                    waterGrad.addColorStop(0, 'rgba(74, 144, 217, 0.30)');
+                    waterGrad.addColorStop(1, 'rgba(74, 144, 217, 0.65)');
+                } else if (tempCat === 'warm') {
+                    waterGrad.addColorStop(0, 'rgba(245, 166, 35, 0.28)');
+                    waterGrad.addColorStop(1, 'rgba(245, 166, 35, 0.58)');
+                } else {
+                    waterGrad.addColorStop(0, 'rgba(231, 76, 60, 0.30)');
+                    waterGrad.addColorStop(1, 'rgba(231, 76, 60, 0.65)');
+                }
+                ctx.fillStyle = waterGrad;
+                ctx.fillRect(beakerLeftX + 11, waterLevelY, beakerWidth - 22, beakerBottomY - 4 - waterLevelY);
+                ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(beakerLeftX + 14, waterLevelY + 2);
+                ctx.quadraticCurveTo(centerX - 30, waterLevelY - 5, centerX, waterLevelY + 2);
+                ctx.quadraticCurveTo(centerX + 30, waterLevelY + 8, beakerRightX - 14, waterLevelY + 2);
+                ctx.stroke();
+                ctx.restore();
+
+                if (tempCat === 'hot' && displayTemp > 50) {
+                    const bubbleCount = Math.floor((displayTemp - 50) / 8) + 2;
+                    ctx.save();
+                    ctx.fillStyle = 'rgba(255,255,255,0.45)';
+                    for (let i = 0; i < bubbleCount; i++) {
+                        const bx = beakerLeftX + 30 + Math.random() * (beakerWidth - 60);
+                        const by = beakerBottomY - 15 - Math.random() * (beakerBottomY - waterLevelY - 20);
+                        const br = 2 + Math.random() * 5;
+                        ctx.beginPath();
+                        ctx.arc(bx, by, br, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    ctx.restore();
+                }
+
+                // 注射器
+                const airBaseHeight = syringeHeight * 0.65;
+                const currentVolume = displayVolume;
+                const currentAirHeight = airBaseHeight * (currentVolume / INITIAL_VOLUME);
+                const airBottomY = syringeBottomY - 18;
+                const airTopY = airBottomY - currentAirHeight;
+                const pistonThickness = 16;
+                const pistonY = airTopY;
+                const pistonTopY = pistonY - pistonThickness;
+
+                const airLeft = syringeLeftX + 10;
+                const airRight = syringeRightX - 10;
+                updateMolecules(airLeft, airRight, airTopY, airBottomY);
+
+                // 筒体
+                ctx.save();
+                ctx.globalAlpha = 0.85;
+                ctx.fillStyle = 'rgba(240, 248, 255, 0.7)';
+                ctx.strokeStyle = '#6b7b8d';
+                ctx.lineWidth = 3;
+                ctx.lineJoin = 'round';
+                ctx.beginPath();
+                ctx.roundRect(syringeLeftX, syringeTopY, syringeWidth, syringeHeight, 8);
+                ctx.fill();
+                ctx.stroke();
+
+                // 刻度
+                ctx.globalAlpha = 0.5;
+                ctx.strokeStyle = '#6b7b8d';
+                ctx.lineWidth = 1;
+                ctx.font = '9px "PingFang SC", "Microsoft YaHei", sans-serif';
+                ctx.fillStyle = '#333';
+                ctx.textAlign = 'left';
+                const volStart = 15;
+                const volEnd = 30;
+                for (let vol = volStart; vol <= volEnd; vol += 1) {
+                    const y = airBottomY - (vol / INITIAL_VOLUME) * airBaseHeight;
+                    if (y < syringeTopY + 10 || y > airBottomY - 5) continue;
+                    const isMain = (vol % 5 === 0);
+                    const tickLen = isMain ? 10 : 5;
+                    ctx.beginPath();
+                    ctx.moveTo(syringeRightX - 2, y);
+                    ctx.lineTo(syringeRightX - 2 - tickLen, y);
+                    ctx.stroke();
+                    if (isMain) {
+                        ctx.fillText(vol + '', syringeRightX + 5, y + 3);
+                    }
+                }
+                ctx.globalAlpha = 1;
+                ctx.restore();
+
+                // 空气区域
+                ctx.save();
+                const airHeight = airBottomY - airTopY;
+                if (airHeight > 0) {
+                    const airGrad = ctx.createLinearGradient(0, airTopY, 0, airBottomY);
+                    airGrad.addColorStop(0, 'rgba(255, 243, 205, 0.85)');
+                    airGrad.addColorStop(0.5, 'rgba(255, 236, 179, 0.90)');
+                    airGrad.addColorStop(1, 'rgba(250, 224, 150, 0.95)');
+                    ctx.fillStyle = airGrad;
+                    ctx.beginPath();
+                    ctx.roundRect(syringeLeftX + 8, airTopY, syringeWidth - 16, airHeight, 3);
+                    ctx.fill();
+                    ctx.fillStyle = '#8d6e63';
+                    for (let m of molecules) {
+                        ctx.beginPath();
+                        ctx.arc(m.x, m.y, MOL_RADIUS, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    ctx.fillStyle = '#8d6e63';
+                    ctx.font = 'bold 16px "PingFang SC", "Microsoft YaHei", sans-serif';
+                    ctx.textAlign = 'center';
+                    if (airHeight > 30) {
+                        ctx.fillText('空气', centerX, airTopY + airHeight / 2 + 5);
+                    }
+                }
+                ctx.restore();
+
+                // 活塞
+                ctx.save();
+                ctx.fillStyle = '#5d6d7e';
+                ctx.strokeStyle = '#3d4d5e';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.roundRect(syringeLeftX + 4, pistonTopY, syringeWidth - 8, pistonThickness, 4);
+                ctx.fill();
+                ctx.stroke();
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 12px "PingFang SC", "Microsoft YaHei", sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('活塞', centerX, pistonTopY + 12);
+                ctx.restore();
+
+                // 活塞杆（稍微加长）
+                const rodLength = syringeHeight * 0.42;
+                const rodTopY = pistonTopY - rodLength;
+                const rodWidth = 10;
+                ctx.save();
+                ctx.fillStyle = '#7f8fa3';
+                ctx.fillRect(centerX - rodWidth / 2, rodTopY, rodWidth, rodLength);
+                // 手柄
+                const handleWidth = 48;
+                const handleHeight = 18;
+                const handleY = rodTopY - handleHeight;
+                ctx.fillStyle = '#4a5a6a';
+                ctx.strokeStyle = '#2c3e50';
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.roundRect(centerX - handleWidth/2, handleY, handleWidth, handleHeight, 6);
+                ctx.fill();
+                ctx.stroke();
+                ctx.fillStyle = 'rgba(255,255,255,0.3)';
+                ctx.beginPath();
+                ctx.roundRect(centerX - handleWidth/2 + 4, handleY + 4, handleWidth - 8, 4, 2);
+                ctx.fill();
+                ctx.restore();
+
+                // 出口管 + 软塞
+                ctx.save();
+                const outletWidth = syringeWidth * 0.35;
+                const outletHeight = 14;
+                const outletX = centerX - outletWidth / 2;
+                const outletY = syringeBottomY - 4;
+                ctx.fillStyle = '#8d9db0';
+                ctx.beginPath();
+                ctx.roundRect(outletX, outletY, outletWidth, outletHeight, 3);
+                ctx.fill();
+                const plugSize = 20;
+                const plugY = outletY + outletHeight - 3;
+                ctx.fillStyle = '#e67e22';
+                ctx.strokeStyle = '#d35400';
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.arc(centerX, plugY + plugSize / 2, plugSize / 2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+                ctx.fillStyle = 'rgba(255,255,255,0.35)';
+                ctx.beginPath();
+                ctx.arc(centerX - 4, plugY + plugSize / 2 - 4, plugSize / 6, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+
+                // 温度计
+                const thermoX = beakerRightX - 50;
+                const thermoTopY = beakerTopY - 25;
+                const thermoBottomY = beakerBottomY - 40;
+                const thermoWidth = 13;
+                ctx.save();
+                ctx.fillStyle = 'rgba(255,255,255,0.7)';
+                ctx.strokeStyle = '#8d9db0';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.roundRect(thermoX - thermoWidth / 2, thermoTopY, thermoWidth, thermoBottomY - thermoTopY, 6);
+                ctx.fill();
+                ctx.stroke();
+                const thermoNorm = (displayTemp - MIN_TEMP) / (MAX_TEMP - MIN_TEMP);
+                const liquidBottom = thermoBottomY - 8;
+                const liquidTop = thermoTopY + 10 + (1 - thermoNorm) * (thermoBottomY - thermoTopY - 24);
+                const liquidHeight = liquidBottom - liquidTop;
+                if (liquidHeight > 2) {
+                    let thermoColor;
+                    if (tempCat === 'cold') thermoColor = '#4a90d9';
+                    else if (tempCat === 'warm') thermoColor = '#f5a623';
+                    else thermoColor = '#e74c3c';
+                    ctx.fillStyle = thermoColor;
+                    ctx.beginPath();
+                    ctx.roundRect(thermoX - thermoWidth / 2 + 3, liquidTop, thermoWidth - 6, liquidHeight, 3);
+                    ctx.fill();
+                }
+                const bulbRadius = 11;
+                const bulbY = thermoBottomY - 5;
+                ctx.fillStyle = tempCat === 'cold' ? '#4a90d9' : tempCat === 'warm' ? '#f5a623' : '#e74c3c';
+                ctx.beginPath();
+                ctx.arc(thermoX, bulbY, bulbRadius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#8d9db0';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                ctx.restore();
+
+                // 体积指示
+                ctx.save();
+                ctx.fillStyle = '#1a5276';
+                ctx.font = 'bold 18px "PingFang SC", "Microsoft YaHei", sans-serif';
+                ctx.textAlign = 'left';
+                ctx.fillText('体积: ' + displayVolume.toFixed(1) + ' mL', syringeRightX + 25, syringeTopY + 28);
+                ctx.restore();
+
+                // 水槽标签
+                ctx.save();
+                ctx.fillStyle = '#4a5a6a';
+                ctx.font = 'bold 15px "PingFang SC", "Microsoft YaHei", sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('水槽', centerX, beakerBottomY + 28);
+                ctx.restore();
+            }
+
+            function drawChart() {
+                const container = chartContainer;
+                const rect = container.getBoundingClientRect();
+                const dpr = window.devicePixelRatio || 1;
+                const cssW = Math.max(200, rect.width);
+                const cssH = Math.max(90, rect.height);
+
+                if (chartCanvas.width !== Math.floor(cssW * dpr) || chartCanvas.height !== Math.floor(cssH * dpr)) {
+                    chartCanvas.width = Math.floor(cssW * dpr);
+                    chartCanvas.height = Math.floor(cssH * dpr);
+                    chartCanvas.style.width = cssW + 'px';
+                    chartCanvas.style.height = cssH + 'px';
+                }
+
+                const ctx = chartCanvas.getContext('2d');
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                ctx.clearRect(0, 0, cssW, cssH);
+
+                const paddingL = 60;
+                const paddingR = 20;
+                const paddingT = 15;
+                const paddingB = 40;
+                const chartW = cssW - paddingL - paddingR;
+                const chartH = cssH - paddingT - paddingB;
+                const originX = paddingL;
+                const originY = paddingT + chartH;
+
+                ctx.save();
+                ctx.strokeStyle = '#b0bec5';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(originX, originY);
+                ctx.lineTo(originX + chartW, originY);
+                ctx.moveTo(originX, originY);
+                ctx.lineTo(originX, paddingT);
+                ctx.stroke();
+
+                ctx.fillStyle = '#5d6d7e';
+                ctx.font = 'bold 16px "PingFang SC", "Microsoft YaHei", sans-serif';
+                ctx.textAlign = 'center';
+                const tempStep = 15;
+                for (let t = MIN_TEMP; t <= MAX_TEMP; t += tempStep) {
+                    const x = originX + ((t - MIN_TEMP) / (MAX_TEMP - MIN_TEMP)) * chartW;
+                    ctx.fillText(t + '°C', x, originY + 25);
+                    ctx.strokeStyle = '#d0d8e0';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(x, originY);
+                    ctx.lineTo(x, originY - 6);
+                    ctx.stroke();
+                    ctx.strokeStyle = '#b0bec5';
+                    ctx.lineWidth = 2;
+                }
+
+                const minV = calcVolume(MIN_TEMP);
+                const maxV = calcVolume(MAX_TEMP);
+                const volStep = 1;
+                ctx.textAlign = 'right';
+                for (let v = Math.ceil(minV); v <= Math.floor(maxV); v += volStep) {
+                    const y = originY - ((v - minV) / (maxV - minV)) * chartH;
+                    ctx.fillText(v + '', originX - 15, y + 6);
+                    ctx.strokeStyle = '#d0d8e0';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(originX, y);
+                    ctx.lineTo(originX + chartW, y);
+                    ctx.stroke();
+                    ctx.strokeStyle = '#b0bec5';
+                    ctx.lineWidth = 2;
+                }
+
+                ctx.beginPath();
+                ctx.strokeStyle = '#e67e22';
+                ctx.lineWidth = 3;
+                ctx.lineJoin = 'round';
+                ctx.lineCap = 'round';
+                for (let t = MIN_TEMP; t <= MAX_TEMP; t += 1) {
+                    const v = calcVolume(t);
+                    const px = originX + ((t - MIN_TEMP) / (MAX_TEMP - MIN_TEMP)) * chartW;
+                    const py = originY - ((v - minV) / (maxV - minV)) * chartH;
+                    if (t === MIN_TEMP) {
+                        ctx.moveTo(px, py);
+                    } else {
+                        ctx.lineTo(px, py);
+                    }
+                }
+                ctx.stroke();
+
+                const curV = displayVolume;
+                const curTemp = airTemp;
+                const dotX = originX + ((curTemp - MIN_TEMP) / (MAX_TEMP - MIN_TEMP)) * chartW;
+                const dotY = originY - ((curV - minV) / (maxV - minV)) * chartH;
+                ctx.fillStyle = '#e74c3c';
+                ctx.beginPath();
+                ctx.arc(dotX, dotY, 9, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+                ctx.fillStyle = '#1a5276';
+                ctx.font = 'bold 14px "PingFang SC", "Microsoft YaHei", sans-serif';
+                ctx.textAlign = 'left';
+                ctx.fillText(curTemp.toFixed(1) + '°C, ' + curV.toFixed(1) + 'mL', Math.min(dotX + 15, cssW - 120), Math.max(dotY - 10, paddingT + 15));
+                ctx.restore();
+            }
+
+            function updateRecordTable() {
+                const tempCat = getTempCategory(displayTemp);
+                beforeVolumeEl.textContent = INITIAL_VOLUME + ' 毫升';
+                afterVolumeEl.textContent = displayVolume.toFixed(1) + ' 毫升';
+                afterVolumeEl.className = 'value-after ' + tempCat;
+                tempDisplayValue.textContent = displayTemp.toFixed(0);
+                tempDisplayValue.className = 'temp-value ' + tempCat;
+                btnCold.classList.toggle('selected', tempCat === 'cold');
+                btnWarm.classList.toggle('selected', tempCat === 'warm');
+                btnHot.classList.toggle('selected', tempCat === 'hot');
+                if (!sliderDragging) {
+                    tempSlider.value = Math.round(displayTemp);
+                }
+            }
+
+            function animate() {
+                const tempDiffTarget = targetTemp - displayTemp;
+                if (Math.abs(tempDiffTarget) > 0.05) {
+                    displayTemp += tempDiffTarget * 0.25;
+                } else {
+                    displayTemp = targetTemp;
+                }
+
+                const tempDiffAir = displayTemp - airTemp;
+                const lagFactor = 1 - Math.exp(-DT * TEMP_LAG_RATE * timeScale);
+                airTemp += tempDiffAir * lagFactor;
+
+                displayVolume = calcVolume(airTemp);
+
+                drawMainScene();
+                drawChart();
+                updateRecordTable();
+
+                animationId = requestAnimationFrame(animate);
+            }
+
+            function setTargetTemp(temp) {
+                targetTemp = Math.max(MIN_TEMP, Math.min(MAX_TEMP, temp));
+            }
+
+            tempSlider.addEventListener('input', function(e) {
+                sliderDragging = true;
+                setTargetTemp(parseFloat(e.target.value));
+            });
+            tempSlider.addEventListener('change', function(e) {
+                setTargetTemp(parseFloat(e.target.value));
+                sliderDragging = false;
+            });
+            tempSlider.addEventListener('pointerup', function() { sliderDragging = false; });
+            tempSlider.addEventListener('touchend', function() { sliderDragging = false; });
+
+            btnCold.addEventListener('click', function() { setTargetTemp(10); sliderDragging = false; });
+            btnWarm.addEventListener('click', function() { setTargetTemp(35); sliderDragging = false; });
+            btnHot.addEventListener('click', function() { setTargetTemp(70); sliderDragging = false; });
+
+            speedBtns.forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    timeScale = parseInt(btn.dataset.speed, 10);
+                    speedBtns.forEach(b => b.classList.remove('selected'));
+                    btn.classList.add('selected');
+                });
+            });
+            document.querySelector('.speed-btn[data-speed="1"]').classList.add('selected');
+
+            btnExpand.addEventListener('click', function() {
+                btnExpand.classList.add('selected');
+                btnShrink.classList.remove('selected');
+            });
+            btnShrink.addEventListener('click', function() {
+                btnShrink.classList.add('selected');
+                btnExpand.classList.remove('selected');
+            });
+
+            document.querySelectorAll('button').forEach(function(btn) {
+                btn.addEventListener('touchstart', function(e) { e.preventDefault(); }, { passive: false });
+            });
+
+            let resizeTimeout;
+            window.addEventListener('resize', function() {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(function() {
+                    drawMainScene();
+                    drawChart();
+                }, 150);
+            });
+
+            function init() {
+                displayTemp = ROOM_TEMP;
+                targetTemp = ROOM_TEMP;
+                airTemp = ROOM_TEMP;
+                displayVolume = INITIAL_VOLUME;
+                timeScale = 1;
+                tempSlider.value = ROOM_TEMP;
+                updateRecordTable();
+                drawMainScene();
+                drawChart();
+                if (animationId) cancelAnimationFrame(animationId);
+                animate();
+            }
+
+            init();
+        })();
+    </script>
+
+
+
+
+<!-- ================= 开物AI科学 · 版权模块（单击显示 / 双击打开官网） ================= -->
+<style id="kaiming-copyright-style">
+  #kaiming-copyright {
+    position: fixed;
+    bottom: 106px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    pointer-events: none;
+    z-index: 999999;
+    transition: opacity 0.45s ease;
+    opacity: 0;
+    display: none;
+  }
+  #kaiming-copyright .inner {
+    display: inline-block;
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #eafaf2;
+    padding: 9px 26px;
+    border-radius: 60px;
+    /* 原稿为 14px；此处改为 16px 以符合本机 verify_html.py 的「字号不得小于 16px」硬规则 */
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.6px;
+    border: 1px solid rgba(255, 245, 210, 0.3);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+    font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+    white-space: nowrap;
+  }
+</style>
+
+<div id="kaiming-copyright">
+  <div class="inner">© 2026 开物AI科学 ｜ AI 赋能 · 教育公平</div>
+</div>
+
+<script id="kaiming-copyright-script">
+(function () {
+  "use strict";
+
+  /* 目标：单击标题 → 显示版权 3.5 秒；双击标题 → 打开 www.kaiwuaiscience.com */
+
+  const HOMEPAGE = "https://www.kaiwuaiscience.com";
+  const SHOW_MS = 3500;      // 版权显示时长
+  const DBL_WINDOW = 280;    // 双击判定的时间窗（毫秒）
+  const FADE_MS = 450;       // 淡出时长，与 CSS transition 一致
+
+  function bindCopyright() {
+    // 首选 #mainTitle（注入脚本会保证它存在）；后三个选择器是手写粘贴时的兜底
+    const title = document.getElementById("mainTitle") ||
+                  document.querySelector("h1, .title, .page-title, .main-title");
+    const box = document.getElementById("kaiming-copyright");
+    if (!title || !box) return;
+
+    title.style.cursor = "pointer";
+    title.style.userSelect = "none";
+    title.style.webkitUserSelect = "none";
+
+    let clickTimer = null;
+    let hideTimer = null;
+    let seq = 0;   // 每次显示/隐藏都 +1，用来作废在飞的定时器
+
+    function showCopyright() {
+      const my = ++seq;
+      if (hideTimer) clearTimeout(hideTimer);
+      box.style.display = "block";
+      /* 强制重绘，让 0 → 1 的淡入真的发生。
+         这里刻意不用 requestAnimationFrame：rAF 在页面不产生新帧时（后台标签页、
+         无头渲染、大屏久置）不保证触发——一旦它晚于下方的隐藏定时器回调，
+         就会把 opacity 又设成 1，导致版权条永久停在屏幕上。 */
+      void box.offsetHeight;
+      box.style.opacity = "1";
+      hideTimer = setTimeout(function () {
+        if (my !== seq) return;      // 期间又被点过，交给新的那一次收尾
+        box.style.opacity = "0";
+        setTimeout(function () {
+          if (my === seq) box.style.display = "none";
+        }, FADE_MS);
+      }, SHOW_MS);
+    }
+
+    function hideCopyright() {
+      const my = ++seq;              // 作废所有在飞的定时器，避免"淡出到一半又被点亮"卡住
+      if (hideTimer) clearTimeout(hideTimer);
+      if (box.style.display !== "block") return;
+      box.style.opacity = "0";
+      setTimeout(function () {
+        if (my === seq) box.style.display = "none";
+      }, FADE_MS);
+    }
+
+    function openHomepage() {
+      // 双击时隐藏版权，并跳转官网
+      hideCopyright();
+      window.open(HOMEPAGE, "_blank", "noopener,noreferrer");
+    }
+
+    title.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (clickTimer) return;   // 已在等待双击窗口，忽略这次单击
+      clickTimer = setTimeout(function () {
+        clickTimer = null;
+        showCopyright();        // 确认是单击
+      }, DBL_WINDOW);
+    });
+
+    title.addEventListener("dblclick", function (e) {
+      e.stopPropagation();
+      if (clickTimer) {         // 取消挂起的单击
+        clearTimeout(clickTimer);
+        clickTimer = null;
+      }
+      openHomepage();
+    });
+
+    // 点击页面其它地方，立即隐藏版权
+    document.addEventListener("click", function (e) {
+      if (e.target === title) return;
+      hideCopyright();
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bindCopyright);
+  } else {
+    bindCopyright();
+  }
+})();
+</script>
+<!-- ================= 开物AI科学 · 版权模块 结束 ================= -->
+
+</body>
+</html>

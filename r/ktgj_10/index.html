@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>科学随机点名系统</title>
+    <style>
+        /* 保持原有样式不变 */
+        body {
+            background: #0a0e17;
+            color: #00ff9d;
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .neon-title {
+            font-size: 3.5rem;
+            text-shadow: 0 0 10px #00ff9d;
+            margin: 2rem 0;
+            position: relative;
+            animation: glow 2s ease-in-out infinite alternate;
+            cursor: default;
+            user-select: none;
+        }
+
+        .display-box {
+            width: 80vw;
+            height: 40vh;
+            background: rgba(0, 30, 60, 0.9);
+            border: 3px solid #00ff9d;
+            border-radius: 15px;
+            margin: 2rem 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .display-box::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, 
+                transparent 25%,
+                rgba(0, 255, 157, 0.1) 25%,
+                rgba(0, 255, 157, 0.1) 50%,
+                transparent 50%,
+                transparent 75%,
+                rgba(0, 255, 157, 0.1) 75%);
+            animation: scan 8s linear infinite;
+        }
+
+        #name-display {
+            font-size: 4rem;
+            font-weight: bold;
+            text-shadow: 0 0 15px #00ff9d;
+            z-index: 1;
+            text-align: center;
+            padding: 0 20px;
+            word-break: break-all;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            z-index: 2;
+        }
+
+        .ai-button {
+            padding: 1.5rem 3rem;
+            font-size: 1.5rem;
+            background: linear-gradient(45deg, #003973, #00ff9d);
+            border: none;
+            border-radius: 50px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+            font-family: inherit;
+        }
+
+        .ai-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 25px #00ff9d;
+        }
+
+        .ai-button::before {
+            content: '🤖';
+            position: absolute;
+            left: -30px;
+            transition: all 0.3s;
+        }
+
+        .ai-button:hover::before {
+            left: 10px;
+        }
+
+        .upload-button {
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            background: transparent;
+            border: 2px solid #00ff9d;
+            border-radius: 50px;
+            color: #00ff9d;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        .upload-button:hover {
+            background: rgba(0, 255, 157, 0.15);
+            box-shadow: 0 0 20px rgba(0, 255, 157, 0.5);
+        }
+
+        .info-bar {
+            margin-top: 1rem;
+            font-size: 0.95rem;
+            color: rgba(0, 255, 157, 0.75);
+            text-align: center;
+            z-index: 2;
+            padding: 0 20px;
+            line-height: 1.7;
+        }
+        .info-bar b { color: #00ff9d; }
+        .info-bar .link-btn {
+            color: #00ff9d;
+            background: none;
+            border: none;
+            cursor: pointer;
+            text-decoration: underline;
+            font-size: 0.95rem;
+            font-family: inherit;
+            padding: 0 4px;
+        }
+        .info-bar .link-btn:hover { color: #fff; }
+
+        @keyframes glow {
+            from {
+                text-shadow: 0 0 10px #00ff9d;
+            }
+            to {
+                text-shadow: 0 0 20px #00ff9d, 0 0 30px #00ff9d;
+            }
+        }
+
+        @keyframes scan {
+            from {
+                transform: translate(-25%, -25%) rotate(45deg);
+            }
+            to {
+                transform: translate(-25%, -25%) rotate(405deg);
+            }
+        }
+
+        .matrix-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0.1;
+            z-index: -1;
+        }
+
+        /* 开物AI科学版权样式 */
+        #kaiming-copyright {
+            position: fixed;
+            bottom: 26px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            pointer-events: none;
+            z-index: 9999;
+            transition: opacity 0.5s ease;
+            opacity: 0;
+            display: none;
+        }
+        #kaiming-copyright .inner {
+            display: inline-block;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            color: #eafaf2;
+            padding: 9px 26px;
+            border-radius: 60px;
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: 0.6px;
+            border: 1px solid rgba(0, 255, 157, 0.4);
+            box-shadow: 0 8px 22px rgba(0, 0, 0, 0.5), 0 0 18px rgba(0, 255, 157, 0.2);
+            font-family: 'Arial', sans-serif;
+        }
+
+        /* Toast 提示 */
+        #toast {
+            position: fixed;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            background: rgba(0, 40, 25, 0.95);
+            color: #00ff9d;
+            border: 1px solid rgba(0, 255, 157, 0.5);
+            border-radius: 12px;
+            padding: 12px 28px;
+            font-size: 1rem;
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 10000;
+            pointer-events: none;
+            box-shadow: 0 0 25px rgba(0, 255, 157, 0.35);
+        }
+        #toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+    </style>
+    <!-- 用于解析 Excel 和 Word 的库 -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
+</head>
+<body>
+    <canvas class="matrix-bg" id="matrix"></canvas>
+    <h1 class="neon-title" id="mainTitle">AI 随机点名系统</h1>
+    
+    <div class="display-box">
+        <div id="name-display">准备就绪</div>
+    </div>
+
+    <div class="button-row">
+        <button class="ai-button" id="action-btn">开始随机</button>
+        <button class="upload-button" id="upload-btn">📄 上传名单（Word / Excel）</button>
+        <input type="file" id="file-input" accept=".xlsx,.xls,.csv,.docx,.doc,.txt" style="display:none">
+    </div>
+
+    <div class="info-bar" id="info-bar">
+        当前名单共 <b id="count-num">55</b> 人
+        <button class="link-btn" id="reset-list">恢复默认名单</button>
+    </div>
+
+    <!-- 开物AI科学版权 -->
+    
+
+    <!-- Toast -->
+    <div id="toast"></div>
+
+    <script>
+        // ================= 开物AI科学版权双击事件 =================
+        (function() {
+            const title = document.getElementById('mainTitle');
+            const copyright = document.getElementById('kaiming-copyright');
+            if (!title || !copyright) return;
+            let timer = null;
+            title.addEventListener('dblclick', function(e) {
+                e.stopPropagation();
+                if (timer) clearTimeout(timer);
+                copyright.style.display = 'block';
+                setTimeout(() => { copyright.style.opacity = '1'; }, 10);
+                timer = setTimeout(() => {
+                    copyright.style.opacity = '0';
+                    setTimeout(() => {
+                        if (copyright.style.opacity === '0') copyright.style.display = 'none';
+                    }, 500);
+                }, 3500);
+            });
+        })();
+
+        // ================= Toast 提示 =================
+        let toastTimer = null;
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
+        }
+
+        // ================= 默认学生名单（随机生成的示例姓名） =================
+        const DEFAULT_STUDENTS = [
+            '林清和', '沈亦舟', '苏晚晴', '顾云舟', '江辞安',
+            '温以宁', '谢知言', '柳昭雪', '陆星辞', '叶疏影',
+            '程未晚', '唐景铄', '许清欢', '宋辞归', '孟书白',
+            '裴听澜', '萧慕辰', '阮望舒', '傅言溪', '薛南枝',
+            '梁星野', '崔月明', '穆云深', '纪清棠', '贺听风',
+            '罗晚舟', '钟离晏', '颜若昭', '薄辞秋', '简书禾',
+            '路遥知', '常念安', '闻清辞', '归南乔', '白鹭洲',
+            '慕容雪', '云舒晚', '顾长安', '谢知微', '沈辞书',
+            '温故知', '苏叶白', '林逾静', '徐来风', '何辞归',
+            '柳轻寒', '叶知秋', '陈景行', '周听雪', '吴思齐',
+            '郑观澜', '王星晚', '冯清越', '蒋南乔', '韩疏桐'
+        ];
+
+        const STORAGE_KEY = 'ai_roll_call_students_v1';
+
+        // ================= 名单管理（含 localStorage 持久化） =================
+        let students = [];
+
+        function loadStudents() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        students = parsed;
+                        updateCountDisplay();
+                        return;
+                    }
+                }
+            } catch (e) { /* 忽略解析错误 */ }
+            students = [...DEFAULT_STUDENTS];
+            updateCountDisplay();
+        }
+
+        function saveStudents() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(students));
+            } catch (e) {
+                showToast('⚠️ 浏览器存储空间不足，名单未能记忆');
+            }
+        }
+
+        function updateCountDisplay() {
+            document.getElementById('count-num').textContent = students.length;
+        }
+
+        // ================= 名单解析 =================
+        // 将任意文本切分为姓名数组
+        function extractNamesFromText(text) {
+            if (!text) return [];
+            // 按 换行 / 制表符 / 逗号（中英文）/ 顿号 / 分号 / 空格 切分
+            return text
+                .split(/[\n\r\t,，、;；]+/)
+                .map(s => s.trim())
+                // 过滤空串、过长字符串（避免句子被当作姓名）、纯数字
+                .filter(s => s && s.length <= 12 && !/^\d+$/.test(s))
+                // 过滤掉表头类的词
+                .filter(s => !/^(姓名|学生|学生姓名|名字|序号|编号|学号|班级|name|no\.?|index)$/i.test(s));
+        }
+
+        // 解析 Excel / CSV
+        function parseExcelFile(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const names = [];
+                        // 遍历所有工作表
+                        workbook.SheetNames.forEach(sheetName => {
+                            const sheet = workbook.Sheets[sheetName];
+                            const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, blankrows: false });
+                            rows.forEach(row => {
+                                if (!row) return;
+                                row.forEach(cell => {
+                                    if (cell === null || cell === undefined) return;
+                                    const str = String(cell).trim();
+                                    if (!str) return;
+                                    // 单元格内可能包含多个用换行/逗号隔开的姓名
+                                    const parts = extractNamesFromText(str);
+                                    parts.forEach(p => names.push(p));
+                                });
+                            });
+                        });
+                        resolve(names);
+                    } catch (err) {
+                        reject(err);
+                    }
+                };
+                reader.onerror = reject;
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        // 解析 Word (.docx)
+        function parseWordFile(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    mammoth.extractRawText({ arrayBuffer: e.target.result })
+                        .then(result => {
+                            const names = extractNamesFromText(result.value);
+                            resolve(names);
+                        })
+                        .catch(reject);
+                };
+                reader.onerror = reject;
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        // 解析纯文本 / CSV
+        function parseTextFile(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const names = extractNamesFromText(e.target.result);
+                    resolve(names);
+                };
+                reader.onerror = reject;
+                reader.readAsText(file, 'UTF-8');
+            });
+        }
+
+        // 处理上传
+        function handleFileUpload(file) {
+            if (!file) return;
+            const name = file.name.toLowerCase();
+            showToast('📖 正在解析文件…');
+
+            let promise;
+            if (name.endsWith('.xlsx') || name.endsWith('.xls') || name.endsWith('.csv')) {
+                if (typeof XLSX === 'undefined') {
+                    showToast('❌ Excel 解析库加载失败，请检查网络');
+                    return;
+                }
+                promise = parseExcelFile(file);
+            } else if (name.endsWith('.docx') || name.endsWith('.doc')) {
+                if (typeof mammoth === 'undefined') {
+                    showToast('❌ Word 解析库加载失败，请检查网络');
+                    return;
+                }
+                if (name.endsWith('.doc')) {
+                    showToast('⚠️ 不支持旧版 .doc，请另存为 .docx 后上传');
+                    return;
+                }
+                promise = parseWordFile(file);
+            } else if (name.endsWith('.txt')) {
+                promise = parseTextFile(file);
+            } else {
+                showToast('❌ 不支持的文件格式（仅支持 xlsx/xls/csv/docx/txt）');
+                return;
+            }
+
+            promise.then(names => {
+                // 去重（保留原顺序）
+                const unique = [];
+                const seen = new Set();
+                names.forEach(n => {
+                    if (!seen.has(n)) { seen.add(n); unique.push(n); }
+                });
+
+                if (unique.length === 0) {
+                    showToast('❌ 未从文件中识别到姓名，请检查文件内容');
+                    return;
+                }
+                if (unique.length < 2) {
+                    showToast('⚠️ 只识别到 1 个姓名，请确认文件是否正确');
+                }
+                students = unique;
+                saveStudents();
+                updateCountDisplay();
+                showToast(`✅ 上传成功！已识别 ${unique.length} 位同学，名单已自动记忆`);
+                // 重置显示
+                document.getElementById('name-display').textContent = '准备就绪';
+            }).catch(err => {
+                console.error(err);
+                showToast('❌ 文件解析失败：' + (err && err.message ? err.message : '未知错误'));
+            });
+        }
+
+        // ================= 矩阵背景 =================
+        function startMatrix() {
+            const canvas = document.getElementById('matrix');
+            const ctx = canvas.getContext('2d');
+            
+            function resize() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            resize();
+            
+            const chars = '01';
+            const fontSize = 14;
+            let columns = Math.floor(canvas.width / fontSize);
+            let drops = new Array(columns).fill(1);
+
+            function draw() {
+                ctx.fillStyle = 'rgba(0, 15, 30, 0.5)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                ctx.fillStyle = '#00ff9d';
+                ctx.font = fontSize + 'px monospace';
+
+                drops.forEach((y, i) => {
+                    const text = chars[Math.floor(Math.random() * chars.length)];
+                    ctx.fillText(text, i * fontSize, y * fontSize);
+                    
+                    if (y * fontSize > canvas.height && Math.random() > 0.975) {
+                        drops[i] = 0;
+                    }
+                    drops[i]++;
+                });
+            }
+
+            setInterval(draw, 50);
+
+            window.addEventListener('resize', () => {
+                resize();
+                columns = Math.floor(canvas.width / fontSize);
+                drops = new Array(columns).fill(1);
+            });
+        }
+
+        // ================= 点名逻辑 =================
+        let isRunning = false;
+        let intervalId;
+        const btn = document.getElementById('action-btn');
+        const display = document.getElementById('name-display');
+
+        function toggle() {
+            if (students.length === 0) {
+                showToast('⚠️ 名单为空，请先上传学生名单');
+                return;
+            }
+            if (!isRunning) {
+                isRunning = true;
+                btn.textContent = '停止随机';
+                display.style.animation = 'glow 0.5s infinite alternate';
+                
+                intervalId = setInterval(() => {
+                    display.textContent = students[Math.floor(Math.random() * students.length)];
+                }, 50);
+            } else {
+                isRunning = false;
+                btn.textContent = '开始随机';
+                display.style.animation = '';
+                clearInterval(intervalId);
+            }
+        }
+
+        // ================= 事件绑定 =================
+        btn.addEventListener('click', toggle);
+
+        const uploadBtn = document.getElementById('upload-btn');
+        const fileInput = document.getElementById('file-input');
+        uploadBtn.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files && e.target.files[0];
+            handleFileUpload(file);
+            // 允许重复上传同一文件
+            fileInput.value = '';
+        });
+
+        // 恢复默认名单
+        document.getElementById('reset-list').addEventListener('click', () => {
+            if (confirm('确定要恢复到默认名单吗？当前上传的名单将被清除。')) {
+                students = [...DEFAULT_STUDENTS];
+                try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+                updateCountDisplay();
+                display.textContent = '准备就绪';
+                showToast('✅ 已恢复默认名单（' + students.length + ' 人）');
+            }
+        });
+
+        // ================= 初始化 =================
+        loadStudents();
+        startMatrix();
+    </script>
+<!-- ================= 开物AI科学 · 版权模块（单击显示 / 双击打开官网） ================= -->
+<style id="kaiming-copyright-style">
+  #kaiming-copyright {
+    position: fixed;
+    bottom: 26px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    pointer-events: none;
+    z-index: 999999;
+    transition: opacity 0.45s ease;
+    opacity: 0;
+    display: none;
+  }
+  #kaiming-copyright .inner {
+    display: inline-block;
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #eafaf2;
+    padding: 9px 26px;
+    border-radius: 60px;
+    /* 原稿为 14px；此处改为 16px 以符合本机 verify_html.py 的「字号不得小于 16px」硬规则 */
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.6px;
+    border: 1px solid rgba(255, 245, 210, 0.3);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+    font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+    white-space: nowrap;
+  }
+</style>
+
+<div id="kaiming-copyright">
+  <div class="inner">© 2026 开物AI科学 ｜ AI 赋能 · 教育公平</div>
+</div>
+
+<script id="kaiming-copyright-script">
+(function () {
+  "use strict";
+
+  /* 目标：单击标题 → 显示版权 3.5 秒；双击标题 → 打开 www.kaiwuaiscience.com */
+
+  const HOMEPAGE = "https://www.kaiwuaiscience.com";
+  const SHOW_MS = 3500;      // 版权显示时长
+  const DBL_WINDOW = 280;    // 双击判定的时间窗（毫秒）
+  const FADE_MS = 450;       // 淡出时长，与 CSS transition 一致
+
+  function bindCopyright() {
+    // 首选 #mainTitle（注入脚本会保证它存在）；后三个选择器是手写粘贴时的兜底
+    const title = document.getElementById("mainTitle") ||
+                  document.querySelector("h1, .title, .page-title, .main-title");
+    const box = document.getElementById("kaiming-copyright");
+    if (!title || !box) return;
+
+    title.style.cursor = "pointer";
+    title.style.userSelect = "none";
+    title.style.webkitUserSelect = "none";
+    /* 有些 3D 页面把 HUD 浮层（标题就在里面）设成 pointer-events:none，
+       好让鼠标事件穿透给下层画布；结果标题被"穿透"了——用户点它时事件落到画布上，
+       单击毫无反应，页面看起来就像没加版权。在标题自身把指针事件打开即可
+       （CSS 里后代可以覆盖祖先的 none，无需改动页面原有样式）。 */
+    title.style.pointerEvents = "auto";
+
+    let clickTimer = null;
+    let hideTimer = null;
+    let seq = 0;   // 每次显示/隐藏都 +1，用来作废在飞的定时器
+
+    function showCopyright() {
+      const my = ++seq;
+      if (hideTimer) clearTimeout(hideTimer);
+      box.style.display = "block";
+      /* 强制重绘，让 0 → 1 的淡入真的发生。
+         这里刻意不用 requestAnimationFrame：rAF 在页面不产生新帧时（后台标签页、
+         无头渲染、大屏久置）不保证触发——一旦它晚于下方的隐藏定时器回调，
+         就会把 opacity 又设成 1，导致版权条永久停在屏幕上。 */
+      void box.offsetHeight;
+      box.style.opacity = "1";
+      hideTimer = setTimeout(function () {
+        if (my !== seq) return;      // 期间又被点过，交给新的那一次收尾
+        box.style.opacity = "0";
+        setTimeout(function () {
+          if (my === seq) box.style.display = "none";
+        }, FADE_MS);
+      }, SHOW_MS);
+    }
+
+    function hideCopyright() {
+      const my = ++seq;              // 作废所有在飞的定时器，避免"淡出到一半又被点亮"卡住
+      if (hideTimer) clearTimeout(hideTimer);
+      if (box.style.display !== "block") return;
+      box.style.opacity = "0";
+      setTimeout(function () {
+        if (my === seq) box.style.display = "none";
+      }, FADE_MS);
+    }
+
+    function openHomepage() {
+      // 双击时隐藏版权，并跳转官网
+      hideCopyright();
+      window.open(HOMEPAGE, "_blank", "noopener,noreferrer");
+    }
+
+    title.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (clickTimer) return;   // 已在等待双击窗口，忽略这次单击
+      clickTimer = setTimeout(function () {
+        clickTimer = null;
+        showCopyright();        // 确认是单击
+      }, DBL_WINDOW);
+    });
+
+    title.addEventListener("dblclick", function (e) {
+      e.stopPropagation();
+      if (clickTimer) {         // 取消挂起的单击
+        clearTimeout(clickTimer);
+        clickTimer = null;
+      }
+      openHomepage();
+    });
+
+    // 点击页面其它地方，立即隐藏版权
+    document.addEventListener("click", function (e) {
+      if (e.target === title) return;
+      hideCopyright();
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bindCopyright);
+  } else {
+    bindCopyright();
+  }
+})();
+</script>
+<!-- ================= 开物AI科学 · 版权模块 结束 ================= -->
+
+</body>
+</html>

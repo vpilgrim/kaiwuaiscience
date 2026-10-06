@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>火箭发射控制台 v6.0 (全中文精简版)</title>
+    <style>
+        /* --- 基础布局 --- */
+        body, html { margin: 0; padding: 0; height: 100%; background-color: #020406; color: #fff; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+        #container { display: flex; height: 100%; width: 100%; }
+
+        /* 左侧面板 */
+        #telemetry-panel {
+            width: 300px; min-width: 300px;
+            background: #0b1118; border-right: 2px solid #233;
+            display: flex; flex-direction: column; padding: 20px; z-index: 10;
+        }
+        h2 { border-bottom: 2px solid #00d2ff; padding-bottom: 10px; color: #00d2ff; margin-top: 0; }
+        /* 英文已替换为中文 */
+        .data-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-family: monospace; color: #8aa; font-size: 14px; }
+        .data-val { color: #fff; font-weight: bold; }
+        #system-log { flex-grow: 1; background: #000; border: 1px solid #333; padding: 10px; margin-top: 15px; color: #0f0; font-family: monospace; overflow-y: auto; font-size: 12px; }
+        
+        /* 小地图 */
+        #minimap-container { width: 100%; height: 200px; background: #000; border: 1px solid #444; margin-bottom: 20px; border-radius: 4px; overflow: hidden;}
+
+        /* 右侧主视口 */
+        #main-view-container { flex-grow: 1; position: relative; background: linear-gradient(to bottom, #000 0%, #101820 100%); overflow: hidden; }
+        
+        /* SVG 容器 */
+        #scene-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+
+        /* 底部控制栏 */
+        #control-bar {
+            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+            background: rgba(20, 30, 40, 0.8); backdrop-filter: blur(10px);
+            padding: 10px 25px; border-radius: 50px;
+            border: 1px solid #555; display: flex; gap: 10px; z-index: 100;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+        }
+        button { padding: 10px 20px; border-radius: 20px; border: 1px solid #555; background: #333; color: #ccc; cursor: pointer; font-weight: bold; transition: 0.2s; white-space: nowrap; }
+        button:hover:not(:disabled) { background: #555; color: #fff; transform: translateY(-2px); }
+        button:disabled { opacity: 0.3; cursor: not-allowed; }
+        .btn-active { background: #007bff !important; border-color: #0056b3 !important; color: white !important; box-shadow: 0 0 15px rgba(0,123,255,0.4); }
+        .btn-auto { background: linear-gradient(45deg, #6200ea, #b388ff) !important; color: white !important; border: none !important; }
+
+        /* 动画类 */
+        .shake { animation: shake 0.1s infinite; }
+        @keyframes shake { 
+            0% { transform: translate(400px, 320px); } 
+            50% { transform: translate(399px, 321px); } 
+            100% { transform: translate(401px, 319px); } 
+        }
+        
+        /* 太阳能板动画 */
+        .panel-hinge { transition: transform 3s cubic-bezier(0.2, 0.8, 0.2, 1); transform-origin: 0 0; }
+        .folded-left { transform: rotate(90deg); } 
+        .folded-right { transform: rotate(-90deg); }
+        .deployed { transform: rotate(0deg) !important; } 
+
+    </style>
+</head>
+<body>
+
+<div id="container">
+    <div id="telemetry-panel">
+        <h2 id="mainTitle">任务控制中心</h2>
+        <div id="minimap-container">
+            <svg width="100%" height="100%" viewBox="0 0 200 200">
+                <path d="M20 180 Q 20 20 180 20" fill="none" stroke="#64b5f6" stroke-dasharray="3,3" stroke-width="2"/>
+                <circle cx="-50" cy="250" r="100" fill="#2c3e50" stroke="#4ca1af" stroke-width="2"/>
+                <circle id="mini-rocket" cx="20" cy="180" r="4" fill="#ff3d00" style="filter: drop-shadow(0 0 5px #ff3d00);"/>
+                
+                <text x="5" y="195" fill="#8aa" font-size="10">发射点</text>
+                <text x="160" y="15" fill="#8aa" font-size="10">目标轨道</text>
+            </svg>
+        </div>
+        <div class="data-row"><span>高度:</span> <span class="data-val" id="disp-alt">0.0 km</span></div>
+        <div class="data-row"><span>速度:</span> <span class="data-val" id="disp-vel">0 m/s</span></div>
+        <div class="data-row"><span>状态:</span> <span class="data-val" id="disp-status">准备就绪</span></div>
+        <div id="system-log">> 所有系统准备就绪...</div>
+    </div>
+
+    <div id="main-view-container">
+        <svg id="scene-svg" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet">
+            <defs>
+                <linearGradient id="body-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#222"/>
+                    <stop offset="20%" stop-color="#e0e0e0"/>
+                    <stop offset="50%" stop-color="#fff"/>
+                    <stop offset="80%" stop-color="#e0e0e0"/>
+                    <stop offset="100%" stop-color="#222"/>
+                </linearGradient>
+                <linearGradient id="fire-grad" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0%" stop-color="#ffff00"/>
+                    <stop offset="30%" stop-color="#ff9800"/>
+                    <stop offset="100%" stop-color="red" stop-opacity="0"/>
+                </linearGradient>
+                 <filter id="glow">
+                    <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+                    <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                </filter>
+            </defs>
+
+            <g id="stars-bg"></g>
+
+            <g id="horizon" transform="translate(400, 460)">
+                <path d="M-800 -50 Q0 -100 800 -50 L800 200 L-800 200 Z" fill="#1c2533" opacity="0.8"/>
+                <path d="M-800 0 Q0 -30 800 0 L800 200 L-800 200 Z" fill="#0f141a"/>
+                <rect x="-50" y="-10" width="100" height="15" fill="#333" stroke="#555"/> 
+                <rect x="-30" y="-10" width="60" height="10" fill="#222"/>
+            </g>
+
+            <g id="rocket-group" transform="translate(400, 320)">
+                
+                <g id="stage1">
+                    <g id="flame1" opacity="0" filter="url(#glow)">
+                        <path d="M-18 130 Q0 220 18 130" fill="url(#fire-grad)">
+                             <animate attributeName="d" values="M-18 130 Q0 220 18 130; M-20 130 Q0 280 20 130; M-18 130 Q0 220 18 130" dur="0.08s" repeatCount="indefinite"/>
+                        </path>
+                    </g>
+                    
+                    <rect x="-24" y="0" width="48" height="130" fill="url(#body-gradient)" stroke="#111" stroke-width="1"/>
+                    
+                    <rect x="-24" y="0" width="48" height="8" fill="#111"/>
+                    
+                    <path d="M-24 100 L-50 140 L-24 140 Z" fill="#333" stroke="#111"/>
+                    <path d="M24 100 L50 140 L24 140 Z" fill="#333" stroke="#111"/>
+                    
+                    <text x="0" y="80" fill="#444" font-size="12" text-anchor="middle" font-weight="bold" transform="rotate(-90)">一级火箭</text>
+                </g>
+
+                <g id="stage2-stack">
+                    <g id="flame2" opacity="0" filter="url(#glow)">
+                        <path d="M-12 0 Q0 80 12 0" fill="#00e5ff">
+                             <animate attributeName="d" values="M-12 0 Q0 80 12 0; M-14 0 Q0 110 14 0; M-12 0 Q0 80 12 0" dur="0.1s" repeatCount="indefinite"/>
+                        </path>
+                    </g>
+
+                    <rect x="-24" y="-90" width="48" height="90" fill="url(#body-gradient)" stroke="#111" stroke-width="1"/>
+                    <g id="payload" transform="translate(0, -100)">
+                        <g id="hinge-left" class="panel-hinge folded-left" transform="translate(-16, 0)">
+                            <g transform="translate(-60, -12)">
+                                <rect x="0" y="0" width="60" height="24" fill="#1565c0" stroke="#fff" rx="1"/>
+                                <path d="M15 0 v24 M30 0 v24 M45 0 v24" stroke="rgba(0,0,0,0.3)"/>
+                            </g>
+                        </g>
+                        <g id="hinge-right" class="panel-hinge folded-right" transform="translate(16, 0)">
+                            <g transform="translate(0, -12)">
+                                <rect x="0" y="0" width="60" height="24" fill="#1565c0" stroke="#fff" rx="1"/>
+                                <path d="M15 0 v24 M30 0 v24 M45 0 v24" stroke="rgba(0,0,0,0.3)"/>
+                            </g>
+                        </g>
+                        <rect x="-16" y="-25" width="32" height="50" fill="gold" stroke="#b8860b" stroke-width="2"/>
+                        <circle cx="0" cy="-10" r="8" fill="#eee" opacity="0.8"/>
+                    </g>
+
+                    <g id="fairing-group" transform="translate(0, -90)">
+                        <path id="fairing-l" d="M0 0 L-24 0 L-24 -60 Q-24 -110 0 -120 Z" fill="url(#body-gradient)" stroke="#555"/>
+                        <path id="fairing-r" d="M0 0 L24 0 L24 -60 Q24 -110 0 -120 Z" fill="url(#body-gradient)" stroke="#555"/>
+                        <line x1="0" y1="0" x2="0" y2="-120" stroke="#aaa" stroke-width="0.5"/>
+                    </g>
+                </g>
+                
+            </g>
+        </svg>
+
+        <div id="control-bar">
+            <button id="btn-auto" class="btn-auto" onclick="runAuto()">✨ 全自动演示</button>
+            <div style="width:1px; background:#666; height:20px;"></div>
+            <button id="btn-launch" class="btn-active" onclick="actLaunch()">1. 点火升空</button>
+            <button id="btn-sep1" disabled onclick="actSep1()">2. 一级分离</button>
+            <button id="btn-sep-fair" disabled onclick="actFairing()">3. 抛整流罩</button>
+            <button id="btn-deploy" disabled onclick="actDeploy()">4. 展开帆板</button>
+            <div style="width:1px; background:#666; height:20px;"></div>
+            <button onclick="location.reload()" style="background:#c62828; border-color:#b71c1c; color:#fff;">重置</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const els = {
+        log: document.getElementById('system-log'),
+        alt: document.getElementById('disp-alt'),
+        vel: document.getElementById('disp-vel'),
+        rocket: document.getElementById('rocket-group'),
+        stage1: document.getElementById('stage1'),
+        flame1: document.getElementById('flame1'),
+        flame2: document.getElementById('flame2'),
+        fairingL: document.getElementById('fairing-l'),
+        fairingR: document.getElementById('fairing-r'),
+        hingeL: document.getElementById('hinge-left'),
+        hingeR: document.getElementById('hinge-right'),
+        miniRocket: document.getElementById('mini-rocket'),
+        horizon: document.getElementById('horizon'),
+        stars: document.getElementById('stars-bg'),
+        btns: {
+            launch: document.getElementById('btn-launch'),
+            sep1: document.getElementById('btn-sep1'),
+            fairing: document.getElementById('btn-sep-fair'),
+            deploy: document.getElementById('btn-deploy')
+        }
+    };
+
+    let state = { alt: 0, vel: 0, phase: 0, flying: false };
+
+    // 初始化星星
+    for(let i=0; i<150; i++) {
+        let c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        c.setAttribute("cx", Math.random()*800); c.setAttribute("cy", Math.random()*600);
+        c.setAttribute("r", Math.random()*1.5); c.setAttribute("fill", "#fff"); c.setAttribute("opacity", Math.random());
+        els.stars.appendChild(c);
+    }
+
+    function log(msg) { els.log.innerHTML += `> ${msg}<br>`; els.log.scrollTop = els.log.scrollHeight; }
+
+    function switchBtn(curr, next) {
+        if(curr) { curr.disabled = true; curr.classList.remove('btn-active'); }
+        if(next) { next.disabled = false; next.classList.add('btn-active'); }
+    }
+
+    // --- 动作函数 ---
+
+    function actLaunch() {
+        if(state.flying) return;
+        state.flying = true;
+        state.phase = 1;
+        els.flame1.setAttribute("opacity", "1");
+        els.rocket.classList.add("shake");
+        log("T-0: 主发动机点火！起飞！");
+        switchBtn(els.btns.launch, els.btns.sep1);
+        requestAnimationFrame(loop);
+    }
+
+    function actSep1() {
+        if(state.phase !== 1) return;
+        state.phase = 2;
+        log("MECO: 一级关机。");
+        els.flame1.setAttribute("opacity", "0");
+        els.rocket.classList.remove("shake");
+
+        setTimeout(() => {
+            log("分离确认: 一级脱落。");
+            let y = 0; let rot = 0; let op = 1;
+            let timer = setInterval(() => {
+                y += 6; rot += 0.5; op -= 0.02;
+                els.stage1.setAttribute("transform", `translate(0, ${y}) rotate(${rot})`);
+                els.stage1.setAttribute("opacity", op);
+                if(op <= 0) clearInterval(timer);
+            }, 20);
+
+            setTimeout(() => {
+                log("SES-1: 二级点火。");
+                els.flame2.setAttribute("opacity", "1");
+                els.rocket.classList.add("shake");
+            }, 800);
+
+            switchBtn(els.btns.sep1, els.btns.fairing);
+        }, 500);
+    }
+
+    function actFairing() {
+        log("抛整流罩: 分离确认。");
+        let dist = 0; let rot = 0;
+        let timer = setInterval(() => {
+            dist += 4; rot += 2;
+            els.fairingL.setAttribute("transform", `translate(-${dist}, ${dist}) rotate(-${rot} 0 -100)`);
+            els.fairingR.setAttribute("transform", `translate(${dist}, ${dist}) rotate(${rot} 0 -100)`);
+            els.fairingL.setAttribute("opacity", 1 - dist/300);
+            els.fairingR.setAttribute("opacity", 1 - dist/300);
+            if(dist > 300) clearInterval(timer);
+        }, 20);
+        switchBtn(els.btns.fairing, els.btns.deploy);
+    }
+
+    function actDeploy() {
+        state.phase = 3; 
+        log("SECO: 二级关机，入轨成功。");
+        els.flame2.setAttribute("opacity", "0");
+        els.rocket.classList.remove("shake");
+        
+        setTimeout(() => {
+            log("卫星分离: 正在展开太阳能帆板...");
+            els.hingeL.classList.remove("folded-left");
+            els.hingeL.classList.add("deployed");
+            els.hingeR.classList.remove("folded-right");
+            els.hingeR.classList.add("deployed");
+            
+            switchBtn(els.btns.deploy, null);
+            log("任务完成！");
+        }, 1000);
+    }
+
+    function runAuto() {
+        let btn = document.getElementById('btn-auto');
+        btn.disabled = true; btn.innerText = "运行中...";
+        Object.values(els.btns).forEach(b => b.disabled = true);
+        
+        setTimeout(actLaunch, 500);
+        setTimeout(actSep1, 5000);
+        setTimeout(actFairing, 9000);
+        setTimeout(actDeploy, 13000);
+    }
+
+    // --- 游戏循环 ---
+    let horizonY = 460;
+    let starY = 0;
+
+    function loop() {
+        if(!state.flying) return;
+
+        if(state.phase < 3) {
+            state.vel += 0.15;
+            state.alt += state.vel * 0.05;
+        }
+
+        els.alt.innerText = state.alt.toFixed(1) + " km";
+        els.vel.innerText = (state.vel * 10).toFixed(0) + " m/s";
+
+        // 背景运动
+        horizonY += state.vel * 0.8;
+        els.horizon.setAttribute("transform", `translate(400, ${horizonY})`);
+        
+        starY += state.vel * 0.15;
+        els.stars.setAttribute("transform", `translate(0, ${starY % 600})`);
+
+        // 小地图轨迹更新
+        let progress = Math.min(state.alt / 1200, 1);
+        let t = progress;
+        let one_minus_t = 1 - t;
+        
+        // Bezier P0: (20, 180) Launch Site
+        // Bezier P1: (20, 20) Control Point
+        // Bezier P2: (180, 20) Target Orbit
+        
+        let P0x = 20, P1x = 20, P2x = 180;
+        let x = one_minus_t * one_minus_t * P0x + 
+                2 * one_minus_t * t * P1x + 
+                t * t * P2x;
+
+        let P0y = 180, P1y = 20, P2y = 20;
+        let y = one_minus_t * one_minus_t * P0y + 
+                2 * one_minus_t * t * P1y + 
+                t * t * P2y;
+
+        els.miniRocket.setAttribute("cx", x);
+        els.miniRocket.setAttribute("cy", y);
+
+        requestAnimationFrame(loop);
+    }
+</script>
+
+
+<!-- ================= 开物AI科学 · 版权模块（单击显示 / 双击打开官网） ================= -->
+<style id="kaiming-copyright-style">
+  #kaiming-copyright {
+    position: fixed;
+    bottom: 92px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    pointer-events: none;
+    z-index: 999999;
+    transition: opacity 0.45s ease;
+    opacity: 0;
+    display: none;
+  }
+  #kaiming-copyright .inner {
+    display: inline-block;
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #eafaf2;
+    padding: 9px 26px;
+    border-radius: 60px;
+    /* 原稿为 14px；此处改为 16px 以符合本机 verify_html.py 的「字号不得小于 16px」硬规则 */
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.6px;
+    border: 1px solid rgba(255, 245, 210, 0.3);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+    font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+    white-space: nowrap;
+  }
+</style>
+
+<div id="kaiming-copyright">
+  <div class="inner">© 2026 开物AI科学 ｜ AI 赋能 · 教育公平</div>
+</div>
+
+<script id="kaiming-copyright-script">
+(function () {
+  "use strict";
+
+  /* 目标：单击标题 → 显示版权 3.5 秒；双击标题 → 打开 www.kaiwuaiscience.com */
+
+  const HOMEPAGE = "https://www.kaiwuaiscience.com";
+  const SHOW_MS = 3500;      // 版权显示时长
+  const DBL_WINDOW = 280;    // 双击判定的时间窗（毫秒）
+  const FADE_MS = 450;       // 淡出时长，与 CSS transition 一致
+
+  function bindCopyright() {
+    // 首选 #mainTitle（注入脚本会保证它存在）；后三个选择器是手写粘贴时的兜底
+    const title = document.getElementById("mainTitle") ||
+                  document.querySelector("h1, .title, .page-title, .main-title");
+    const box = document.getElementById("kaiming-copyright");
+    if (!title || !box) return;
+
+    title.style.cursor = "pointer";
+    title.style.userSelect = "none";
+    title.style.webkitUserSelect = "none";
+
+    let clickTimer = null;
+    let hideTimer = null;
+    let seq = 0;   // 每次显示/隐藏都 +1，用来作废在飞的定时器
+
+    function showCopyright() {
+      const my = ++seq;
+      if (hideTimer) clearTimeout(hideTimer);
+      box.style.display = "block";
+      /* 强制重绘，让 0 → 1 的淡入真的发生。
+         这里刻意不用 requestAnimationFrame：rAF 在页面不产生新帧时（后台标签页、
+         无头渲染、大屏久置）不保证触发——一旦它晚于下方的隐藏定时器回调，
+         就会把 opacity 又设成 1，导致版权条永久停在屏幕上。 */
+      void box.offsetHeight;
+      box.style.opacity = "1";
+      hideTimer = setTimeout(function () {
+        if (my !== seq) return;      // 期间又被点过，交给新的那一次收尾
+        box.style.opacity = "0";
+        setTimeout(function () {
+          if (my === seq) box.style.display = "none";
+        }, FADE_MS);
+      }, SHOW_MS);
+    }
+
+    function hideCopyright() {
+      const my = ++seq;              // 作废所有在飞的定时器，避免"淡出到一半又被点亮"卡住
+      if (hideTimer) clearTimeout(hideTimer);
+      if (box.style.display !== "block") return;
+      box.style.opacity = "0";
+      setTimeout(function () {
+        if (my === seq) box.style.display = "none";
+      }, FADE_MS);
+    }
+
+    function openHomepage() {
+      // 双击时隐藏版权，并跳转官网
+      hideCopyright();
+      window.open(HOMEPAGE, "_blank", "noopener,noreferrer");
+    }
+
+    title.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (clickTimer) return;   // 已在等待双击窗口，忽略这次单击
+      clickTimer = setTimeout(function () {
+        clickTimer = null;
+        showCopyright();        // 确认是单击
+      }, DBL_WINDOW);
+    });
+
+    title.addEventListener("dblclick", function (e) {
+      e.stopPropagation();
+      if (clickTimer) {         // 取消挂起的单击
+        clearTimeout(clickTimer);
+        clickTimer = null;
+      }
+      openHomepage();
+    });
+
+    // 点击页面其它地方，立即隐藏版权
+    document.addEventListener("click", function (e) {
+      if (e.target === title) return;
+      hideCopyright();
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bindCopyright);
+  } else {
+    bindCopyright();
+  }
+})();
+</script>
+<!-- ================= 开物AI科学 · 版权模块 结束 ================= -->
+
+</body>
+</html>

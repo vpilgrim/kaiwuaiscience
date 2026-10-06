@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>近视的成因 · 眼睛光学模型</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#14110d; --panel:rgba(40,32,22,0.85);
+    --fg:#f4e8d4; --muted:#a89578; --accent:#ffb84d; --accent2:#ff7a3d;
+    --line:rgba(255,184,77,0.18); --ray:#ffd54a; --virtual:#7fc8ff;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html, body{height: 100%; overflow: hidden;}
+  body{
+    background:
+      radial-gradient(ellipse at 15% 0%, rgba(255,140,60,0.10), transparent 55%),
+      radial-gradient(ellipse at 85% 100%, rgba(120,60,30,0.15), transparent 60%),
+      linear-gradient(180deg,#1a1510 0%,#0d0a07 100%);
+    color:var(--fg); font-family:'Noto Sans SC',sans-serif;
+  }
+  .serif{font-family:'Noto Serif SC',serif;}
+  .app{height: 100vh; display: flex; flex-direction: column; padding: 12px 20px; max-width: 1600px; margin: 0 auto;}
+  header{
+    display:flex; align-items:baseline; gap:16px; flex-wrap:wrap;
+    border-bottom:1px solid var(--line); padding-bottom:8px; margin-bottom:10px;
+  }
+  header .badge{
+    font-size:10px; letter-spacing:0.25em; color:var(--accent);
+    border:1px solid var(--accent); padding:3px 8px; border-radius:2px;
+  }
+  header h1{font-family:'Noto Serif SC',serif; font-weight:700; font-size:24px; letter-spacing:0.04em;}
+  .layout{flex: 1; display:grid; grid-template-columns:1fr 260px; gap:14px; min-height: 0;}
+  .stage{
+    background:#0a0805; border:1px solid var(--line); border-radius:6px;
+    overflow:hidden; position:relative; display: flex; flex-direction: column;
+  }
+  .stage-header{
+    padding:6px 14px; border-bottom:1px solid var(--line);
+    display:flex; justify-content:space-between; align-items:center;
+    background:rgba(255,184,77,0.03); flex-shrink: 0;
+  }
+  .stage-title{font-size:11px; letter-spacing:0.2em; color:var(--accent); text-transform:uppercase;}
+  .stage-info{font-size:12px; color:var(--accent2); font-weight: 500;}
+  #canvas{flex: 1; width:100%; background:#0a0805; display:block;}
+  .panel{
+    background:var(--panel); border:1px solid var(--line);
+    border-radius:6px; padding:12px; backdrop-filter:blur(6px); 
+    display: flex; flex-direction: column; overflow-y: auto;
+  }
+  .panel h3{
+    font-family:'Noto Serif SC',serif; font-size:12px; margin:0 0 8px;
+    color:var(--accent); letter-spacing:0.1em; display:flex; align-items:center; gap:6px;
+  }
+  .panel h3::before{content:''; width:3px; height:11px; background:var(--accent);}
+  .panel-section{margin-bottom:12px; padding-bottom:12px; border-bottom:1px dashed var(--line);}
+  .panel-section:last-child{border-bottom:none; margin-bottom:0; padding-bottom:0;}
+  .btn-group{display:grid; grid-template-columns:repeat(2,1fr); gap:5px;}
+  .btn-group.cols-4{grid-template-columns:repeat(4,1fr);}
+  .btn-group.cols-1{grid-template-columns:1fr;}
+  .btn{
+    background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08);
+    color:var(--fg); padding:6px 4px; border-radius:4px; cursor:pointer;
+    font-size:11px; font-family:inherit; transition:all 0.18s ease;
+    text-align:center; user-select:none;
+  }
+  .btn:hover{background:rgba(255,184,77,0.10); border-color:rgba(255,184,77,0.3);}
+  .btn.active{
+    background:linear-gradient(180deg,#ffb84d,#e89a2e); color:#1a1510;
+    border-color:#ffb84d; font-weight:500;
+    box-shadow:0 2px 10px rgba(255,184,77,0.25);
+  }
+  .btn.toggle.active{
+    background:linear-gradient(180deg,#ff7a3d,#d65a25);
+    border-color:#ff7a3d; box-shadow:0 2px 10px rgba(255,122,61,0.3);
+  }
+  .slider-wrap{margin-top:6px;}
+  .slider-wrap .row{display:flex; justify-content:space-between; font-size:10px; color:var(--muted); margin-bottom:2px;}
+  .slider-wrap .val{color:var(--accent); font-weight:500; font-size:12px;}
+  input[type="range"]{width:100%; -webkit-appearance:none; background:transparent; height:14px;}
+  input[type="range"]::-webkit-slider-runnable-track{height:3px; background:rgba(255,255,255,0.1); border-radius:2px;}
+  input[type="range"]::-webkit-slider-thumb{
+    -webkit-appearance:none; width:12px; height:12px; background:var(--accent);
+    border-radius:50%; margin-top:-4px; cursor:pointer;
+    box-shadow:0 0 0 2px rgba(255,184,77,0.2);
+  }
+  input[type="range"]::-moz-range-track{height:3px; background:rgba(255,255,255,0.1); border-radius:2px;}
+  input[type="range"]::-moz-range-thumb{width:12px; height:12px; background:var(--accent); border-radius:50%; border:none; cursor:pointer;}
+  .hint{
+    margin-top:auto; padding:8px 10px; background:rgba(255,184,77,0.05);
+    border-left:2px solid var(--accent); font-size:11px; color:var(--muted); line-height:1.5;
+  }
+  .hint b{color:var(--fg);}
+  .hint .red{color:var(--accent2); font-weight:500;}
+  .hint .blue{color:var(--virtual); font-weight:500;}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="badge">物理 · 八年级</span>
+    <h1 class="serif" id="mainTitle">近视的成因</h1>
+  </header>
+  <div class="layout">
+    <div class="stage">
+      <div class="stage-header">
+        <span class="stage-title">Eye Optical Model</span>
+        <span class="stage-info" id="stageInfo">屈光性近视 · 晶状体过厚</span>
+      </div>
+      <canvas id="canvas"></canvas>
+    </div>
+    <div class="panel">
+      <div class="panel-section">
+        <h3>观察物体</h3>
+        <div class="btn-group cols-4">
+          <button class="btn active" data-obj="A">字母 A</button>
+          <button class="btn" data-obj="candle">蜡烛</button>
+          <button class="btn" data-obj="arrow">箭头</button>
+          <button class="btn" data-obj="tree">小树</button>
+        </div>
+      </div>
+      <div class="panel-section">
+        <h3>近视类型</h3>
+        <div class="btn-group cols-1">
+          <button class="btn active" data-myopia="refractive">屈光性近视（晶状体过厚）</button>
+          <button class="btn" data-myopia="axial">轴性近视（眼轴过长）</button>
+        </div>
+        <div class="slider-wrap" id="axialSlider" style="display:none;">
+          <div class="row">
+            <span>眼轴长度</span>
+            <span><span class="val" id="axialVal">1.10</span> ×</span>
+          </div>
+          <input type="range" id="axialRange" min="1.00" max="1.30" step="0.01" value="1.10">
+        </div>
+      </div>
+      <div class="panel-section">
+        <h3>矫正与对比</h3>
+        <div class="btn-group cols-1">
+          <button class="btn toggle" id="btnLens">佩戴凹透镜矫正</button>
+          <button class="btn toggle" id="btnNormal">显示正常眼对比</button>
+          <button class="btn toggle active" id="btnStructure">显示眼睛结构</button>
+          <button class="btn toggle active" id="btnRays">显示光路</button>
+        </div>
+      </div>
+      <div class="hint" id="hint">
+        <b>当前状态：</b>晶状体过厚，折光能力过强，远处物体的像落在视网膜<span class="red">前方</span>，需佩戴凹透镜矫正。
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+const state = {
+  object: 'A',
+  myopiaType: 'refractive',
+  axialLength: 1.10,
+  addLens: false,
+  showNormal: false,
+  showStructure: true,
+  showRays: true,
+};
+
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let W = 1100, H = 640;
+const BASE = { cy: 0, R: 0, objX: 0, objH: 0 };
+const REF_CX_RATIO = 0.55;
+
+function resizeCanvas() {
+  const stage = document.querySelector('.stage');
+  W = stage.clientWidth;
+  H = stage.clientHeight - 30;
+  canvas.width = W;
+  canvas.height = H;
+  BASE.cy = H * 0.5;
+  BASE.R = Math.min(H * 0.34, 160);
+  BASE.objX = W * 0.05;
+  BASE.objH = BASE.R * 0.7;
+  render();
+}
+window.addEventListener('resize', resizeCanvas);
+
+function getEyeConfig(cx, isMyopia, showConcave) {
+  const R = BASE.R, cy = BASE.cy;
+  const lensX = cx - R * 0.82;
+  const refCx = W * REF_CX_RATIO;
+  const refObjX = W * 0.05;
+  const u = (refCx - R * 0.82) - refObjX;
+  const retinaNormal = cx + R * 0.88;
+  const Dnormal = retinaNormal - lensX;
+
+  let lensThickness = 1.0, Rx = R, ecx = cx, retinaX = retinaNormal;
+
+  if (isMyopia) {
+    if (state.myopiaType === 'refractive') {
+      lensThickness = 1.45;
+    } else if (state.myopiaType === 'axial') {
+      Rx = R * state.axialLength;
+      ecx = cx - R + Rx;
+      retinaX = ecx + Rx - R * 0.08;
+    }
+  }
+
+  let v;
+  if (isMyopia) {
+    if (state.addLens) {
+      v = retinaX - lensX;
+    } else {
+      v = Dnormal * 0.85;
+    }
+  } else {
+    if (state.addLens) {
+      v = Dnormal * 1.15;
+    } else {
+      v = Dnormal;
+    }
+  }
+
+  const imgH = BASE.objH * v / u;
+  const imgX = lensX + v;
+
+  return {
+    cx, cy, R, ecx, Rx, Ry: R, lensX, retinaX, retinaNormal,
+    lensThickness, u, v, imgX, imgH, isMyopia,
+    showConcave: showConcave || false, Dnormal
+  };
+}
+
+function drawObjectShape(centerX, centerY, h, type){
+  ctx.save();
+  const topY = centerY - h/2;
+  const botY = centerY + h/2;
+  switch(type){
+    case 'A':
+      ctx.font = 'bold ' + Math.round(h) + 'px "Noto Serif SC", serif';
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillStyle='#fff8e0';
+      ctx.fillText('A', centerX, centerY);
+      break;
+    case 'candle': {
+      const cw = Math.max(16, h*0.28);
+      const bodyH = h * 0.6;
+      const bodyTop = topY + h * 0.15;
+      ctx.fillStyle='#e8d5b0';
+      ctx.fillRect(centerX - cw/2, bodyTop, cw, bodyH);
+      ctx.strokeStyle='#3a2a1a'; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.moveTo(centerX, bodyTop); ctx.lineTo(centerX, bodyTop - h*0.08); ctx.stroke();
+      const fy = bodyTop - h*0.08;
+      const flameH = h * 0.25;
+      const g = ctx.createRadialGradient(centerX, fy - flameH*0.3, 1, centerX, fy - flameH*0.3, Math.max(4, flameH));
+      g.addColorStop(0,'#fff5b0'); g.addColorStop(0.4,'#ffb84d'); g.addColorStop(1,'rgba(255,90,30,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.ellipse(centerX, fy - flameH*0.35, Math.max(3, h*0.1), Math.max(6, flameH*0.6), 0, 0, Math.PI*2);
+      ctx.fill();
+      ctx.fillStyle='#fff8d0';
+      ctx.beginPath();
+      ctx.ellipse(centerX, fy - flameH*0.2, Math.max(2, h*0.04), Math.max(3, flameH*0.3), 0, 0, Math.PI*2);
+      ctx.fill();
+      ctx.fillStyle='#8a6a4a';
+      ctx.fillRect(centerX - cw/2 - 5, botY - 4, cw + 10, 4);
+      break;
+    }
+    case 'arrow':
+      ctx.strokeStyle='#f4e8d4'; ctx.lineWidth=3;
+      ctx.beginPath(); ctx.moveTo(centerX, botY); ctx.lineTo(centerX, topY + h*0.12); ctx.stroke();
+      ctx.fillStyle='#f4e8d4';
+      ctx.beginPath();
+      ctx.moveTo(centerX, topY);
+      ctx.lineTo(centerX - h*0.12, topY + h*0.2);
+      ctx.lineTo(centerX + h*0.12, topY + h*0.2);
+      ctx.closePath(); ctx.fill();
+      break;
+    case 'tree':
+      ctx.fillStyle='#6a4528';
+      ctx.fillRect(centerX - 3, botY - h*0.3, 6, h*0.3);
+      ctx.fillStyle='#4a7a3a';
+      ctx.beginPath();
+      ctx.moveTo(centerX, topY);
+      ctx.lineTo(centerX - h*0.28, topY + h*0.45);
+      ctx.lineTo(centerX + h*0.28, topY + h*0.45);
+      ctx.closePath(); ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(centerX, topY + h*0.25);
+      ctx.lineTo(centerX - h*0.24, topY + h*0.7);
+      ctx.lineTo(centerX + h*0.24, topY + h*0.7);
+      ctx.closePath(); ctx.fill();
+      break;
+  }
+  ctx.restore();
+}
+
+function drawObject(x, centerY, h, type, inverted){
+  ctx.save();
+  if (inverted){
+    ctx.translate(x, centerY);
+    ctx.scale(1, -1);
+    drawObjectShape(0, 0, h, type);
+  } else {
+    drawObjectShape(x, centerY, h, type);
+  }
+  ctx.restore();
+}
+
+// 模糊的像：保留物体轮廓，但细节看不清
+// 用两层：一层强模糊做底，一层中等模糊叠在上面，保留轮廓感
+function drawBlurObject(x, centerY, h, type, inverted, isMyopia){
+  ctx.save();
+  if (inverted){
+    ctx.translate(x, centerY);
+    ctx.scale(1, -1);
+  }
+
+  // 底层：大模糊，淡淡的轮廓
+  ctx.globalAlpha = 0.45;
+  ctx.filter = 'blur(6px)';
+  drawObjectShape(inverted ? 0 : x, inverted ? 0 : centerY, h, type);
+
+  // 中层：中等模糊，增强轮廓可见度
+  ctx.globalAlpha = 0.45;
+  ctx.filter = 'blur(3px)';
+  drawObjectShape(inverted ? 0 : x, inverted ? 0 : centerY, h, type);
+
+  // 顶层：轻微模糊，让轮廓更可辨但细节仍模糊
+  ctx.globalAlpha = 0.3;
+  ctx.filter = 'blur(1.5px)';
+  drawObjectShape(inverted ? 0 : x, inverted ? 0 : centerY, h, type);
+
+  ctx.restore();
+}
+
+function drawEye(s) {
+  const cx = s.cx, cy = s.cy, R = s.R;
+  const ecx = s.ecx, Rx = s.Rx, Ry = s.Ry;
+  const lensX = s.lensX, retinaX = s.retinaX;
+  const lensThickness = s.lensThickness;
+  ctx.save();
+  const scleraGrad = ctx.createRadialGradient(ecx - R*0.3, cy - R*0.3, R*0.2, ecx, cy, Rx);
+  scleraGrad.addColorStop(0, '#fbf2e2');
+  scleraGrad.addColorStop(0.7, '#f0e3c8');
+  scleraGrad.addColorStop(1, '#d8c8a8');
+  ctx.fillStyle = scleraGrad;
+  ctx.beginPath();
+  ctx.ellipse(ecx, cy, Rx, Ry, 0, 0, Math.PI*2);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(140, 70, 50, 0.32)';
+  ctx.beginPath();
+  ctx.ellipse(ecx, cy, Rx-4, Ry-4, 0, 0, Math.PI*2);
+  ctx.fill();
+  ctx.save();
+  ctx.beginPath();
+  ctx.ellipse(ecx, cy, Rx-4, Ry-4, 0, 0, Math.PI*2);
+  ctx.clip();
+  const retGrad = ctx.createRadialGradient(retinaX, cy, 6, retinaX, cy, Math.max(20, Rx*0.95));
+  retGrad.addColorStop(0, '#e8826a');
+  retGrad.addColorStop(0.5, '#c45a42');
+  retGrad.addColorStop(1, '#8a3a28');
+  ctx.fillStyle = retGrad;
+  ctx.beginPath();
+  ctx.ellipse(ecx, cy, Rx-6, Ry-6, 0, -Math.PI/2.4, Math.PI/2.4);
+  ctx.ellipse(ecx, cy, Rx-14, Ry-14, 0, Math.PI/2.4, -Math.PI/2.4, true);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+  const kcx = cx - R * 0.95;
+  const kr = R * 0.22;
+  const corneaGrad = ctx.createRadialGradient(kcx, cy, kr*0.5, kcx, cy, kr);
+  corneaGrad.addColorStop(0, 'rgba(180,220,230,0.05)');
+  corneaGrad.addColorStop(0.85, 'rgba(150,200,220,0.25)');
+  corneaGrad.addColorStop(1, 'rgba(120,180,210,0.5)');
+  ctx.fillStyle = corneaGrad;
+  ctx.beginPath();
+  ctx.arc(kcx, cy, kr, Math.PI*0.6, Math.PI*1.4, false);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(120,180,210,0.75)'; ctx.lineWidth = 1.5;
+  ctx.stroke();
+  const lensHalfW = Math.max(4, R * 0.1 * lensThickness);
+  const lensHalfH = R * 0.38;
+  const lensGrad = ctx.createRadialGradient(lensX, cy, 5, lensX, cy, lensHalfH);
+  lensGrad.addColorStop(0, 'rgba(255,240,180,0.72)');
+  lensGrad.addColorStop(0.6, 'rgba(255,220,130,0.55)');
+  lensGrad.addColorStop(1, 'rgba(220,180,80,0.42)');
+  ctx.fillStyle = lensGrad;
+  ctx.beginPath();
+  ctx.ellipse(lensX, cy, lensHalfW, lensHalfH, 0, 0, Math.PI*2);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(200,160,60,0.75)'; ctx.lineWidth = 1.3;
+  ctx.stroke();
+  ctx.fillStyle = '#7a3a2a';
+  ctx.beginPath();
+  ctx.moveTo(lensX, cy - lensHalfH);
+  ctx.quadraticCurveTo(lensX - 12, cy - lensHalfH - 14, lensX - 28, cy - lensHalfH - 8);
+  ctx.lineTo(lensX - 32, cy - lensHalfH);
+  ctx.quadraticCurveTo(lensX - 16, cy - lensHalfH + 4, lensX - 6, cy - lensHalfH + 6);
+  ctx.closePath(); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(lensX, cy + lensHalfH);
+  ctx.quadraticCurveTo(lensX - 12, cy + lensHalfH + 14, lensX - 28, cy + lensHalfH + 8);
+  ctx.lineTo(lensX - 32, cy + lensHalfH);
+  ctx.quadraticCurveTo(lensX - 16, cy + lensHalfH - 4, lensX - 6, cy + lensHalfH - 6);
+  ctx.closePath(); ctx.fill();
+  const opticX = ecx + Rx * 0.96;
+  const opticY = cy;
+  ctx.fillStyle = '#f0e0c8';
+  ctx.beginPath();
+  ctx.ellipse(opticX, opticY, 12, 16, 0, 0, Math.PI*2);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(120,80,50,0.5)'; ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.strokeStyle = 'rgba(120,80,50,0.5)'; ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.ellipse(ecx, cy, Rx, Ry, 0, 0, Math.PI*2);
+  ctx.stroke();
+  if (state.showStructure) drawEyeLabels(s, opticX, opticY);
+  ctx.restore();
+}
+
+function drawEyeLabels(s, opticX, opticY){
+  const cx = s.cx, cy = s.cy, R = s.R;
+  const lensX = s.lensX, retinaX = s.retinaX;
+  const ecx = s.ecx, Rx = s.Rx;
+  const lensHalfH = R * 0.38;
+  const kr = R * 0.22;
+  const kcx = cx - R * 0.95;
+  ctx.save();
+  ctx.font = '12px "Noto Sans SC", sans-serif';
+  ctx.lineWidth = 0.8;
+  const labels = [
+    { name:'角膜',     x:kcx - kr*0.5, y:cy - kr*0.86, tx:kcx - kr, ty:cy - R*0.95, align:'center' },
+    { name:'晶状体',   x:lensX,     y:cy - lensHalfH*0.5, tx:lensX - R*0.1, ty:cy - R*1.15, align:'center' },
+    { name:'睫状体',   x:lensX - 28,  y:cy - lensHalfH - 8, tx:lensX - 28, ty:cy - R*1.0, align:'center' },
+    { name:'视网膜',   x:retinaX - 4, y:cy + R*0.3, tx:retinaX + R*0.1, ty:cy - R*1.15, align:'center' },
+    { name:'视神经',   x:opticX, y:opticY + 16, tx:ecx + Rx*1.05, ty:cy + R*0.8, align:'left' },
+  ];
+  labels.forEach(function(l){
+    ctx.strokeStyle = 'rgba(244,232,212,0.4)';
+    ctx.beginPath();
+    ctx.moveTo(l.x, l.y);
+    ctx.lineTo(l.tx, l.ty);
+    ctx.stroke();
+    ctx.fillStyle = '#f4e8d4';
+    ctx.textAlign = l.align;
+    ctx.textBaseline = 'bottom';
+    ctx.fillText(l.name, l.tx, l.ty - 2);
+  });
+  ctx.restore();
+}
+
+function drawConcaveLens(x, cy, h){
+  const w = 10;
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(x - w/2, cy - h/2);
+  ctx.quadraticCurveTo(x - w/2 + 3, cy, x - w/2, cy + h/2);
+  ctx.lineTo(x + w/2, cy + h/2);
+  ctx.quadraticCurveTo(x + w/2 - 3, cy, x + w/2, cy - h/2);
+  ctx.closePath();
+  const g = ctx.createLinearGradient(x - w/2, 0, x + w/2, 0);
+  g.addColorStop(0, 'rgba(150,200,230,0.4)');
+  g.addColorStop(0.5, 'rgba(120,180,220,0.65)');
+  g.addColorStop(1, 'rgba(150,200,230,0.4)');
+  ctx.fillStyle = g; ctx.fill();
+  ctx.strokeStyle = 'rgba(140,195,225,0.9)'; ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.fillStyle = '#9fd0ee';
+  ctx.font = '11px "Noto Sans SC", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('凹透镜', x, cy + h/2 + 16);
+  ctx.restore();
+}
+
+function drawRays(s, objX, objH){
+  if (!state.showRays) return;
+  const lensX = s.lensX, retinaX = s.retinaX;
+  const imgX = s.imgX, imgH = s.imgH;
+  const cy = BASE.cy;
+  const R = s.R;
+  const objTopY = cy - objH/2;
+  const objBotY = cy + objH/2;
+  const imgTopY = cy - imgH/2;
+  const imgBotY = cy + imgH/2;
+  const rayColor = s.isMyopia ? 'rgba(255,213,74,0.92)' : 'rgba(127,200,255,0.75)';
+  const rayExt = s.isMyopia ? 'rgba(255,213,74,0.35)' : 'rgba(127,200,255,0.3)';
+  ctx.save();
+  ctx.lineWidth = 1.8;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  const lensHalfH = R * 0.38;
+
+  var y1ret = null, y2ret = null;
+  var onRetina = false, behindRetina = false, beforeRetina = false;
+
+  if (s.showConcave) {
+    const kcx = s.cx - R * 0.95;
+    const concaveX = kcx - R * 0.25;
+    const concaveH = lensHalfH * 2 * 0.8;
+    drawConcaveLens(concaveX, cy, concaveH);
+    const fConc = R * 1.5;
+
+    ctx.strokeStyle = rayColor;
+    ctx.beginPath();
+    ctx.moveTo(objX, objTopY);
+    ctx.lineTo(concaveX, objTopY);
+    const m1 = (cy - objTopY) / fConc;
+    const yAtLens1 = objTopY + m1 * (lensX - concaveX);
+    ctx.lineTo(lensX, yAtLens1);
+    ctx.lineTo(imgX, imgBotY);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(objX, objBotY);
+    ctx.lineTo(concaveX, objBotY);
+    const m2 = (cy - objBotY) / fConc;
+    const yAtLens2 = objBotY + m2 * (lensX - concaveX);
+    ctx.lineTo(lensX, yAtLens2);
+    ctx.lineTo(imgX, imgTopY);
+    ctx.stroke();
+
+    if (Math.abs(imgX - retinaX) < 2) {
+      onRetina = true;
+    } else if (imgX > retinaX + 2) {
+      behindRetina = true;
+      const m1ret = (imgBotY - yAtLens1) / (imgX - lensX);
+      y1ret = yAtLens1 + m1ret * (retinaX - lensX);
+      const m2ret = (imgTopY - yAtLens2) / (imgX - lensX);
+      y2ret = yAtLens2 + m2ret * (retinaX - lensX);
+    }
+  } else {
+    ctx.strokeStyle = rayColor;
+    ctx.beginPath();
+    ctx.moveTo(objX, objTopY);
+    ctx.lineTo(lensX, objTopY);
+    ctx.lineTo(imgX, imgBotY);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(objX, objBotY);
+    ctx.lineTo(lensX, objBotY);
+    ctx.lineTo(imgX, imgTopY);
+    ctx.stroke();
+
+    if (Math.abs(imgX - retinaX) < 2) {
+      onRetina = true;
+    } else if (imgX < retinaX - 2) {
+      beforeRetina = true;
+      const m1 = (imgBotY - objTopY) / (imgX - lensX);
+      y1ret = objTopY + m1 * (retinaX - lensX);
+      const m2 = (imgTopY - objBotY) / (imgX - lensX);
+      y2ret = objBotY + m2 * (retinaX - lensX);
+
+      ctx.strokeStyle = rayExt;
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(imgX, imgBotY);
+      ctx.lineTo(retinaX, y1ret);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(imgX, imgTopY);
+      ctx.lineTo(retinaX, y2ret);
+      ctx.stroke();
+    }
+  }
+
+  // 像点
+  ctx.fillStyle = s.isMyopia ? '#ff6b3d' : '#7fc8ff';
+  ctx.beginPath();
+  ctx.arc(imgX, imgBotY, 4, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath();
+  ctx.arc(imgX, imgTopY, 4, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(imgX, imgBotY, 4, 0, Math.PI*2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(imgX, imgTopY, 4, 0, Math.PI*2); ctx.stroke();
+
+  // 清晰的倒立像（聚焦点处）
+  ctx.globalAlpha = 0.85;
+  drawObject(imgX, cy, imgH, state.object, true);
+  ctx.globalAlpha = 1;
+
+  // 视网膜上的模糊像：能看到轮廓但看不清细节
+  if (beforeRetina || behindRetina) {
+    var blurH = Math.abs(y1ret - y2ret);
+    if (blurH < objH * 0.4) blurH = objH * 0.4;
+    drawBlurObject(retinaX, cy, blurH, state.object, true, s.isMyopia);
+  }
+
+  ctx.restore();
+}
+
+function drawBackground(){
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,184,77,0.08)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4,6]);
+  ctx.beginPath();
+  ctx.moveTo(20, BASE.cy);
+  ctx.lineTo(W - 20, BASE.cy);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+}
+
+function render(){
+  ctx.fillStyle = '#0a0805';
+  ctx.fillRect(0, 0, W, H);
+  drawBackground();
+
+  if (state.showNormal) {
+    const myopiaObjX = W * 0.04;
+    const myopiaCx = W * 0.28;
+    const myopiaConfig = getEyeConfig(myopiaCx, true, state.addLens);
+    drawObject(myopiaObjX, BASE.cy, BASE.objH, state.object, false);
+    drawEye(myopiaConfig);
+    drawRays(myopiaConfig, myopiaObjX, BASE.objH);
+
+    // 正常眼右移，避免轴性近视眼球变大时重合
+    const normalCx = W * 0.78;
+    const normalLensX = normalCx - BASE.R * 0.82;
+    const myopiaLensX = myopiaCx - BASE.R * 0.82;
+    const distance = myopiaLensX - myopiaObjX;
+    const normalObjX = normalLensX - distance;
+
+    const normalConfig = getEyeConfig(normalCx, false, state.addLens);
+    drawObject(normalObjX, BASE.cy, BASE.objH, state.object, false);
+    drawEye(normalConfig);
+    drawRays(normalConfig, normalObjX, BASE.objH);
+
+    ctx.save();
+    ctx.font = 'bold 14px "Noto Sans SC", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#ff7a3d';
+    ctx.fillText('近视眼', myopiaConfig.cx, BASE.cy - BASE.R - 45);
+    ctx.fillStyle = '#7fc8ff';
+    ctx.fillText('正常眼', normalConfig.cx, BASE.cy - BASE.R - 45);
+    ctx.restore();
+  } else {
+    const myopiaObjX = W * 0.05;
+    const myopiaCx = W * REF_CX_RATIO;
+    const myopiaConfig = getEyeConfig(myopiaCx, true, state.addLens);
+    drawObject(myopiaObjX, BASE.cy, BASE.objH, state.object, false);
+    drawEye(myopiaConfig);
+    drawRays(myopiaConfig, myopiaObjX, BASE.objH);
+  }
+
+  updateInfo();
+}
+
+function updateInfo(){
+  const stageInfo = document.getElementById('stageInfo');
+  const hint = document.getElementById('hint');
+  let infoText, hintText;
+
+  if (state.myopiaType === 'refractive'){
+    if (state.addLens){
+      infoText = '屈光性近视 · 已佩戴凹透镜矫正';
+      if (state.showNormal) {
+        hintText = '<b>当前状态：</b>近视眼佩戴凹透镜后，像恰好落在<b>视网膜上</b>（黄色光线）。正常眼不需要凹透镜，戴上后像落到视网膜<span class="blue">后方</span>（蓝色光线），视网膜上的像模糊不清，反而看不清。';
+      } else {
+        hintText = '<b>当前状态：</b>晶状体过厚导致折光过强。佩戴凹透镜后，光线先<span class="blue">发散</span>再经晶状体会聚，<b>像恰好落在视网膜上</b>，成像清晰。';
+      }
+    } else {
+      infoText = '屈光性近视 · 晶状体过厚';
+      if (state.showNormal) {
+        hintText = '<b>对比：</b>近视眼的像落在视网膜<span class="red">前方</span>（视网膜上的像模糊不清），正常眼的像恰好落在<b>视网膜上</b>（看得清）。';
+      } else {
+        hintText = '<b>当前状态：</b>晶状体过厚，折光能力过强，远处物体的像落在视网膜<span class="red">前方</span>，视网膜上的像模糊不清，需佩戴凹透镜矫正。';
+      }
+    }
+  } else {
+    if (state.addLens){
+      infoText = '轴性近视 · 眼轴 ' + state.axialLength.toFixed(2) + '× · 已矫正';
+      if (state.showNormal) {
+        hintText = '<b>当前状态：</b>近视眼佩戴凹透镜后像落在<b>视网膜上</b>。正常眼戴上凹透镜后像落到视网膜<span class="blue">后方</span>，视网膜上的像模糊不清，反而看不清。';
+      } else {
+        hintText = '<b>当前状态：</b>眼轴过长，视网膜后移。佩戴凹透镜后，光线发散使像<b>后移到视网膜上</b>。';
+      }
+    } else {
+      infoText = '轴性近视 · 眼轴 ' + state.axialLength.toFixed(2) + '×';
+      if (state.showNormal) {
+        if (Math.abs(state.axialLength - 1.0) < 0.005) {
+          hintText = '<b>对比：</b>当前眼轴正常，像落在视网膜上。请拖动滑块增加眼轴长度，观察像与视网膜的位置变化。';
+        } else {
+          hintText = '<b>对比：</b>眼轴过长，视网膜后移，像落在视网膜<span class="red">前方</span>（视网膜上的像模糊不清）。正常眼像落在<b>视网膜上</b>。';
+        }
+      } else {
+        if (Math.abs(state.axialLength - 1.0) < 0.005) {
+          hintText = '<b>当前状态：</b>眼轴长度正常，<b>像恰好落在视网膜上</b>。请向右拖动滑块增加眼轴长度，观察像与视网膜的位置关系。';
+        } else {
+          hintText = '<b>当前状态：</b>眼轴过长（' + state.axialLength.toFixed(2) + ' 倍），视网膜后移，像落在视网膜<span class="red">前方</span>，视网膜上的像模糊不清。';
+        }
+      }
+    }
+  }
+  stageInfo.innerHTML = infoText;
+  hint.innerHTML = hintText;
+}
+
+document.querySelectorAll('[data-obj]').forEach(function(b){
+  b.addEventListener('click', function(){
+    document.querySelectorAll('[data-obj]').forEach(function(x){x.classList.remove('active');});
+    b.classList.add('active');
+    state.object = b.dataset.obj;
+    render();
+  });
+});
+
+document.querySelectorAll('[data-myopia]').forEach(function(b){
+  b.addEventListener('click', function(){
+    document.querySelectorAll('[data-myopia]').forEach(function(x){x.classList.remove('active');});
+    b.classList.add('active');
+    state.myopiaType = b.dataset.myopia;
+    if (state.myopiaType === 'axial') {
+      state.axialLength = 1.10;
+      document.getElementById('axialRange').value = 1.10;
+      document.getElementById('axialVal').textContent = '1.10';
+    }
+    document.getElementById('axialSlider').style.display = state.myopiaType === 'axial' ? 'block' : 'none';
+    render();
+  });
+});
+
+var axialRange = document.getElementById('axialRange');
+var axialVal = document.getElementById('axialVal');
+axialRange.addEventListener('input', function(){
+  state.axialLength = parseFloat(axialRange.value);
+  axialVal.textContent = state.axialLength.toFixed(2);
+  render();
+});
+
+function setupToggle(id, key){
+  var btn = document.getElementById(id);
+  btn.addEventListener('click', function(){
+    state[key] = !state[key];
+    btn.classList.toggle('active', state[key]);
+    render();
+  });
+}
+setupToggle('btnLens', 'addLens');
+setupToggle('btnNormal', 'showNormal');
+setupToggle('btnStructure', 'showStructure');
+setupToggle('btnRays', 'showRays');
+
+setTimeout(resizeCanvas, 0);
+</script>
+<!-- ================= 开物AI科学 · 版权模块（单击显示 / 双击打开官网） ================= -->
+<style id="kaiming-copyright-style">
+  #kaiming-copyright {
+    position: fixed;
+    bottom: 26px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    pointer-events: none;
+    z-index: 999999;
+    transition: opacity 0.45s ease;
+    opacity: 0;
+    display: none;
+  }
+  #kaiming-copyright .inner {
+    display: inline-block;
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #eafaf2;
+    padding: 9px 26px;
+    border-radius: 60px;
+    /* 原稿为 14px；此处改为 16px 以符合本机 verify_html.py 的「字号不得小于 16px」硬规则 */
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.6px;
+    border: 1px solid rgba(255, 245, 210, 0.3);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+    font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+    white-space: nowrap;
+  }
+</style>
+
+<div id="kaiming-copyright">
+  <div class="inner">© 2026 开物AI科学 ｜ AI 赋能 · 教育公平</div>
+</div>
+
+<script id="kaiming-copyright-script">
+(function () {
+  "use strict";
+
+  /* 目标：单击标题 → 显示版权 3.5 秒；双击标题 → 打开 www.kaiwuaiscience.com */
+
+  const HOMEPAGE = "https://www.kaiwuaiscience.com";
+  const SHOW_MS = 3500;      // 版权显示时长
+  const DBL_WINDOW = 280;    // 双击判定的时间窗（毫秒）
+  const FADE_MS = 450;       // 淡出时长，与 CSS transition 一致
+
+  function bindCopyright() {
+    // 首选 #mainTitle（注入脚本会保证它存在）；后三个选择器是手写粘贴时的兜底
+    const title = document.getElementById("mainTitle") ||
+                  document.querySelector("h1, .title, .page-title, .main-title");
+    const box = document.getElementById("kaiming-copyright");
+    if (!title || !box) return;
+
+    title.style.cursor = "pointer";
+    title.style.userSelect = "none";
+    title.style.webkitUserSelect = "none";
+
+    let clickTimer = null;
+    let hideTimer = null;
+    let seq = 0;   // 每次显示/隐藏都 +1，用来作废在飞的定时器
+
+    function showCopyright() {
+      const my = ++seq;
+      if (hideTimer) clearTimeout(hideTimer);
+      box.style.display = "block";
+      /* 强制重绘，让 0 → 1 的淡入真的发生。
+         这里刻意不用 requestAnimationFrame：rAF 在页面不产生新帧时（后台标签页、
+         无头渲染、大屏久置）不保证触发——一旦它晚于下方的隐藏定时器回调，
+         就会把 opacity 又设成 1，导致版权条永久停在屏幕上。 */
+      void box.offsetHeight;
+      box.style.opacity = "1";
+      hideTimer = setTimeout(function () {
+        if (my !== seq) return;      // 期间又被点过，交给新的那一次收尾
+        box.style.opacity = "0";
+        setTimeout(function () {
+          if (my === seq) box.style.display = "none";
+        }, FADE_MS);
+      }, SHOW_MS);
+    }
+
+    function hideCopyright() {
+      const my = ++seq;              // 作废所有在飞的定时器，避免"淡出到一半又被点亮"卡住
+      if (hideTimer) clearTimeout(hideTimer);
+      if (box.style.display !== "block") return;
+      box.style.opacity = "0";
+      setTimeout(function () {
+        if (my === seq) box.style.display = "none";
+      }, FADE_MS);
+    }
+
+    function openHomepage() {
+      // 双击时隐藏版权，并跳转官网
+      hideCopyright();
+      window.open(HOMEPAGE, "_blank", "noopener,noreferrer");
+    }
+
+    title.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (clickTimer) return;   // 已在等待双击窗口，忽略这次单击
+      clickTimer = setTimeout(function () {
+        clickTimer = null;
+        showCopyright();        // 确认是单击
+      }, DBL_WINDOW);
+    });
+
+    title.addEventListener("dblclick", function (e) {
+      e.stopPropagation();
+      if (clickTimer) {         // 取消挂起的单击
+        clearTimeout(clickTimer);
+        clickTimer = null;
+      }
+      openHomepage();
+    });
+
+    // 点击页面其它地方，立即隐藏版权
+    document.addEventListener("click", function (e) {
+      if (e.target === title) return;
+      hideCopyright();
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bindCopyright);
+  } else {
+    bindCopyright();
+  }
+})();
+</script>
+<!-- ================= 开物AI科学 · 版权模块 结束 ================= -->
+
+</body>
+</html>

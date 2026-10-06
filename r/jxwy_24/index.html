@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>《影子的形成》教学演示实验</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Three.js 核心库 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- 引入 OrbitControls 鼠标控制插件 -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #111; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        #canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
+        #ui-panel { z-index: 10; }
+        input[type=range] { accent-color: #3b82f6; }
+        .glass-panel {
+            background: rgba(31, 41, 55, 0.85);
+            backdrop-filter: blur(10px);
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="text-white">
+
+    <!-- 3D 渲染容器 -->
+    <div id="canvas-container"></div>
+
+    <!-- 左侧主标题 -->
+    <div class="absolute top-6 left-6 z-10 pointer-events-none">
+        <h1 class="text-3xl font-bold text-blue-400 drop-shadow-lg" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.8);" id="mainTitle">《影子的形成》</h1>
+    </div>
+
+    <!-- 右侧控制面板 (精简布局以防出现滚动条) -->
+    <div id="ui-panel" class="absolute top-0 right-0 w-80 h-full glass-panel p-4 flex flex-col justify-center shadow-2xl transition-transform duration-300">
+        
+        <!-- 1. 光源控制 -->
+        <div class="mb-3 bg-gray-800 rounded-lg p-3 border border-gray-700">
+            <h2 class="text-base font-semibold mb-2 flex items-center text-yellow-300">
+                <span class="mr-2">💡</span> 光源控制 (手电筒)
+            </h2>
+            
+            <div class="mb-2">
+                <label class="block text-xs mb-1 flex justify-between">
+                    <span>光源距离 (远近)</span> <span id="val-r" class="text-blue-300">20</span>
+                </label>
+                <input type="range" id="light-r" min="10" max="40" step="0.5" value="20" class="w-full h-1">
+            </div>
+
+            <div class="mb-2">
+                <label class="block text-xs mb-1 flex justify-between">
+                    <span>高低角度 (上下)</span> <span id="val-phi" class="text-blue-300">0°</span>
+                </label>
+                <input type="range" id="light-phi" min="-80" max="80" step="1" value="0" class="w-full h-1">
+            </div>
+
+            <div class="mb-2">
+                <label class="block text-xs mb-1 flex justify-between">
+                    <span>左右角度 (水平)</span> <span id="val-theta" class="text-blue-300">0°</span>
+                </label>
+                <input type="range" id="light-theta" min="-80" max="80" step="1" value="0" class="w-full h-1">
+            </div>
+            
+            <div class="flex items-center mt-2">
+                <input type="checkbox" id="toggle-beam" checked class="mr-2 w-3 h-3 accent-yellow-400">
+                <label for="toggle-beam" class="text-xs cursor-pointer">显示中心主光束</label>
+            </div>
+            <div class="flex items-center mt-1.5">
+                <input type="checkbox" id="toggle-edge-beam" checked class="mr-2 w-3 h-3 accent-cyan-400">
+                <label for="toggle-edge-beam" class="text-xs cursor-pointer text-cyan-300">显示边缘光束路径 (虚线)</label>
+            </div>
+        </div>
+
+        <!-- 2. 遮挡物控制 -->
+        <div class="mb-3 bg-gray-800 rounded-lg p-3 border border-gray-700">
+            <h2 class="text-base font-semibold mb-2 flex items-center text-orange-300">
+                <span class="mr-2">🧱</span> 遮挡物
+            </h2>
+            
+            <!-- 横向单选：形状选择 -->
+            <div class="mb-3">
+                <label class="block text-xs mb-1">形状选择</label>
+                <div class="flex space-x-1">
+                    <label class="flex-1 cursor-pointer">
+                        <input type="radio" name="obj-shape" value="cube" class="peer sr-only" checked>
+                        <div class="text-center py-1 rounded bg-gray-700 border border-gray-600 text-xs text-gray-300 peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-500 transition">正方体</div>
+                    </label>
+                    <label class="flex-1 cursor-pointer">
+                        <input type="radio" name="obj-shape" value="sphere" class="peer sr-only">
+                        <div class="text-center py-1 rounded bg-gray-700 border border-gray-600 text-xs text-gray-300 peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-500 transition">球体</div>
+                    </label>
+                    <label class="flex-1 cursor-pointer">
+                        <input type="radio" name="obj-shape" value="cylinder" class="peer sr-only">
+                        <div class="text-center py-1 rounded bg-gray-700 border border-gray-600 text-xs text-gray-300 peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-500 transition">圆柱体</div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 横向单选：材质属性 -->
+            <div class="mb-1">
+                <label class="block text-xs mb-1">材质属性</label>
+                <div class="flex space-x-1">
+                    <label class="flex-1 cursor-pointer">
+                        <input type="radio" name="obj-material" value="opaque" class="peer sr-only" checked>
+                        <div class="text-center py-1 rounded bg-gray-700 border border-gray-600 text-xs text-gray-300 peer-checked:bg-orange-600 peer-checked:text-white peer-checked:border-orange-500 transition">木块</div>
+                    </label>
+                    <label class="flex-1 cursor-pointer">
+                        <input type="radio" name="obj-material" value="translucent" class="peer sr-only">
+                        <div class="text-center py-1 rounded bg-gray-700 border border-gray-600 text-xs text-gray-300 peer-checked:bg-orange-600 peer-checked:text-white peer-checked:border-orange-500 transition">塑料</div>
+                    </label>
+                    <label class="flex-1 cursor-pointer">
+                        <input type="radio" name="obj-material" value="transparent" class="peer sr-only">
+                        <div class="text-center py-1 rounded bg-gray-700 border border-gray-600 text-xs text-gray-300 peer-checked:bg-orange-600 peer-checked:text-white peer-checked:border-orange-500 transition">玻璃</div>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. 投影屏控制 -->
+        <div class="mb-3 bg-gray-800 rounded-lg p-3 border border-gray-700">
+            <h2 class="text-base font-semibold mb-2 flex items-center text-green-300">
+                <span class="mr-2">🖼️</span> 投影屏
+            </h2>
+            
+            <!-- 横向单选：屏幕透光性 -->
+            <div class="mb-1">
+                <label class="block text-xs mb-1">屏幕透光性</label>
+                <div class="flex space-x-1">
+                    <label class="flex-1 cursor-pointer">
+                        <input type="radio" name="screen-material" value="opaque" class="peer sr-only" checked>
+                        <div class="text-center py-1 rounded bg-gray-700 border border-gray-600 text-xs text-gray-300 peer-checked:bg-green-600 peer-checked:text-white peer-checked:border-green-500 transition">白板</div>
+                    </label>
+                    <label class="flex-1 cursor-pointer">
+                        <input type="radio" name="screen-material" value="translucent" class="peer sr-only">
+                        <div class="text-center py-1 rounded bg-gray-700 border border-gray-600 text-xs text-gray-300 peer-checked:bg-green-600 peer-checked:text-white peer-checked:border-green-500 transition">毛玻璃</div>
+                    </label>
+                    <label class="flex-1 cursor-pointer">
+                        <input type="radio" name="screen-material" value="transparent" class="peer sr-only">
+                        <div class="text-center py-1 rounded bg-gray-700 border border-gray-600 text-xs text-gray-300 peer-checked:bg-green-600 peer-checked:text-white peer-checked:border-green-500 transition">玻璃</div>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- 操作说明 -->
+        <div class="mt-2 p-2 bg-blue-900 bg-opacity-30 rounded text-xs text-blue-200 border border-blue-800">
+            <strong>📸 视角：</strong> 左键旋转 | 滚轮缩放 | 右键平移
+        </div>
+        
+        <button id="reset-cam" class="w-full mt-3 bg-gray-700 hover:bg-gray-600 text-white font-semibold py-1.5 px-4 rounded text-sm transition duration-200">
+            重置观察视角
+        </button>
+    </div>
+
+    <!-- 左下角实验发现开关与面板 -->
+    <div class="absolute bottom-6 left-6 z-10">
+        <button id="toggle-findings" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded shadow-lg transition duration-200 flex items-center">
+            💡 <span id="findings-btn-text" class="ml-2">显示实验发现</span>
+        </button>
+        
+        <div id="findings-panel" class="hidden mt-3 bg-gray-900 bg-opacity-90 p-4 rounded-lg border border-gray-600 max-w-md shadow-xl transition-opacity duration-300">
+            <h3 class="text-yellow-400 font-bold mb-2">📝 实验发现：</h3>
+            <ul class="text-sm space-y-2 text-gray-200">
+                <li>1. 改变光源远近：光源越近，影子越<span class="text-white font-bold text-lg">大</span>；光源越远，影子越<span class="text-white font-bold text-lg">小</span>。</li>
+                <li>2. 改变照射角度：影子的方向总是和光源方向<span class="text-blue-300 font-bold">相反</span>，并且长度会随角度变化。</li>
+                <li>3. 遮挡物透光性：只有不透明或半透明的物体才能在屏上形成明显的影子。</li>
+                <li>4. 影子产生的三个必要条件：<span class="text-blue-300 font-bold">光源</span>、<span class="text-orange-300 font-bold">遮挡物</span>、<span class="text-green-300 font-bold">屏</span>。</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // --- 初始化 Three.js 场景 ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x1a1a1a);
+        scene.fog = new THREE.Fog(0x1a1a1a, 20, 80);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const defaultCamPos = new THREE.Vector3(25, 20, 25);
+        camera.position.copy(defaultCamPos);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.target.set(0, 10, -5);
+        controls.update();
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        // --- 场景元素构建 ---
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.15);
+        scene.add(ambientLight);
+
+        const targetObject = new THREE.Object3D();
+        targetObject.position.set(0, 10, 0); 
+        scene.add(targetObject);
+
+        const spotLight = new THREE.SpotLight(0xffffee, 2.5);
+        spotLight.position.set(0, 5, 15);
+        spotLight.angle = Math.PI / 7;
+        spotLight.penumbra = 0.3;
+        spotLight.decay = 1;
+        spotLight.distance = 100;
+        spotLight.castShadow = true;
+        spotLight.shadow.mapSize.width = 2048;
+        spotLight.shadow.mapSize.height = 2048;
+        spotLight.shadow.camera.near = 1;
+        spotLight.shadow.camera.far = 50;
+        spotLight.shadow.bias = -0.001;
+        spotLight.target = targetObject;
+        scene.add(spotLight);
+
+        const spotLightHelper = new THREE.SpotLightHelper(spotLight, 0xffff00);
+        scene.add(spotLightHelper);
+
+        // 边缘光束（虚线）系统
+        const edgeBeamsGroup = new THREE.Group();
+        const edgeBeams = [];
+        const beamMaterial = new THREE.LineDashedMaterial({
+            color: 0x00ffff, // 青色光束
+            linewidth: 1,
+            scale: 1,
+            dashSize: 0.8,
+            gapSize: 0.5,
+            transparent: true,
+            opacity: 0.8
+        });
+
+        // 准备 4 条虚线射线
+        for (let i = 0; i < 4; i++) {
+            const geo = new THREE.BufferGeometry();
+            const positions = new Float32Array(6); // 起点和终点 (x,y,z)
+            geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            const line = new THREE.Line(geo, beamMaterial);
+            edgeBeams.push(line);
+            edgeBeamsGroup.add(line);
+        }
+        scene.add(edgeBeamsGroup);
+
+        const flashlightGroup = new THREE.Group();
+        // 修正手电筒模型：前大后小，发光面朝向正前方(+Z方向)
+        const bodyGeo = new THREE.CylinderGeometry(0.8, 0.5, 3, 32);
+        const bodyMat = new THREE.MeshStandardMaterial({ color: 0x555555, metalness: 0.8, roughness: 0.2 });
+        const bodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
+        bodyMesh.rotation.x = Math.PI / 2;
+        bodyMesh.position.z = 0;
+        const lensGeo = new THREE.SphereGeometry(0.75, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2);
+        const lensMat = new THREE.MeshBasicMaterial({ color: 0xffffee });
+        const lensMesh = new THREE.Mesh(lensGeo, lensMat);
+        lensMesh.rotation.x = Math.PI / 2;
+        lensMesh.position.z = 1.45; // 放在手电筒最前端
+        flashlightGroup.add(bodyMesh);
+        flashlightGroup.add(lensMesh);
+        scene.add(flashlightGroup);
+
+        // 遮挡物
+        let currentObstacle;
+        let obstacleEdges; // 存放透明/半透明时的轮廓边线
+        const obstacleMaterials = {
+            opaque: new THREE.MeshStandardMaterial({ color: 0xe74c3c, roughness: 0.6 }),
+            // 新增半透明材质
+            translucent: new THREE.MeshPhysicalMaterial({
+                color: 0x88ccff, transparent: true, opacity: 0.6, roughness: 0.4, transmission: 0.5
+            }),
+            transparent: new THREE.MeshPhysicalMaterial({ 
+                color: 0xffffff, transparent: true, opacity: 0.15, roughness: 0.0, transmission: 1.0, ior: 1.5 
+            })
+        };
+
+        function createObstacle(shapeType, materialType) {
+            if (currentObstacle) scene.remove(currentObstacle);
+            
+            let geometry;
+            switch(shapeType) {
+                case 'sphere': geometry = new THREE.SphereGeometry(2, 32, 32); break;
+                case 'cylinder': geometry = new THREE.CylinderGeometry(1.5, 1.5, 4, 32); break;
+                case 'cube': default: geometry = new THREE.BoxGeometry(3.5, 3.5, 3.5); break;
+            }
+
+            currentObstacle = new THREE.Mesh(geometry, obstacleMaterials[materialType]);
+            currentObstacle.position.set(0, 10, 0);
+            
+            // 物理规律：不透明和半透明可以产生影子，全透明不产生
+            currentObstacle.castShadow = (materialType !== 'transparent'); 
+            currentObstacle.receiveShadow = true;
+
+            // 为半透明和透明材质增加白色轮廓线，使其更明显
+            if (materialType === 'transparent' || materialType === 'translucent') {
+                const edgesGeo = new THREE.EdgesGeometry(geometry);
+                const edgesMat = new THREE.LineBasicMaterial({ 
+                    color: 0xffffff, 
+                    transparent: true, 
+                    opacity: materialType === 'transparent' ? 0.9 : 0.5 
+                });
+                obstacleEdges = new THREE.LineSegments(edgesGeo, edgesMat);
+                currentObstacle.add(obstacleEdges); // 添加为子元素，会跟着一起自转
+            }
+            
+            scene.add(currentObstacle);
+            updateEdgeBeams(); // 重新计算边缘射线
+        }
+        createObstacle('cube', 'opaque');
+
+        // 投影屏
+        const screenGeometry = new THREE.PlaneGeometry(35, 20);
+        const screenMaterials = {
+            opaque: new THREE.MeshStandardMaterial({ color: 0xdddddd, side: THREE.DoubleSide }),
+            translucent: new THREE.MeshStandardMaterial({ color: 0xeeeeee, transparent: true, opacity: 0.6, side: THREE.DoubleSide }),
+            transparent: new THREE.MeshStandardMaterial({ color: 0xaaaaaa, transparent: true, opacity: 0.1, side: THREE.DoubleSide })
+        };
+        
+        const mainScreen = new THREE.Mesh(screenGeometry, screenMaterials.opaque);
+        mainScreen.position.set(0, 10, -10);
+        mainScreen.receiveShadow = true;
+        scene.add(mainScreen);
+
+        const screenEdges = new THREE.EdgesGeometry(screenGeometry);
+        const screenLine = new THREE.LineSegments(screenEdges, new THREE.LineBasicMaterial({ color: 0x00aaff, linewidth: 2 }));
+        screenLine.position.copy(mainScreen.position);
+        scene.add(screenLine);
+
+        const backWallGeo = new THREE.PlaneGeometry(80, 40);
+        const backWallMat = new THREE.MeshStandardMaterial({ color: 0x334455 });
+        const backWall = new THREE.Mesh(backWallGeo, backWallMat);
+        backWall.position.set(0, 20, -25);
+        backWall.receiveShadow = true;
+        scene.add(backWall);
+
+        const floorGeo = new THREE.PlaneGeometry(80, 80);
+        const floorMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.8, metalness: 0.2 });
+        const floor = new THREE.Mesh(floorGeo, floorMat);
+        floor.rotation.x = -Math.PI / 2;
+        floor.receiveShadow = true;
+        scene.add(floor);
+
+        const gridHelper = new THREE.GridHelper(80, 40, 0x444444, 0x444444);
+        gridHelper.position.y = 0.01;
+        scene.add(gridHelper);
+
+        // --- UI 交互与逻辑 ---
+
+        const elR = document.getElementById('light-r');
+        const elPhi = document.getElementById('light-phi');
+        const elTheta = document.getElementById('light-theta');
+        const valR = document.getElementById('val-r');
+        const valPhi = document.getElementById('val-phi');
+        const valTheta = document.getElementById('val-theta');
+
+        // 获取当前选中的单选框值
+        function getRadioValue(name) {
+            const el = document.querySelector(`input[name="${name}"]:checked`);
+            return el ? el.value : '';
+        }
+
+        // 更新光源及辅助线：改用球面坐标系，保证距离恒定
+        function updateLightPosition() {
+            const r = parseFloat(elR.value);
+            const phiDeg = parseFloat(elPhi.value);
+            const thetaDeg = parseFloat(elTheta.value);
+            
+            valR.textContent = r; 
+            valPhi.textContent = phiDeg + '°'; 
+            valTheta.textContent = thetaDeg + '°';
+
+            // 角度转弧度
+            const phi = phiDeg * Math.PI / 180;
+            const theta = thetaDeg * Math.PI / 180;
+
+            const cx = targetObject.position.x;
+            const cy = targetObject.position.y;
+            const cz = targetObject.position.z;
+
+            // 球面坐标转笛卡尔坐标
+            const y = cy + r * Math.sin(phi);
+            const h = r * Math.cos(phi); // 水平分量半径
+            const x = cx + h * Math.sin(theta);
+            const z = cz + h * Math.cos(theta);
+
+            spotLight.position.set(x, y, z);
+            flashlightGroup.position.copy(spotLight.position);
+            flashlightGroup.lookAt(targetObject.position);
+            spotLightHelper.update();
+            updateEdgeBeams(); // 光源移动时更新边缘光束
+        }
+
+        // 核心逻辑：计算并更新掠过遮挡物边缘的 4 条射线
+        function updateEdgeBeams() {
+            if (!document.getElementById('toggle-edge-beam').checked) {
+                edgeBeamsGroup.visible = false;
+                return;
+            }
+            edgeBeamsGroup.visible = true;
+
+            const L = spotLight.position; // 光源位置
+            const C = targetObject.position; // 物体中心
+            const D = new THREE.Vector3().subVectors(C, L).normalize(); // 光源到物体的方向
+            
+            // 建立一个基于光束方向的局部坐标系
+            const up = new THREE.Vector3(0, 1, 0);
+            let right = new THREE.Vector3().crossVectors(D, up);
+            if (right.lengthSq() < 0.001) right.set(1, 0, 0); // 防止从正上方打光时出错
+            else right.normalize();
+            const realUp = new THREE.Vector3().crossVectors(right, D).normalize();
+
+            // 根据形状估算轮廓半径
+            let r = 2.0; 
+            const shape = getRadioValue('obj-shape');
+            if (shape === 'cube') r = 2.4; 
+            if (shape === 'cylinder') r = 1.6;
+
+            // 获取垂直于光束方向的四个边缘控制点
+            const pts = [
+                new THREE.Vector3().copy(C).addScaledVector(realUp, r),
+                new THREE.Vector3().copy(C).addScaledVector(realUp, -r),
+                new THREE.Vector3().copy(C).addScaledVector(right, r),
+                new THREE.Vector3().copy(C).addScaledVector(right, -r)
+            ];
+
+            // 绘制 4 条边缘光束线
+            for (let i = 0; i < 4; i++) {
+                const P = pts[i];
+                // 射线的方向向量 (光源 -> 边缘点)
+                const dir = new THREE.Vector3().subVectors(P, L).normalize();
+                
+                // 计算与投影屏幕平面 (Z = -10) 的交点
+                let t = (-10 - L.z) / dir.z;
+                if (t < 0) t = 100; // 如果光在屏后面，给个默认远点
+                
+                const hit = new THREE.Vector3().copy(L).addScaledVector(dir, t);
+
+                const positions = edgeBeams[i].geometry.attributes.position.array;
+                // 起点：光源
+                positions[0] = L.x; positions[1] = L.y; positions[2] = L.z;
+                // 终点：屏幕上的交点
+                positions[3] = hit.x; positions[4] = hit.y; positions[5] = hit.z;
+                
+                edgeBeams[i].geometry.attributes.position.needsUpdate = true;
+                edgeBeams[i].computeLineDistances(); // 更新虚线材质距离
+            }
+        }
+
+        elR.addEventListener('input', updateLightPosition);
+        elPhi.addEventListener('input', updateLightPosition);
+        elTheta.addEventListener('input', updateLightPosition);
+
+        document.getElementById('toggle-beam').addEventListener('change', (e) => {
+            spotLightHelper.visible = e.target.checked;
+        });
+        document.getElementById('toggle-edge-beam').addEventListener('change', updateEdgeBeams);
+
+        // 监听单选按钮的变化
+        document.querySelectorAll('input[name="obj-shape"]').forEach(radio => {
+            radio.addEventListener('change', () => {
+                createObstacle(getRadioValue('obj-shape'), getRadioValue('obj-material'));
+            });
+        });
+
+        document.querySelectorAll('input[name="obj-material"]').forEach(radio => {
+            radio.addEventListener('change', () => {
+                createObstacle(getRadioValue('obj-shape'), getRadioValue('obj-material'));
+            });
+        });
+
+        document.querySelectorAll('input[name="screen-material"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                const type = e.target.value;
+                mainScreen.material = screenMaterials[type];
+                mainScreen.receiveShadow = (type !== 'transparent'); 
+            });
+        });
+
+        document.getElementById('reset-cam').addEventListener('click', () => {
+            camera.position.copy(defaultCamPos);
+            controls.target.set(0, 10, -5);
+            controls.update();
+        });
+
+        // 实验发现 面板切换逻辑
+        const btnFindings = document.getElementById('toggle-findings');
+        const panelFindings = document.getElementById('findings-panel');
+        const textFindings = document.getElementById('findings-btn-text');
+        
+        btnFindings.addEventListener('click', () => {
+            if (panelFindings.classList.contains('hidden')) {
+                panelFindings.classList.remove('hidden');
+                textFindings.textContent = '隐藏实验发现';
+                btnFindings.classList.replace('bg-blue-600', 'bg-red-600');
+                btnFindings.classList.replace('hover:bg-blue-500', 'hover:bg-red-500');
+            } else {
+                panelFindings.classList.add('hidden');
+                textFindings.textContent = '显示实验发现';
+                btnFindings.classList.replace('bg-red-600', 'bg-blue-600');
+                btnFindings.classList.replace('hover:bg-red-500', 'hover:bg-blue-500');
+            }
+        });
+
+        updateLightPosition();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }, false);
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (currentObstacle) {
+                currentObstacle.rotation.y += 0.005;
+                currentObstacle.rotation.x += 0.002;
+            }
+            controls.update();
+            if (spotLightHelper.visible) spotLightHelper.update(); 
+            renderer.render(scene, camera);
+        }
+        animate();
+    </script>
+
+
+<!-- ================= 开物AI科学 · 版权模块（单击显示 / 双击打开官网） ================= -->
+<style id="kaiming-copyright-style">
+  #kaiming-copyright {
+    position: fixed;
+    bottom: 26px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    pointer-events: none;
+    z-index: 999999;
+    transition: opacity 0.45s ease;
+    opacity: 0;
+    display: none;
+  }
+  #kaiming-copyright .inner {
+    display: inline-block;
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #eafaf2;
+    padding: 9px 26px;
+    border-radius: 60px;
+    /* 原稿为 14px；此处改为 16px 以符合本机 verify_html.py 的「字号不得小于 16px」硬规则 */
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.6px;
+    border: 1px solid rgba(255, 245, 210, 0.3);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+    font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+    white-space: nowrap;
+  }
+</style>
+
+<div id="kaiming-copyright">
+  <div class="inner">© 2026 开物AI科学 ｜ AI 赋能 · 教育公平</div>
+</div>
+
+<script id="kaiming-copyright-script">
+(function () {
+  "use strict";
+
+  /* 目标：单击标题 → 显示版权 3.5 秒；双击标题 → 打开 www.kaiwuaiscience.com */
+
+  const HOMEPAGE = "https://www.kaiwuaiscience.com";
+  const SHOW_MS = 3500;      // 版权显示时长
+  const DBL_WINDOW = 280;    // 双击判定的时间窗（毫秒）
+  const FADE_MS = 450;       // 淡出时长，与 CSS transition 一致
+
+  function bindCopyright() {
+    // 首选 #mainTitle（注入脚本会保证它存在）；后三个选择器是手写粘贴时的兜底
+    const title = document.getElementById("mainTitle") ||
+                  document.querySelector("h1, .title, .page-title, .main-title");
+    const box = document.getElementById("kaiming-copyright");
+    if (!title || !box) return;
+
+    title.style.cursor = "pointer";
+    title.style.userSelect = "none";
+    title.style.webkitUserSelect = "none";
+    /* 有些 3D 页面把 HUD 浮层（标题就在里面）设成 pointer-events:none，
+       好让鼠标事件穿透给下层画布；结果标题被"穿透"了——用户点它时事件落到画布上，
+       单击毫无反应，页面看起来就像没加版权。在标题自身把指针事件打开即可
+       （CSS 里后代可以覆盖祖先的 none，无需改动页面原有样式）。 */
+    title.style.pointerEvents = "auto";
+
+    let clickTimer = null;
+    let hideTimer = null;
+    let seq = 0;   // 每次显示/隐藏都 +1，用来作废在飞的定时器
+
+    function showCopyright() {
+      const my = ++seq;
+      if (hideTimer) clearTimeout(hideTimer);
+      box.style.display = "block";
+      /* 强制重绘，让 0 → 1 的淡入真的发生。
+         这里刻意不用 requestAnimationFrame：rAF 在页面不产生新帧时（后台标签页、
+         无头渲染、大屏久置）不保证触发——一旦它晚于下方的隐藏定时器回调，
+         就会把 opacity 又设成 1，导致版权条永久停在屏幕上。 */
+      void box.offsetHeight;
+      box.style.opacity = "1";
+      hideTimer = setTimeout(function () {
+        if (my !== seq) return;      // 期间又被点过，交给新的那一次收尾
+        box.style.opacity = "0";
+        setTimeout(function () {
+          if (my === seq) box.style.display = "none";
+        }, FADE_MS);
+      }, SHOW_MS);
+    }
+
+    function hideCopyright() {
+      const my = ++seq;              // 作废所有在飞的定时器，避免"淡出到一半又被点亮"卡住
+      if (hideTimer) clearTimeout(hideTimer);
+      if (box.style.display !== "block") return;
+      box.style.opacity = "0";
+      setTimeout(function () {
+        if (my === seq) box.style.display = "none";
+      }, FADE_MS);
+    }
+
+    function openHomepage() {
+      // 双击时隐藏版权，并跳转官网
+      hideCopyright();
+      window.open(HOMEPAGE, "_blank", "noopener,noreferrer");
+    }
+
+    title.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (clickTimer) return;   // 已在等待双击窗口，忽略这次单击
+      clickTimer = setTimeout(function () {
+        clickTimer = null;
+        showCopyright();        // 确认是单击
+      }, DBL_WINDOW);
+    });
+
+    title.addEventListener("dblclick", function (e) {
+      e.stopPropagation();
+      if (clickTimer) {         // 取消挂起的单击
+        clearTimeout(clickTimer);
+        clickTimer = null;
+      }
+      openHomepage();
+    });
+
+    // 点击页面其它地方，立即隐藏版权
+    document.addEventListener("click", function (e) {
+      if (e.target === title) return;
+      hideCopyright();
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bindCopyright);
+  } else {
+    bindCopyright();
+  }
+})();
+</script>
+<!-- ================= 开物AI科学 · 版权模块 结束 ================= -->
+
+</body>
+</html>

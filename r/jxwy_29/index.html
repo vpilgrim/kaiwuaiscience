@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>物理互动实验：近视的成因与矫正</title>
+    <style>
+        /* 强制网页占满全屏且绝对禁止滚动 */
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            background-color: #eef2f5;
+            color: #333;
+        }
+        #simulation-area {
+            flex: 1;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            background: radial-gradient(circle at center, #ffffff 0%, #e6e9ec 100%);
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        /* Canvas 采用 1920x960 极高分辨率，保证线条清晰且最大化利用屏幕 */
+        canvas {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            border-radius: 12px;
+            background-color: #ffffff;
+        }
+        #controls-area {
+            width: 380px; 
+            flex-shrink: 0;
+            height: 100%;
+            background-color: #1e293b;
+            color: #f8fafc;
+            padding: 25px 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            box-shadow: -5px 0 15px rgba(0,0,0,0.1);
+        }
+        h2 {
+            margin: 0 0 5px 0;
+            font-size: 1.35rem;
+            text-align: center;
+            color: #38bdf8;
+            font-weight: 600;
+        }
+        .instruction {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+        .divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #475569, transparent);
+            margin-bottom: 5px;
+        }
+        button {
+            background-color: #334155;
+            color: white;
+            border: 1px solid #475569;
+            padding: 16px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.05rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        button:hover {
+            background-color: #475569;
+            transform: translateY(-1px);
+        }
+        button.active {
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+            font-weight: bold;
+            border-color: transparent;
+        }
+        #btnNormal.active { background-color: #10b981; }
+        #btnMyopiaRefractive.active { background-color: #f59e0b; }
+        #btnMyopiaAxial.active { background-color: #ef4444; }
+        
+        #btnLens.active { background-color: #0ea5e9; border-color: #0ea5e9; }
+        #btnRays.active { background-color: #8b5cf6; border-color: #8b5cf6; }
+        #btnObject { background-color: #3b82f6; border-color: #3b82f6; }
+        #btnObject:hover { background-color: #2563eb; }
+
+        input[type="range"] {
+            width: 100%;
+            cursor: pointer;
+            accent-color: #ef4444;
+            margin-top: 10px;
+        }
+        .slider-container {
+            background-color: #0f172a;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 5px;
+        }
+        label {
+            font-size: 0.95rem;
+            color: #cbd5e1;
+            display: flex;
+            justify-content: space-between;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="simulation-area">
+        <canvas id="eyeCanvas" width="1920" height="960"></canvas>
+    </div>
+
+    <div id="controls-area">
+        <h2 id="mainTitle">近视成因与矫正实验</h2>
+        <div class="instruction">点击选择 1~2 个模型进行横向对比</div>
+        <div class="divider"></div>
+        
+        <button id="btnNormal" class="active">1. 正常视力模型 <span style="font-size: 0.85rem;">✔️</span></button>
+        <button id="btnMyopiaRefractive">2. 屈光度近视 (晶状体厚) <span style="font-size: 0.85rem;"></span></button>
+        
+        <div style="display: flex; flex-direction: column;">
+            <button id="btnMyopiaAxial" style="border-bottom-left-radius: 0; border-bottom-right-radius: 0;">3. 轴性近视 (眼轴长) <span style="font-size: 0.85rem;"></span></button>
+            <div id="axisControl" class="slider-container" style="display: none; border: 1px solid #ef4444; border-top: none; border-top-left-radius: 0; border-top-right-radius: 0;">
+                <label for="axisSlider">
+                    <span>眼轴拉长距离</span>
+                    <span id="axisValue" style="color: #fca5a5; font-weight: bold;">+60 mm</span>
+                </label>
+                <input type="range" id="axisSlider" min="20" max="100" value="60">
+            </div>
+        </div>
+
+        <div class="divider" style="margin-top: 10px;"></div>
+
+        <button id="btnLens">佩戴凹透镜片 (近视眼镜)</button>
+        <!-- 默认加上 active 类名，并修改默认文字 -->
+        <button id="btnRays" class="active">隐藏光路图</button>
+        <button id="btnObject">切换观察物体 <span id="objTag" style="font-size:0.9rem; color:#bae6fd;">(当前: 字母 A)</span></button>
+
+    </div>
+
+    <script>
+        const canvas = document.getElementById('eyeCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let state = {
+            activeModels: ['normal'], 
+            hasGlasses: false,
+            showRays: true, // 默认开启光路图
+            objectType: 'A',
+            showLabels: true,
+            axisExtension: 60 
+        };
+
+        const MODEL_NAMES = {
+            'normal': '正常视力模型',
+            'refractive': '屈光度近视 (晶状体变厚)',
+            'axial': '轴性近视 (眼轴过长)'
+        };
+
+        const btnNormal = document.getElementById('btnNormal');
+        const btnMyopiaRefractive = document.getElementById('btnMyopiaRefractive');
+        const btnMyopiaAxial = document.getElementById('btnMyopiaAxial');
+        const axisControl = document.getElementById('axisControl');
+        const axisSlider = document.getElementById('axisSlider');
+        const axisValue = document.getElementById('axisValue');
+        
+        const btnLens = document.getElementById('btnLens');
+        const btnRays = document.getElementById('btnRays');
+        const btnObject = document.getElementById('btnObject');
+        const objTag = document.getElementById('objTag');
+
+        function toggleModel(mode) {
+            if (state.activeModels.includes(mode)) {
+                if (state.activeModels.length > 1) {
+                    state.activeModels = state.activeModels.filter(m => m !== mode);
+                }
+            } else {
+                if (state.activeModels.length >= 2) {
+                    state.activeModels.shift();
+                }
+                state.activeModels.push(mode);
+            }
+            updateUI();
+            draw();
+        }
+
+        function updateUI() {
+            [
+                { id: 'normal', btn: btnNormal },
+                { id: 'refractive', btn: btnMyopiaRefractive },
+                { id: 'axial', btn: btnMyopiaAxial }
+            ].forEach(item => {
+                if (state.activeModels.includes(item.id)) {
+                    item.btn.classList.add('active');
+                    item.btn.querySelector('span').innerText = '✔️';
+                } else {
+                    item.btn.classList.remove('active');
+                    item.btn.querySelector('span').innerText = '';
+                }
+            });
+
+            if (state.activeModels.includes('axial')) {
+                axisControl.style.display = 'block';
+            } else {
+                axisControl.style.display = 'none';
+            }
+        }
+
+        btnNormal.onclick = () => toggleModel('normal');
+        btnMyopiaRefractive.onclick = () => toggleModel('refractive');
+        btnMyopiaAxial.onclick = () => toggleModel('axial');
+
+        axisSlider.oninput = (e) => {
+            state.axisExtension = parseInt(e.target.value);
+            axisValue.innerText = `+${state.axisExtension} mm`;
+            draw();
+        };
+
+        btnLens.onclick = () => {
+            state.hasGlasses = !state.hasGlasses;
+            btnLens.classList.toggle('active');
+            btnLens.innerText = state.hasGlasses ? '摘下凹透镜片' : '佩戴凹透镜片 (近视眼镜)';
+            draw();
+        };
+
+        btnRays.onclick = () => {
+            state.showRays = !state.showRays;
+            btnRays.classList.toggle('active');
+            btnRays.innerText = state.showRays ? '隐藏光路图' : '显示光路图 (虚线)';
+            draw();
+        };
+
+        btnObject.onclick = () => {
+            state.objectType = state.objectType === 'A' ? 'Candle' : 'A';
+            objTag.innerText = state.objectType === 'A' ? '(当前: 字母 A)' : '(当前: 蜡烛)';
+            draw();
+        };
+
+        // ================= 渲染引擎 =================
+        function drawModel(mode) {
+            const centerY = 500;     
+            const objX = 60;         
+            const eyeX = 550;        
+            const baseRadius = 190;  
+            
+            const currentRadiusX = baseRadius + (mode === 'axial' ? state.axisExtension : 0);
+            const corneaX = eyeX - baseRadius - 20; 
+            const irisX = corneaX + 60;
+            const lensX = irisX + 20;
+            const glassesX = corneaX - 95; 
+            const retinaX = eyeX + currentRadiusX; 
+
+            let focalX = eyeX + baseRadius; 
+            if (mode === 'refractive') focalX -= 65; 
+            if (state.hasGlasses) focalX += 65; 
+
+            let isBlurry = Math.abs(focalX - retinaX) > 12;
+
+            // --- 1. 绘制物体 ---
+            ctx.save();
+            ctx.translate(objX, centerY);
+            if (state.objectType === 'A') {
+                ctx.fillStyle = '#ef4444';
+                ctx.font = 'bold 180px Arial'; 
+                ctx.textBaseline = 'alphabetic';
+                ctx.fillText('A', -50, 60);
+            } else {
+                ctx.fillStyle = '#f59e0b';
+                ctx.fillRect(-20, -50, 40, 120); 
+                const flameGrad = ctx.createRadialGradient(0, -80, 5, 0, -80, 35);
+                flameGrad.addColorStop(0, '#ffffff');
+                flameGrad.addColorStop(0.4, '#fbbf24');
+                flameGrad.addColorStop(1, 'transparent');
+                ctx.fillStyle = flameGrad;
+                ctx.beginPath(); ctx.arc(0, -80, 35, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = '#ef4444';
+                ctx.beginPath();
+                ctx.moveTo(0, -115);
+                ctx.quadraticCurveTo(20, -50, 0, -50);
+                ctx.quadraticCurveTo(-20, -50, 0, -115);
+                ctx.fill(); 
+            }
+            ctx.restore();
+
+            // --- 2. 绘制眼镜 ---
+            if (state.hasGlasses) {
+                ctx.beginPath();
+                ctx.moveTo(glassesX, centerY - 110);
+                ctx.quadraticCurveTo(glassesX + 25, centerY, glassesX, centerY + 110);
+                ctx.lineTo(glassesX - 16, centerY + 110);
+                ctx.quadraticCurveTo(glassesX + 8, centerY, glassesX - 16, centerY - 110);
+                ctx.closePath();
+                const glassGrad = ctx.createLinearGradient(glassesX-20, centerY-110, glassesX+20, centerY+110);
+                glassGrad.addColorStop(0, 'rgba(255,255,255,0.8)');
+                glassGrad.addColorStop(0.5, 'rgba(14, 165, 233, 0.3)');
+                glassGrad.addColorStop(1, 'rgba(255,255,255,0.8)');
+                ctx.fillStyle = glassGrad; ctx.fill();
+                ctx.lineWidth = 3; ctx.strokeStyle = '#0ea5e9'; ctx.stroke();
+                
+                // 已经删除镜架（镜腿）的绘制代码，保证凹透镜后方干净
+            }
+
+            // --- 3. 绘制眼球 ---
+            ctx.fillStyle = '#db2777'; 
+            ctx.beginPath();
+            ctx.moveTo(eyeX - 30, centerY - baseRadius + 10);
+            ctx.quadraticCurveTo(eyeX + 80, centerY - baseRadius - 45, eyeX + 180, centerY - baseRadius - 25);
+            ctx.lineTo(eyeX + 180, centerY - baseRadius + 20);
+            ctx.quadraticCurveTo(eyeX + 80, centerY - baseRadius, eyeX, centerY - baseRadius + 20);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(eyeX - 30, centerY + baseRadius - 10);
+            ctx.quadraticCurveTo(eyeX + 80, centerY + baseRadius + 45, eyeX + 180, centerY + baseRadius + 25);
+            ctx.lineTo(eyeX + 180, centerY + baseRadius - 20);
+            ctx.quadraticCurveTo(eyeX + 80, centerY + baseRadius, eyeX, centerY + baseRadius - 20);
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.ellipse(eyeX, centerY, currentRadiusX, baseRadius, 0, 0, Math.PI * 2);
+            ctx.fillStyle = '#f8fafc'; ctx.fill();
+            ctx.lineWidth = 6; ctx.strokeStyle = '#cbd5e1'; ctx.stroke();
+
+            ctx.beginPath(); ctx.arc(eyeX - currentRadiusX + 5, centerY, 80, -Math.PI/2, Math.PI/2);
+            ctx.fillStyle = '#f8fafc'; ctx.fill();
+
+            ctx.beginPath(); ctx.moveTo(eyeX + currentRadiusX, centerY - 25); ctx.lineTo(eyeX + currentRadiusX, centerY + 25);
+            ctx.lineWidth = 10; ctx.strokeStyle = '#f8fafc'; ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(eyeX + currentRadiusX - 4, centerY + 25);
+            ctx.quadraticCurveTo(eyeX + currentRadiusX + 50, centerY + 30, eyeX + currentRadiusX + 100, centerY + 50);
+            ctx.lineTo(eyeX + currentRadiusX + 100, centerY - 50);
+            ctx.quadraticCurveTo(eyeX + currentRadiusX + 50, centerY - 35, eyeX + currentRadiusX - 4, centerY - 25);
+            const nerveGrad = ctx.createLinearGradient(eyeX+currentRadiusX, centerY, eyeX+currentRadiusX+100, centerY);
+            nerveGrad.addColorStop(0, '#fef3c7'); nerveGrad.addColorStop(1, '#fde68a');
+            ctx.fillStyle = nerveGrad; ctx.fill();
+            ctx.lineWidth = 4; ctx.strokeStyle = '#fbbf24'; ctx.stroke();
+
+            ctx.lineWidth = 7; ctx.strokeStyle = '#ef4444'; 
+            ctx.beginPath(); ctx.ellipse(eyeX, centerY, currentRadiusX-7, baseRadius-7, 0, -Math.PI+0.6, -0.15, false); ctx.stroke();
+            ctx.beginPath(); ctx.ellipse(eyeX, centerY, currentRadiusX-7, baseRadius-7, 0, Math.PI-0.6, 0.15, true); ctx.stroke();
+            ctx.lineWidth = 6; ctx.strokeStyle = '#fbbf24';
+            ctx.beginPath(); ctx.ellipse(eyeX, centerY, currentRadiusX-14, baseRadius-14, 0, -Math.PI/2-0.2, -0.2, false); ctx.stroke();
+            ctx.beginPath(); ctx.ellipse(eyeX, centerY, currentRadiusX-14, baseRadius-14, 0, Math.PI/2+0.2, 0.2, true); ctx.stroke();
+
+            ctx.beginPath();
+            ctx.arc(eyeX - baseRadius + 22, centerY, 85, Math.PI/2 - 0.9, -Math.PI/2 + 0.9, true);
+            ctx.fillStyle = 'rgba(224, 247, 250, 0.6)'; ctx.fill();
+            ctx.lineWidth = 6; ctx.strokeStyle = 'rgba(125, 211, 252, 0.9)'; ctx.stroke();
+
+            ctx.fillStyle = '#4f46e5'; 
+            ctx.beginPath(); ctx.ellipse(irisX, centerY-55, 7, 30, 0, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.ellipse(irisX, centerY+55, 7, 30, 0, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#b91c1c';
+            ctx.beginPath(); ctx.ellipse(irisX+12, centerY-88, 18, 26, Math.PI/5, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.ellipse(irisX+12, centerY+88, 18, 26, -Math.PI/5, 0, Math.PI*2); ctx.fill();
+
+            let lensThickness = mode === 'refractive' ? 44 : 26; 
+            const lensGrad = ctx.createRadialGradient(lensX, centerY, 0, lensX, centerY, 75);
+            lensGrad.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+            lensGrad.addColorStop(1, 'rgba(186, 230, 253, 0.7)');
+            ctx.beginPath();
+            ctx.ellipse(lensX, centerY, lensThickness, 65, 0, 0, Math.PI*2);
+            ctx.fillStyle = lensGrad; ctx.fill();
+            ctx.lineWidth = 2.5; ctx.strokeStyle = '#38bdf8'; ctx.stroke();
+
+            ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 2;
+            for(let i=0; i<8; i++) {
+                ctx.beginPath(); ctx.moveTo(irisX+14+i*2.5, centerY-75); ctx.lineTo(lensX, centerY-60+i*2.5); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(irisX+14+i*2.5, centerY+75); ctx.lineTo(lensX, centerY+60-i*2.5); ctx.stroke();
+            }
+
+            // --- 4. 绘制视网膜成像 ---
+            ctx.save();
+            ctx.translate(retinaX - 16, centerY); 
+            ctx.scale(-0.5, -0.5); 
+            
+            if (isBlurry) {
+                let blurAmount = Math.min(Math.abs(focalX - retinaX) * 0.18, 12); 
+                ctx.filter = `blur(${blurAmount}px)`;
+                ctx.globalAlpha = 0.65;
+            }
+
+            if (state.objectType === 'A') {
+                ctx.fillStyle = '#ef4444';
+                ctx.font = 'bold 180px Arial';
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText('A', 0, 0);
+            } else {
+                ctx.fillStyle = '#f59e0b'; ctx.fillRect(-20, -50, 40, 120); 
+                const flameGrad = ctx.createRadialGradient(0, -80, 5, 0, -80, 35);
+                flameGrad.addColorStop(0, '#ffffff'); flameGrad.addColorStop(0.4, '#fbbf24'); flameGrad.addColorStop(1, 'transparent');
+                ctx.fillStyle = flameGrad; ctx.beginPath(); ctx.arc(0, -80, 35, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.moveTo(0, -115); ctx.quadraticCurveTo(20, -50, 0, -50); ctx.quadraticCurveTo(-20, -50, 0, -115); ctx.fill(); 
+            }
+            ctx.restore();
+
+            // --- 5. 绘制光路图 ---
+            if (state.showRays) {
+                const rayStartX = objX + (state.objectType==='A'? -15 : 0);
+                const startYTop = centerY - 65;
+                const startYBot = centerY + 65;
+                
+                ctx.setLineDash([12, 8]);
+                ctx.lineWidth = 4;
+                
+                const drawRay = (yOffset, color) => {
+                    ctx.strokeStyle = color;
+                    ctx.beginPath();
+                    ctx.moveTo(rayStartX, yOffset);
+                    if (state.hasGlasses) {
+                        ctx.lineTo(glassesX, yOffset);
+                        const divergeY = yOffset + (yOffset > centerY ? 35 : -35); 
+                        ctx.lineTo(lensX, divergeY);
+                        ctx.lineTo(focalX, centerY);
+                        if (focalX < retinaX + 30) {
+                            const slope = (centerY - divergeY) / (focalX - lensX);
+                            const finalY = centerY + slope * (retinaX - focalX);
+                            ctx.lineTo(retinaX, finalY);
+                        }
+                    } else {
+                        ctx.lineTo(lensX, yOffset);
+                        ctx.lineTo(focalX, centerY);
+                        if (focalX < retinaX + 30) {
+                            const slope = (centerY - yOffset) / (focalX - lensX);
+                            const finalY = centerY + slope * (retinaX - focalX);
+                            ctx.lineTo(retinaX, finalY);
+                        }
+                    }
+                    ctx.stroke();
+                };
+
+                drawRay(startYTop, '#ef4444');
+                drawRay(startYBot, '#3b82f6');
+                ctx.setLineDash([]);
+            }
+
+            // --- 6. 绘制文字标题与标签 ---
+            ctx.fillStyle = '#1e293b';
+            ctx.font = 'bold 40px sans-serif'; 
+            ctx.textAlign = 'center';
+            ctx.fillText(MODEL_NAMES[mode], eyeX, 120); 
+
+            if (state.showLabels) {
+                ctx.font = 'bold 20px sans-serif';
+                ctx.fillStyle = '#475569';
+                ctx.fillText('角膜', corneaX - 15, centerY - 140);
+                ctx.fillText('晶状体', lensX, centerY - 145);
+                ctx.fillStyle = '#d97706';
+                ctx.fillText('视网膜', retinaX - 35, centerY - 155);
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const numModels = state.activeModels.length;
+            
+            if (numModels === 1) {
+                ctx.save();
+                ctx.translate(canvas.width / 2 - 480, 0); 
+                drawModel(state.activeModels[0]);
+                ctx.restore();
+            } else if (numModels === 2) {
+                ctx.save();
+                ctx.translate(20, 0); 
+                drawModel(state.activeModels[0]);
+                ctx.restore();
+
+                ctx.save();
+                ctx.translate(canvas.width / 2 + 20, 0); 
+                drawModel(state.activeModels[1]);
+                ctx.restore();
+                
+                ctx.beginPath();
+                ctx.moveTo(canvas.width / 2, 60);
+                ctx.lineTo(canvas.width / 2, canvas.height - 60);
+                ctx.strokeStyle = '#cbd5e1';
+                ctx.lineWidth = 3;
+                ctx.setLineDash([20, 20]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+        }
+
+        updateUI();
+        draw();
+    </script>
+<!-- ================= 开物AI科学 · 版权模块（单击显示 / 双击打开官网） ================= -->
+<style id="kaiming-copyright-style">
+  #kaiming-copyright {
+    position: fixed;
+    bottom: 26px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    pointer-events: none;
+    z-index: 999999;
+    transition: opacity 0.45s ease;
+    opacity: 0;
+    display: none;
+  }
+  #kaiming-copyright .inner {
+    display: inline-block;
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #eafaf2;
+    padding: 9px 26px;
+    border-radius: 60px;
+    /* 原稿为 14px；此处改为 16px 以符合本机 verify_html.py 的「字号不得小于 16px」硬规则 */
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.6px;
+    border: 1px solid rgba(255, 245, 210, 0.3);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+    font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+    white-space: nowrap;
+  }
+</style>
+
+<div id="kaiming-copyright">
+  <div class="inner">© 2026 开物AI科学 ｜ AI 赋能 · 教育公平</div>
+</div>
+
+<script id="kaiming-copyright-script">
+(function () {
+  "use strict";
+
+  /* 目标：单击标题 → 显示版权 3.5 秒；双击标题 → 打开 www.kaiwuaiscience.com */
+
+  const HOMEPAGE = "https://www.kaiwuaiscience.com";
+  const SHOW_MS = 3500;      // 版权显示时长
+  const DBL_WINDOW = 280;    // 双击判定的时间窗（毫秒）
+  const FADE_MS = 450;       // 淡出时长，与 CSS transition 一致
+
+  function bindCopyright() {
+    // 首选 #mainTitle（注入脚本会保证它存在）；后三个选择器是手写粘贴时的兜底
+    const title = document.getElementById("mainTitle") ||
+                  document.querySelector("h1, .title, .page-title, .main-title");
+    const box = document.getElementById("kaiming-copyright");
+    if (!title || !box) return;
+
+    title.style.cursor = "pointer";
+    title.style.userSelect = "none";
+    title.style.webkitUserSelect = "none";
+
+    let clickTimer = null;
+    let hideTimer = null;
+    let seq = 0;   // 每次显示/隐藏都 +1，用来作废在飞的定时器
+
+    function showCopyright() {
+      const my = ++seq;
+      if (hideTimer) clearTimeout(hideTimer);
+      box.style.display = "block";
+      /* 强制重绘，让 0 → 1 的淡入真的发生。
+         这里刻意不用 requestAnimationFrame：rAF 在页面不产生新帧时（后台标签页、
+         无头渲染、大屏久置）不保证触发——一旦它晚于下方的隐藏定时器回调，
+         就会把 opacity 又设成 1，导致版权条永久停在屏幕上。 */
+      void box.offsetHeight;
+      box.style.opacity = "1";
+      hideTimer = setTimeout(function () {
+        if (my !== seq) return;      // 期间又被点过，交给新的那一次收尾
+        box.style.opacity = "0";
+        setTimeout(function () {
+          if (my === seq) box.style.display = "none";
+        }, FADE_MS);
+      }, SHOW_MS);
+    }
+
+    function hideCopyright() {
+      const my = ++seq;              // 作废所有在飞的定时器，避免"淡出到一半又被点亮"卡住
+      if (hideTimer) clearTimeout(hideTimer);
+      if (box.style.display !== "block") return;
+      box.style.opacity = "0";
+      setTimeout(function () {
+        if (my === seq) box.style.display = "none";
+      }, FADE_MS);
+    }
+
+    function openHomepage() {
+      // 双击时隐藏版权，并跳转官网
+      hideCopyright();
+      window.open(HOMEPAGE, "_blank", "noopener,noreferrer");
+    }
+
+    title.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (clickTimer) return;   // 已在等待双击窗口，忽略这次单击
+      clickTimer = setTimeout(function () {
+        clickTimer = null;
+        showCopyright();        // 确认是单击
+      }, DBL_WINDOW);
+    });
+
+    title.addEventListener("dblclick", function (e) {
+      e.stopPropagation();
+      if (clickTimer) {         // 取消挂起的单击
+        clearTimeout(clickTimer);
+        clickTimer = null;
+      }
+      openHomepage();
+    });
+
+    // 点击页面其它地方，立即隐藏版权
+    document.addEventListener("click", function (e) {
+      if (e.target === title) return;
+      hideCopyright();
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bindCopyright);
+  } else {
+    bindCopyright();
+  }
+})();
+</script>
+<!-- ================= 开物AI科学 · 版权模块 结束 ================= -->
+
+</body>
+</html>

@@ -1,0 +1,573 @@
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智慧课堂：专注森林专业版</title>
+    <style>
+        :root {
+            --apple-green: #34C759;
+            --apple-blue: #007AFF;
+            --apple-red: #FF3B30;
+            --apple-gray: #8E8E93;
+            --bg-glass: rgba(255, 255, 255, 0.75);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: #1d1d1f;
+        }
+
+        .container {
+            background: var(--bg-glass);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            padding: 25px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
+            width: 98%;
+            max-width: 1200px;
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            grid-template-rows: auto 1fr;
+            grid-template-areas: 
+                "header header"
+                "sidebar main";
+            gap: 20px;
+            height: 90vh;
+        }
+
+        .header { grid-area: header; display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; border-bottom: 1px solid rgba(0,0,0,0.05); }
+        .header h1 { font-size: 22px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+
+        .class-selector { display: flex; gap: 8px; }
+        select { padding: 6px 12px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.1); background: white; cursor: pointer; font-size: 14px; }
+
+        .sidebar { grid-area: sidebar; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; }
+        .main-content { grid-area: main; background: rgba(255, 255, 255, 0.5); border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 15px; position: relative; overflow: hidden; }
+
+        .card { background: white; border-radius: 18px; padding: 18px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        
+        #status-box { font-weight: 600; text-align: center; padding: 12px; border-radius: 12px; transition: all 0.3s; margin-bottom: 10px; font-size: 15px; }
+        .status-quiet { background: #e8f5e9; color: var(--apple-green); border: 1px solid #c8e6c9; }
+        .status-loud { background: #ffebee; color: var(--apple-red); border: 1px solid #ffcdd2; }
+
+        .btn { width: 100%; padding: 12px; border-radius: 12px; border: none; font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 14px; }
+        .btn-primary { background: var(--apple-blue); color: white; }
+        .btn-secondary { background: #f2f2f7; color: #007AFF; }
+        .btn-reset { background: #f2f2f7; color: #1d1d1f; }
+        .btn:active { transform: scale(0.98); }
+
+        #forest { flex-grow: 1; background: white; border-radius: 16px; padding: 15px; display: flex; flex-wrap: wrap; gap: 8px; align-content: flex-start; overflow-y: auto; border: 1px solid rgba(0,0,0,0.03); }
+        .tree { font-size: 34px; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+
+        @keyframes popIn { 0% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+
+        .progress-bar-bg { height: 12px; background: #e5e5ea; border-radius: 6px; overflow: hidden; margin: 10px 0; border: 1px solid rgba(0,0,0,0.05); }
+        #progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #34C759, #30b14d); transition: width 0.3s; }
+
+        .volume-meter { height: 14px; background: #eee; border-radius: 7px; overflow: hidden; position: relative; border: 1px solid rgba(0,0,0,0.05); margin-bottom: 4px;}
+        #volume-fill { 
+            height: 100%; 
+            width: 0%; 
+            background: linear-gradient(90deg, #34C759 0%, #FFCC00 40%, #FF9500 70%, #FF3B30 100%); 
+            transition: width 0.08s ease-out;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        #report-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.4); backdrop-filter: blur(5px);
+            display: none; justify-content: center; align-items: center; z-index: 1000;
+        }
+        .report-modal {
+            background: white; padding: 25px; border-radius: 24px; width: 95%; max-width: 850px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2); position: relative;
+        }
+        .close-btn { position: absolute; top: 15px; right: 15px; cursor: pointer; font-size: 20px; color: #888; }
+        
+        .chart-container { width: 100%; overflow-x: auto; margin: 15px 0; padding-bottom: 10px; background: #fafafa; border-radius: 12px; border: 1px solid #eee; }
+        #history-canvas { min-width: 700px; height: 300px; }
+
+        .log-list { max-height: 150px; overflow-y: auto; font-size: 13px; border-top: 1px solid #eee; padding-top: 10px; }
+        .log-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #fafafa; }
+
+        input[type="range"] { accent-color: var(--apple-blue); height: 6px; cursor: pointer; margin: 10px 0;}
+        
+        /* 布局修复：居中对齐数值 */
+        .control-row { display: flex; flex-direction: column; align-items: center; width: 100%; }
+        .control-label-text { font-size: 13px; font-weight: 600; color: #8E8E93; margin-bottom: 4px; }
+        .value-badge { 
+            background: #f2f2f7; 
+            padding: 4px 15px; 
+            border-radius: 20px; 
+            color: var(--apple-blue); 
+            font-weight: 700;
+            font-family: 'SF Mono', monospace; 
+            font-size: 16px;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header class="header">
+            <h1 id="mainTitle">🌲 智慧课堂：专注森林</h1>
+            <div class="class-selector">
+                <select id="grade-select"><option value="1">一年级</option><option value="2">二年级</option><option value="3">三年级</option><option value="4">四年级</option><option value="5">五年级</option><option value="6">六年级</option></select>
+                <select id="class-select"></select>
+                <button class="btn btn-secondary" style="width:auto; padding:6px 15px" onclick="toggleReport(true)">📊 全量趋势图</button>
+            </div>
+        </header>
+
+        <aside class="sidebar">
+            <div id="status-box" class="status-quiet">等待开启监测</div>
+            <button id="start-btn" class="btn btn-primary">开始专注监测</button>
+
+            <div class="card">
+                <!-- 实时音量居中对齐 -->
+                <div class="control-row" style="margin-bottom: 10px;">
+                    <span class="control-label-text">当前音量强度</span>
+                    <div class="value-badge"><span id="volume-val">0</span></div>
+                    <div class="volume-meter" style="width:100%"><div id="volume-fill"></div></div>
+                </div>
+                
+                <hr style="border:0; border-top:1px solid #f0f0f0; margin:15px 0">
+
+                <!-- 阈值居中对齐 -->
+                <div class="control-row">
+                    <span class="control-label-text">专注阈值 (dB)</span>
+                    <div class="value-badge"><span id="threshold-val">25</span></div>
+                    <input type="range" id="threshold-slider" min="5" max="80" value="25" style="width:100%">
+                </div>
+
+                <div style="height:15px"></div>
+
+                <!-- 时间居中对齐 -->
+                <div class="control-row">
+                    <span class="control-label-text">种植一棵树时间 (秒)</span>
+                    <div class="value-badge"><span id="target-sec-val">60</span></div>
+                    <input type="range" id="target-sec-slider" min="10" max="300" step="5" value="60" style="width:100%">
+                </div>
+            </div>
+
+            <div class="card">
+                <div style="font-weight:600; font-size:14px; margin-bottom:10px; text-align:center">班级勋章墙</div>
+                <div style="display:flex; justify-content:space-around">
+                    <div style="text-align:center"><div style="font-size:20px; font-weight:700; color:var(--apple-green)" id="total-trees">0</div><div style="font-size:11px; color:#888">总种植</div></div>
+                    <div style="text-align:center"><div style="font-size:20px; font-weight:700; color:var(--apple-blue)" id="session-best">0</div><div style="font-size:11px; color:#888">本次收获</div></div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="progress-container">
+                <div style="display:flex; justify-content:space-between; font-size:14px; font-weight:500">
+                    <span id="progress-status">等待学生进入深度专注...</span>
+                    <span id="percent-text">0%</span>
+                </div>
+                <div class="progress-bar-bg"><div id="progress-fill"></div></div>
+            </div>
+            <div id="forest"></div>
+            <div style="display:flex; justify-content:space-between; align-items:center">
+                <span id="current-class-display" style="font-size:13px; color:var(--apple-gray)">未加载班级数据</span>
+                <button class="btn btn-reset" id="reset-session-btn" style="width:auto; padding:8px 16px">✨ 清空画面(不删历史)</button>
+            </div>
+        </main>
+    </div>
+
+    <!-- 报表弹窗 -->
+    <div id="report-overlay">
+        <div class="report-modal">
+            <span class="close-btn" onclick="toggleReport(false)">✕</span>
+            <h3 style="margin-bottom:5px">📈 班级成长全量趋势</h3>
+            <p style="font-size: 12px; color: #888; margin-bottom: 10px;">该图表记录自建班以来的所有数据，日期多时可左右滑动查看</p>
+            
+            <div class="chart-container">
+                <canvas id="history-canvas"></canvas>
+            </div>
+
+            <div style="font-weight:600; font-size:14px; margin-top:10px; margin-bottom:5px">最近 30 条种植动态</div>
+            <div class="log-list" id="log-list"></div>
+            <button class="btn btn-reset" onclick="clearAllData()" style="margin-top:15px; font-size:12px; color:var(--apple-red)">永久清空该班所有历史</button>
+        </div>
+    </div>
+
+    <script>
+        const gradeSelect = document.getElementById('grade-select');
+        const classSelect = document.getElementById('class-select');
+        const forest = document.getElementById('forest');
+        const startBtn = document.getElementById('start-btn');
+        const progressFill = document.getElementById('progress-fill');
+        const volumeFill = document.getElementById('volume-fill');
+        const targetSecSlider = document.getElementById('target-sec-slider');
+        const targetSecValText = document.getElementById('target-sec-val');
+        const thresholdSlider = document.getElementById('threshold-slider');
+        const statusBox = document.getElementById('status-box');
+
+        let audioContext, analyser, dataArray, isMonitoring = false, progress = 0, sessionTrees = 0;
+        let smoothedVolume = 0;
+
+        // 初始化班级选项
+        for (let i = 1; i <= 15; i++) {
+            const opt = document.createElement('option'); opt.value = i; opt.textContent = i + ' 班';
+            classSelect.appendChild(opt);
+        }
+
+        function getStorageKey() { return `forest_v7_${gradeSelect.value}_${classSelect.value}`; }
+        function getGlobalLogKey() { return `forest_global_logs_v7`; }
+
+        function loadData() {
+            const key = getStorageKey();
+            const data = JSON.parse(localStorage.getItem(key)) || { total: 0, best: 0, trees: [] };
+            document.getElementById('total-trees').textContent = data.total;
+            document.getElementById('session-best').textContent = sessionTrees;
+            document.getElementById('current-class-display').textContent = `${gradeSelect.selectedOptions[0].text} ${classSelect.selectedOptions[0].text}`;
+            
+            forest.innerHTML = "";
+            if(data.trees?.length) {
+                data.trees.forEach(t => { 
+                    const s = document.createElement('span'); 
+                    s.className='tree'; 
+                    s.textContent=t; 
+                    forest.appendChild(s); 
+                });
+            } else {
+                forest.innerHTML = `<p style="width:100%;text-align:center;color:#ccc;font-size:13px;margin-top:20px">这片森林还未种下树木...</p>`;
+            }
+        }
+
+        function saveTree(emoji) {
+            const key = getStorageKey();
+            const data = JSON.parse(localStorage.getItem(key)) || { total: 0, best: 0, trees: [] };
+            data.total++;
+            sessionTrees++;
+            if(sessionTrees > data.best) data.best = sessionTrees;
+            if(!data.trees) data.trees = [];
+            data.trees.push(emoji);
+            localStorage.setItem(key, JSON.stringify(data));
+
+            const logs = JSON.parse(localStorage.getItem(getGlobalLogKey())) || [];
+            logs.push({ date: new Date().toLocaleDateString(), grade: gradeSelect.value, class: classSelect.value, emoji: emoji });
+            localStorage.setItem(getGlobalLogKey(), JSON.stringify(logs));
+            loadData();
+        }
+
+        async function toggleMonitor() {
+            if (isMonitoring) { isMonitoring = false; startBtn.textContent = "继续监测"; statusBox.textContent="已暂停"; return; }
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                const source = audioContext.createMediaStreamSource(stream);
+                source.connect(analyser);
+                analyser.fftSize = 512;
+                analyser.smoothingTimeConstant = 0.7; 
+                dataArray = new Uint8Array(analyser.frequencyBinCount);
+                isMonitoring = true;
+                startBtn.textContent = "暂停监测";
+                run();
+            } catch (err) { alert("麦克风权限被拒，请在地址栏点击锁图标允许访问。"); }
+        }
+
+        function run() {
+            if (!isMonitoring) return;
+            analyser.getByteFrequencyData(dataArray);
+            let sum = 0; for(let i=0; i<dataArray.length; i++) sum += dataArray[i];
+            let rawVolume = sum / dataArray.length;
+            smoothedVolume = (smoothedVolume * 0.85) + (rawVolume * 0.15);
+            
+            volumeFill.style.width = Math.min(smoothedVolume * 1.8, 100) + "%";
+            document.getElementById('volume-val').textContent = Math.round(smoothedVolume);
+
+            const threshold = parseInt(thresholdSlider.value);
+            const targetSec = parseInt(targetSecSlider.value);
+            const step = 100 / (targetSec * 60);
+
+            if (smoothedVolume < threshold) {
+                progress += step;
+                statusBox.className = "status-quiet";
+                statusBox.textContent = "🌱 专注成长中...";
+            } else {
+                progress -= (step * 3);
+                statusBox.className = "status-loud";
+                statusBox.textContent = "🚨 监测到干扰";
+            }
+
+            if (progress < 0) progress = 0;
+            if (progress >= 100) { spawn(); progress = 0; }
+
+            progressFill.style.width = progress + "%";
+            document.getElementById('percent-text').textContent = Math.round(progress) + "%";
+            requestAnimationFrame(run);
+        }
+
+        function spawn() {
+            const emojis = ['🌳', '🌲', '🌴', '🌿', '🎄', '🌱', '🍂', '🍁', '🥦', '🍀'];
+            const emoji = emojis[Math.floor(Math.random()*emojis.length)];
+            saveTree(emoji);
+        }
+
+        function toggleReport(show) {
+            document.getElementById('report-overlay').style.display = show ? 'flex' : 'none';
+            if(show) { renderChart(); renderLogs(); }
+        }
+
+        function renderChart() {
+            const canvas = document.getElementById('history-canvas');
+            const ctx = canvas.getContext('2d');
+            const logs = JSON.parse(localStorage.getItem(getGlobalLogKey())) || [];
+            const curGrade = gradeSelect.value, curClass = classSelect.value;
+            
+            const classLogs = logs.filter(l => l.grade === curGrade && l.class === curClass);
+            const dateMap = {};
+            classLogs.forEach(l => { dateMap[l.date] = (dateMap[l.date] || 0) + 1; });
+            
+            const allDates = Object.keys(dateMap).sort((a,b) => new Date(a) - new Date(b));
+            if(allDates.length === 0) {
+                ctx.clearRect(0,0,canvas.width, canvas.height);
+                ctx.fillStyle = "#888"; ctx.font = "16px sans-serif";
+                ctx.fillText("暂无历史种植数据", canvas.width/2 - 60, canvas.height/2);
+                return;
+            }
+
+            const pointSpacing = 100;
+            canvas.width = Math.max(canvas.parentElement.clientWidth, allDates.length * pointSpacing + 120);
+            
+            const max = Math.max(...Object.values(dateMap), 10);
+            ctx.clearRect(0,0,canvas.width, canvas.height);
+            
+            // 网格
+            ctx.strokeStyle = '#eee'; ctx.lineWidth = 1;
+            for(let i=0; i<=5; i++) {
+                let y = 50 + (i/5)*(canvas.height-120);
+                ctx.beginPath(); ctx.moveTo(60, y); ctx.lineTo(canvas.width-30, y); ctx.stroke();
+            }
+
+            // 绘制主线条
+            ctx.strokeStyle = '#007AFF'; ctx.lineWidth = 5; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+            ctx.beginPath();
+            allDates.forEach((date, i) => {
+                const x = 80 + i * pointSpacing;
+                const y = (canvas.height-70) - (dateMap[date]/max)*(canvas.height-120);
+                if(i===0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+
+            // 填充渐变
+            const grd = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            grd.addColorStop(0, 'rgba(0,122,255,0.2)');
+            grd.addColorStop(1, 'rgba(0,122,255,0)');
+            ctx.fillStyle = grd;
+            ctx.lineTo(80 + (allDates.length-1) * pointSpacing, canvas.height-70);
+            ctx.lineTo(80, canvas.height-70);
+            ctx.fill();
+
+            // 绘制点
+            allDates.forEach((date, i) => {
+                const x = 80 + i * pointSpacing;
+                const y = (canvas.height-70) - (dateMap[date]/max)*(canvas.height-120);
+                ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(x, y, 7, 0, Math.PI*2); ctx.fill();
+                ctx.strokeStyle = '#007AFF'; ctx.lineWidth = 3; ctx.stroke();
+                
+                ctx.fillStyle = '#1d1d1f'; ctx.font = "bold 14px sans-serif";
+                ctx.fillText(dateMap[date], x-8, y-18);
+                
+                ctx.fillStyle = '#8E8E93'; ctx.font = "11px sans-serif";
+                ctx.fillText(date, x-30, canvas.height-40);
+            });
+        }
+
+        function renderLogs() {
+            const logs = JSON.parse(localStorage.getItem(getGlobalLogKey())) || [];
+            const curGrade = gradeSelect.value, curClass = classSelect.value;
+            const filtered = logs.filter(l => l.grade === curGrade && l.class === curClass).reverse();
+            document.getElementById('log-list').innerHTML = filtered.slice(0, 30).map(l => `
+                <div class="log-item">
+                    <span>${l.date}</span>
+                    <span>种植树木 ${l.emoji}</span>
+                </div>
+            `).join('') || '<p style="color:#999;text-align:center;padding:15px">还没有种植动态</p>';
+        }
+
+        function clearAllData() {
+            if(confirm("确定永久清除【所有历史记录】吗？不可恢复！")) {
+                localStorage.removeItem(getStorageKey());
+                const logs = JSON.parse(localStorage.getItem(getGlobalLogKey())) || [];
+                const newLogs = logs.filter(l => !(l.grade === gradeSelect.value && l.class === classSelect.value));
+                localStorage.setItem(getGlobalLogKey(), JSON.stringify(newLogs));
+                sessionTrees = 0; loadData(); toggleReport(false);
+            }
+        }
+
+        // 事件监听
+        gradeSelect.onchange = () => { sessionTrees = 0; loadData(); };
+        classSelect.onchange = () => { sessionTrees = 0; loadData(); };
+        thresholdSlider.oninput = () => document.getElementById('threshold-val').textContent = thresholdSlider.value;
+        targetSecSlider.oninput = () => targetSecValText.textContent = targetSecSlider.value;
+        startBtn.onclick = toggleMonitor;
+        
+        // ✨ 清空画面功能修复：它只重置当前的视觉显示，不修改已存入数据库的数据
+        document.getElementById('reset-session-btn').onclick = () => { 
+            if(confirm("确定清空画面吗？(此操作仅重置当前画面和本次收获数，不影响总记录)")) { 
+                progress = 0; 
+                sessionTrees = 0; 
+                progressFill.style.width = "0%";
+                document.getElementById('percent-text').textContent = "0%";
+                // 清空内存中该班级的展示列表（仅限本次会话）
+                const key = getStorageKey();
+                const data = JSON.parse(localStorage.getItem(key)) || { total: 0, best: 0, trees: [] };
+                data.trees = []; // 将展示用树木清空
+                localStorage.setItem(key, JSON.stringify(data));
+                loadData(); 
+            }
+        };
+
+        loadData();
+    </script>
+
+
+<!-- ================= 开物AI科学 · 版权模块（单击显示 / 双击打开官网） ================= -->
+<style id="kaiming-copyright-style">
+  #kaiming-copyright {
+    position: fixed;
+    bottom: 26px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    pointer-events: none;
+    z-index: 999999;
+    transition: opacity 0.45s ease;
+    opacity: 0;
+    display: none;
+  }
+  #kaiming-copyright .inner {
+    display: inline-block;
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #eafaf2;
+    padding: 9px 26px;
+    border-radius: 60px;
+    /* 原稿为 14px；此处改为 16px 以符合本机 verify_html.py 的「字号不得小于 16px」硬规则 */
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.6px;
+    border: 1px solid rgba(255, 245, 210, 0.3);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+    font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+    white-space: nowrap;
+  }
+</style>
+
+<div id="kaiming-copyright">
+  <div class="inner">© 2026 开物AI科学 ｜ AI 赋能 · 教育公平</div>
+</div>
+
+<script id="kaiming-copyright-script">
+(function () {
+  "use strict";
+
+  /* 目标：单击标题 → 显示版权 3.5 秒；双击标题 → 打开 www.kaiwuaiscience.com */
+
+  const HOMEPAGE = "https://www.kaiwuaiscience.com";
+  const SHOW_MS = 3500;      // 版权显示时长
+  const DBL_WINDOW = 280;    // 双击判定的时间窗（毫秒）
+  const FADE_MS = 450;       // 淡出时长，与 CSS transition 一致
+
+  function bindCopyright() {
+    // 首选 #mainTitle（注入脚本会保证它存在）；后三个选择器是手写粘贴时的兜底
+    const title = document.getElementById("mainTitle") ||
+                  document.querySelector("h1, .title, .page-title, .main-title");
+    const box = document.getElementById("kaiming-copyright");
+    if (!title || !box) return;
+
+    title.style.cursor = "pointer";
+    title.style.userSelect = "none";
+    title.style.webkitUserSelect = "none";
+
+    let clickTimer = null;
+    let hideTimer = null;
+    let seq = 0;   // 每次显示/隐藏都 +1，用来作废在飞的定时器
+
+    function showCopyright() {
+      const my = ++seq;
+      if (hideTimer) clearTimeout(hideTimer);
+      box.style.display = "block";
+      /* 强制重绘，让 0 → 1 的淡入真的发生。
+         这里刻意不用 requestAnimationFrame：rAF 在页面不产生新帧时（后台标签页、
+         无头渲染、大屏久置）不保证触发——一旦它晚于下方的隐藏定时器回调，
+         就会把 opacity 又设成 1，导致版权条永久停在屏幕上。 */
+      void box.offsetHeight;
+      box.style.opacity = "1";
+      hideTimer = setTimeout(function () {
+        if (my !== seq) return;      // 期间又被点过，交给新的那一次收尾
+        box.style.opacity = "0";
+        setTimeout(function () {
+          if (my === seq) box.style.display = "none";
+        }, FADE_MS);
+      }, SHOW_MS);
+    }
+
+    function hideCopyright() {
+      const my = ++seq;              // 作废所有在飞的定时器，避免"淡出到一半又被点亮"卡住
+      if (hideTimer) clearTimeout(hideTimer);
+      if (box.style.display !== "block") return;
+      box.style.opacity = "0";
+      setTimeout(function () {
+        if (my === seq) box.style.display = "none";
+      }, FADE_MS);
+    }
+
+    function openHomepage() {
+      // 双击时隐藏版权，并跳转官网
+      hideCopyright();
+      window.open(HOMEPAGE, "_blank", "noopener,noreferrer");
+    }
+
+    title.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (clickTimer) return;   // 已在等待双击窗口，忽略这次单击
+      clickTimer = setTimeout(function () {
+        clickTimer = null;
+        showCopyright();        // 确认是单击
+      }, DBL_WINDOW);
+    });
+
+    title.addEventListener("dblclick", function (e) {
+      e.stopPropagation();
+      if (clickTimer) {         // 取消挂起的单击
+        clearTimeout(clickTimer);
+        clickTimer = null;
+      }
+      openHomepage();
+    });
+
+    // 点击页面其它地方，立即隐藏版权
+    document.addEventListener("click", function (e) {
+      if (e.target === title) return;
+      hideCopyright();
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bindCopyright);
+  } else {
+    bindCopyright();
+  }
+})();
+</script>
+<!-- ================= 开物AI科学 · 版权模块 结束 ================= -->
+
+</body>
+</html>

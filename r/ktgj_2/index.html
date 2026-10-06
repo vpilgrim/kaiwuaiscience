@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>地月积分系统</title>
+    <style>
+        :root {
+            --cosmic-bg: linear-gradient(45deg, #000318 0%, #0a0722 100%);
+        }
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: '微软雅黑';
+            background: var(--cosmic-bg);
+            color: #fff;
+        }
+
+        /* 动态星空 */
+        .stars {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            z-index: -3;
+        }
+
+        /* 巨型太阳 */
+        .sun {
+            position: fixed;
+            left: -1800px;
+            top: 50%;
+            width: 2500px;
+            height: 2500px;
+            transform: translateY(-50%);
+            background: radial-gradient(circle at 70% 50%, 
+                rgba(255,80,0,0.6) 10%,
+                rgba(255,60,0,0.4) 30%,
+                rgba(255,40,0,0) 70%);
+            filter: blur(200px);
+            animation: sun-glow 3s infinite alternate;
+        }
+
+        /* 地球系统 */
+        .earth-system {
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            z-index: -1;
+        }
+
+        .earth {
+            font-size: 120px; /* 增大地球尺寸 */
+            animation: earth-rotate 40s linear infinite;
+            text-shadow: 0 0 60px #00aaff;
+        }
+
+        /* 月球系统 */
+        .moon-orbit {
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            border-radius: 50%;
+            top: -190px;
+            left: -190px;
+            animation: moon-orbit 15s linear infinite;
+        }
+
+        .moon {
+            position: absolute;
+            font-size: 50px;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: moon-rotate 15s linear infinite; /* 新增自转动画 */
+        }
+
+        /* 动画定义 */
+        @keyframes earth-rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes moon-orbit {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes moon-rotate {
+            from { transform: translateX(-50%) rotate(0deg); }
+            to { transform: translateX(-50%) rotate(-360deg); } /* 反向自转实现潮汐锁定 */
+        }
+
+        @keyframes sun-glow {
+            0% { opacity: 0.7; }
+            100% { opacity: 0.9; }
+        }
+
+        /* 小组卡片样式（保持原有完美状态） */
+        .title {
+            text-align: center;
+            font-size: 2.8em;
+            margin: 25px 0;
+            letter-spacing: 4px;
+            text-shadow: 0 0 25px #9d7dff;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 25px;
+            padding: 30px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .team-card {
+            background: rgba(255,255,255,0.08);
+            padding: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.15);
+            min-height: 250px;
+            position: relative;
+        }
+
+        .team-number {
+            position: absolute;
+            left: 15px;
+            top: 15px;
+            font-size: 1.2em;
+            background: rgba(255,255,255,0.1);
+            padding: 3px 10px;
+            border-radius: 15px;
+        }
+
+        .team-name {
+            text-align: center;
+            font-size: 1.4em;
+            margin: 10px 0 20px;
+        }
+
+        .current-phase {
+            font-size: 4em;
+            text-align: center;
+            margin: 15px 0;
+        }
+
+        .history-phases {
+            background: rgba(0,0,0,0.2);
+            padding: 10px;
+            border-radius: 8px;
+            margin: 15px 0;
+            white-space: nowrap;
+            overflow-x: auto;
+        }
+
+        button {
+            background: linear-gradient(45deg, #6c5b7b, #8a6da8);
+            border: none;
+            padding: 10px 20px;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s;
+        }
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px #6c5b7b;
+        }
+
+        /* 滚动条样式 */
+        ::-webkit-scrollbar {
+            height: 5px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.3);
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="stars"></div>
+    <div class="sun"></div>
+    
+    <div class="earth-system">
+        <div class="earth">🌍</div>
+        <div class="moon-orbit">
+            <div class="moon">🌗</div>
+        </div>
+    </div>
+
+    <h1 class="title" id="mainTitle">🌌 月相积分系统 🌠</h1>
+    
+    <div class="container">
+        <!-- 小组卡片由JavaScript生成 -->
+    </div>
+
+    <script>
+        // 创建动态星空
+        function createStars() {
+            const stars = document.querySelector('.stars');
+            for(let i=0; i<400; i++){
+                const star = document.createElement('div');
+                star.style.cssText = `
+                    position: absolute;
+                    left: ${Math.random()*100}%;
+                    top: ${Math.random()*100}%;
+                    width: ${Math.random()*3}px;
+                    height: ${Math.random()*3}px;
+                    background: hsl(${Math.random()*360}, 50%, 70%);
+                    border-radius: 50%;
+                    animation: 
+                        twinkle ${3+Math.random()*3}s infinite,
+                        drift ${40+Math.random()*80}s infinite linear;
+                `;
+                stars.appendChild(star);
+            }
+            
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes twinkle {
+                    0%, 100% { opacity: 0.4; }
+                    50% { opacity: 0.8; }
+                }
+                @keyframes drift {
+                    from { transform: translate(0,0); }
+                    to { transform: translate(${Math.random()*300-150}px, ${Math.random()*300-150}px); }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        // 小组数据
+        const teamNames = ["婵娟", "玉盘", "冰轮", "玉弓", "银钩", 
+                         "玉兔", "金蟾", "望舒", "太阴", "桂轮"];
+        const phases = ['🌑','🌒','🌓','🌔','🌕','🌖','🌗','🌘','🌑'];
+
+        // 初始化小组
+        const teams = teamNames.map((name, index) => ({
+            id: index + 1,
+            name,
+            score: 0,
+            element: null,
+            historyElement: null
+        }));
+
+        // 创建卡片
+        function createTeamCards() {
+            const container = document.querySelector('.container');
+            teams.forEach((team, index) => {
+                const card = document.createElement('div');
+                card.className = 'team-card';
+                card.innerHTML = `
+                    <div class="team-number">${team.id}组</div>
+                    <div class="team-name">${team.name}</div>
+                    <div class="current-phase">${phases[0]}</div>
+                    <div class="history-phases"></div>
+                    <button onclick="addScore(${index})">+1月相演化</button>
+                `;
+                team.element = card;
+                team.historyElement = card.querySelector('.history-phases');
+                container.appendChild(card);
+            });
+        }
+
+        // 增加积分
+        function addScore(index) {
+            const team = teams[index];
+            if (team.score < 8) {
+                team.score++;
+                const phaseElement = team.element.querySelector('.current-phase');
+                const historyElement = team.element.querySelector('.history-phases');
+                
+                // 更新显示
+                phaseElement.textContent = phases[team.score];
+                historyElement.innerHTML = Array.from({length: team.score + 1}, (_, i) => phases[i]).join('→');
+                historyElement.scrollLeft = historyElement.scrollWidth;
+
+                // 添加动画
+                phaseElement.style.transform = 'scale(1.2)';
+                setTimeout(() => {
+                    phaseElement.style.transform = 'scale(1)';
+                }, 200);
+
+                // 循环重置
+                if (team.score === 8) {
+                    setTimeout(() => {
+                        team.score = 0;
+                        phaseElement.textContent = phases[0];
+                        historyElement.innerHTML = '';
+                    }, 1000);
+                }
+            }
+        }
+
+        // 初始化
+        createStars();
+        createTeamCards();
+    </script>
+
+
+<!-- ================= 开物AI科学 · 版权模块（单击显示 / 双击打开官网） ================= -->
+<style id="kaiming-copyright-style">
+  #kaiming-copyright {
+    position: fixed;
+    bottom: 26px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    pointer-events: none;
+    z-index: 999999;
+    transition: opacity 0.45s ease;
+    opacity: 0;
+    display: none;
+  }
+  #kaiming-copyright .inner {
+    display: inline-block;
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #eafaf2;
+    padding: 9px 26px;
+    border-radius: 60px;
+    /* 原稿为 14px；此处改为 16px 以符合本机 verify_html.py 的「字号不得小于 16px」硬规则 */
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.6px;
+    border: 1px solid rgba(255, 245, 210, 0.3);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+    font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+    white-space: nowrap;
+  }
+</style>
+
+<div id="kaiming-copyright">
+  <div class="inner">© 2026 开物AI科学 ｜ AI 赋能 · 教育公平</div>
+</div>
+
+<script id="kaiming-copyright-script">
+(function () {
+  "use strict";
+
+  /* 目标：单击标题 → 显示版权 3.5 秒；双击标题 → 打开 www.kaiwuaiscience.com */
+
+  const HOMEPAGE = "https://www.kaiwuaiscience.com";
+  const SHOW_MS = 3500;      // 版权显示时长
+  const DBL_WINDOW = 280;    // 双击判定的时间窗（毫秒）
+  const FADE_MS = 450;       // 淡出时长，与 CSS transition 一致
+
+  function bindCopyright() {
+    // 首选 #mainTitle（注入脚本会保证它存在）；后三个选择器是手写粘贴时的兜底
+    const title = document.getElementById("mainTitle") ||
+                  document.querySelector("h1, .title, .page-title, .main-title");
+    const box = document.getElementById("kaiming-copyright");
+    if (!title || !box) return;
+
+    title.style.cursor = "pointer";
+    title.style.userSelect = "none";
+    title.style.webkitUserSelect = "none";
+
+    let clickTimer = null;
+    let hideTimer = null;
+    let seq = 0;   // 每次显示/隐藏都 +1，用来作废在飞的定时器
+
+    function showCopyright() {
+      const my = ++seq;
+      if (hideTimer) clearTimeout(hideTimer);
+      box.style.display = "block";
+      /* 强制重绘，让 0 → 1 的淡入真的发生。
+         这里刻意不用 requestAnimationFrame：rAF 在页面不产生新帧时（后台标签页、
+         无头渲染、大屏久置）不保证触发——一旦它晚于下方的隐藏定时器回调，
+         就会把 opacity 又设成 1，导致版权条永久停在屏幕上。 */
+      void box.offsetHeight;
+      box.style.opacity = "1";
+      hideTimer = setTimeout(function () {
+        if (my !== seq) return;      // 期间又被点过，交给新的那一次收尾
+        box.style.opacity = "0";
+        setTimeout(function () {
+          if (my === seq) box.style.display = "none";
+        }, FADE_MS);
+      }, SHOW_MS);
+    }
+
+    function hideCopyright() {
+      const my = ++seq;              // 作废所有在飞的定时器，避免"淡出到一半又被点亮"卡住
+      if (hideTimer) clearTimeout(hideTimer);
+      if (box.style.display !== "block") return;
+      box.style.opacity = "0";
+      setTimeout(function () {
+        if (my === seq) box.style.display = "none";
+      }, FADE_MS);
+    }
+
+    function openHomepage() {
+      // 双击时隐藏版权，并跳转官网
+      hideCopyright();
+      window.open(HOMEPAGE, "_blank", "noopener,noreferrer");
+    }
+
+    title.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (clickTimer) return;   // 已在等待双击窗口，忽略这次单击
+      clickTimer = setTimeout(function () {
+        clickTimer = null;
+        showCopyright();        // 确认是单击
+      }, DBL_WINDOW);
+    });
+
+    title.addEventListener("dblclick", function (e) {
+      e.stopPropagation();
+      if (clickTimer) {         // 取消挂起的单击
+        clearTimeout(clickTimer);
+        clickTimer = null;
+      }
+      openHomepage();
+    });
+
+    // 点击页面其它地方，立即隐藏版权
+    document.addEventListener("click", function (e) {
+      if (e.target === title) return;
+      hideCopyright();
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bindCopyright);
+  } else {
+    bindCopyright();
+  }
+})();
+</script>
+<!-- ================= 开物AI科学 · 版权模块 结束 ================= -->
+
+</body>
+</html>

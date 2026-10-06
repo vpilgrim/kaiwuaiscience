@@ -1,0 +1,1322 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>给水加热 · 水温变化实验</title>
+<style>
+*{box-sizing:border-box}
+:root{--blue:#2f7edb;--blue2:#eaf4ff;--orange:#f39a3d;--green:#27a45d;--red:#d94d47;--ink:#243746;--muted:#6f808d;--line:#d8e3ea}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:"Microsoft YaHei","PingFang SC",Arial,sans-serif;background:#edf4f8;color:var(--ink)}
+button,input{font:inherit}button{cursor:pointer}
+.app{height:100vh;display:grid;grid-template-columns:58% 42%;gap:12px;padding:12px;background:#edf4f8}
+.left-col{min-width:0;min-height:0;display:grid;grid-template-rows:62px 1fr;gap:10px}
+.left-header{background:#fff;border:1px solid var(--line);border-radius:0 0 14px 14px;box-shadow:0 2px 10px rgba(40,65,85,.08);display:flex;align-items:center;padding:0 18px}
+.left-header h1{margin:0;font-size:25px;font-weight:900;color:#225f9f;letter-spacing:.6px}
+.left-main{min-width:0;min-height:0;display:grid;grid-template-rows:minmax(0,1fr) 92px;gap:10px}
+.right-col{min-width:0;min-height:0;display:flex;flex-direction:column;gap:10px}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 6px 18px rgba(35,65,85,.08);overflow:hidden}
+.stage{position:relative;min-height:0;background:linear-gradient(#fbfdff,#f0f6f9)}
+#apparatus{width:100%;height:100%;display:block}
+.status{position:absolute;left:14px;top:13px;background:#fffdf8;border:1px solid #eddcae;border-radius:9px;padding:8px 11px;font-size:16px;font-weight:800}
+.reading{position:absolute;right:14px;top:13px;background:#203449;color:#fff;border-radius:11px;padding:8px 13px;text-align:center;min-width:130px}
+.reading strong{display:block;color:#ffd166;font-size:29px;line-height:1.05}.reading span{font-size:14px;color:#d9e1e7}
+.controls{display:flex;align-items:center;gap:8px;padding:11px;background:#fff;flex-wrap:wrap}
+.controls button{height:58px;border-radius:10px;border:1px solid var(--line);padding:0 14px;font-weight:900;background:#f7fafc;color:var(--ink)}
+.speed-box,.speed-box-single{display:flex;align-items:center;gap:5px;padding:5px 7px;border:1px solid var(--line);border-radius:10px;background:#f7fafc}
+.speed-box-single{display:none;justify-content:space-between}
+.speed-label{font-size:12px;color:#5f7280;font-weight:800;margin-right:2px}
+.speed-btn{min-width:46px;height:34px !important;padding:0 8px !important;border-radius:7px !important;font-size:13px !important;font-weight:900 !important;background:#fff !important;color:#466173 !important}
+.speed-btn.active{background:#eaf4ff !important;border-color:#8dbce9 !important;color:#2166a8 !important}
+.controls .start{background:var(--green);border-color:var(--green);color:#fff}
+.controls .stop{background:#eef3f7;border-color:#c2d1dc;color:#42607a}
+.controls .stop:disabled{opacity:.55;cursor:not-allowed}
+.controls .heat{background:var(--orange);border-color:var(--orange);color:#fff}
+.controls .reset{background:#fff0f0;border-color:#f1c0bd;color:#b54542}
+.time{margin-left:auto;text-align:center;padding:5px 10px;border:1px solid var(--line);border-radius:9px;background:#f7fafc;min-width:76px}
+.time b{font-size:21px;color:#245e95}.time small{display:block;color:var(--muted);font-size:10px;margin-top:2px}
+.record-panel,.chart-panel{padding:10px 12px;min-height:0;overflow:hidden;position:relative}
+.record-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.record-header h2{font-size:18px;margin:0;cursor:pointer}
+.record-header .reveal-btn{background:var(--blue);border-color:var(--blue);color:#fff;height:auto;padding:6px 12px;border-radius:8px;font-weight:900;font-size:14px}
+.chart-header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px;flex-wrap:wrap}
+.chart-header h2{font-size:18px;margin:0;cursor:pointer}
+.chart-tools{display:flex;gap:6px}
+.chart-tools button{border:1px solid var(--line);background:#fff;border-radius:7px;padding:5px 8px;font-size:12px;font-weight:800;color:#466173}
+.chart-tools button.active{background:#eaf4ff;border-color:#9ec9ef;color:#286ca7}
+.is-focus{box-shadow:0 8px 22px rgba(47,126,219,.16)}
+.table-wrap{height:auto;overflow:visible}
+table{width:100%;border-collapse:collapse;font-size:15px;table-layout:fixed}
+th,td{border:1px solid var(--line);text-align:center;padding:7px 6px;line-height:1.3}th{background:#eaf4ff;color:#315b7d;font-weight:900;font-size:15px}
+tbody tr:nth-child(odd){background:#fbfdff}
+.reveal-cell{display:flex;align-items:center;justify-content:center;gap:6px;min-height:28px}
+.hidden-value{color:#a4b1bb;font-size:14px}
+.show-btn{border:0;background:#edf5ff;color:#2a70b4;border-radius:7px;padding:5px 8px;font-weight:800;font-size:13px}
+.value{font-weight:900;color:#244a68;font-size:15px}
+.value.phen{font-size:14px;line-height:1.35;display:block}
+.chart-wrap{height:calc(100% - 31px);border:1px solid var(--line);border-radius:9px;background:#fcfeff;position:relative;overflow:hidden}
+#chart{display:block;width:100%;height:100%;touch-action:none}
+.chart-tip{display:none}
+.chart-tip-big{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(255,255,255,.96);border:2px solid var(--orange);border-radius:14px;padding:20px 24px;font-size:18px;font-weight:800;color:var(--ink);box-shadow:0 8px 20px rgba(35,65,85,.25);pointer-events:auto;z-index:10;display:none;text-align:center;max-width:80%;cursor:pointer}
+.chart-tip-big.show{display:block}
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,15px);padding:9px 15px;border-radius:9px;background:#223444;color:#fff;opacity:0;pointer-events:none;transition:.2s;z-index:100000}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+@media(max-width:900px){html,body{overflow:auto}.app{height:auto;min-height:100vh;grid-template-columns:1fr}.left-col{grid-template-rows:62px auto}.left-main{grid-template-rows:680px 92px}.right-col{height:auto;min-height:500px}}
+
+/* ===== 实验区全屏按钮 ===== */
+.fs-btn{position:absolute;right:10px;bottom:10px;z-index:20;display:flex;align-items:center;justify-content:center;gap:6px;height:38px;padding:0 14px;border:1px solid #bcd6ea;border-radius:10px;background:rgba(255,255,255,.94);color:#2166a8;font-weight:900;font-size:14px;box-shadow:0 4px 12px rgba(35,65,85,.14);transition:.15s}
+.fs-btn:hover{background:#eaf4ff}
+.fs-btn:active{transform:scale(.97)}
+
+/* ===== 实验区全屏布局 ===== */
+body.fs-active .left-main{display:block;position:relative;height:100vh;padding:0;gap:0;background:#edf4f8;border-radius:0;}
+body.fs-pseudo .left-main{position:fixed;left:0;top:0;right:0;bottom:0;z-index:9000}
+body.fs-active .stage{position:absolute;inset:0;border:0;border-radius:0;background:linear-gradient(#fbfdff,#f0f6f9)}
+body.fs-active .stage .status{font-size:18px;padding:10px 14px}
+body.fs-active .stage .reading strong{font-size:34px}
+
+body.fs-active .controls{
+  position:absolute;right:18px;bottom:18px;
+  display:flex;flex-direction:column;flex-wrap:nowrap;align-items:stretch;
+  width:172px;padding:10px;gap:8px;
+  background:rgba(255,255,255,.97);
+  border:1px solid var(--line);border-radius:14px;
+  box-shadow:0 10px 26px rgba(35,65,85,.24);
+  z-index:20;max-height:calc(100vh - 36px);overflow-y:auto;
+}
+body.fs-active .controls > button{width:100%;height:44px;padding:0 8px;font-size:13px}
+body.fs-active .controls .speed-box{display:none}
+body.fs-active .controls .speed-box-single{display:flex;width:100%}
+body.fs-active .controls .speed-box-single .speed-btn{min-width:64px}
+body.fs-active .controls .time{margin-left:0;width:100%}
+body.fs-active #fsBtn{
+  position:static;right:auto;bottom:auto;
+  display:flex;align-items:center;justify-content:center;
+  width:100%;height:44px;padding:0 8px;
+  border-radius:10px;font-size:13px;font-weight:900;
+  background:#eaf4ff;border:1px solid #bcd6ea;color:#2166a8;box-shadow:none;
+}
+
+/* ===== 面板全屏按钮（标题旁） ===== */
+.panel-fs{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;margin-left:6px;padding:0;border:1px solid #bcd6ea;border-radius:7px;background:#f4faff;color:#2166a8;font-size:13px;line-height:1;font-weight:900;vertical-align:middle;cursor:pointer}
+.panel-fs:hover{background:#e2f0ff}
+.panel-fs:active{transform:scale(.94)}
+
+/* ===== 图表全屏：同一行显示 标题 + 时间 + 温度 ===== */
+.panel-fs-status{display:none;align-items:center;gap:36px;flex:1;justify-content:center;margin:0;padding:0;background:none;border:none}
+.panel-fs-status .fs-item{font-size:18px;font-weight:800;color:#3c5772;display:inline-flex;align-items:baseline;gap:8px;white-space:nowrap}
+.panel-fs-status .fs-item b{font-size:28px;color:#1c5fa8;font-weight:900}
+
+.panel-fullscreen.chart-panel .chart-header{
+  display:flex;align-items:center;flex-wrap:wrap;gap:22px;
+  padding:10px 18px;
+  background:linear-gradient(#f6fbff,#eaf4ff);
+  border:1px solid #cfe4f5;border-radius:14px;
+  margin-bottom:10px;
+}
+.panel-fullscreen.chart-panel .chart-header h2{font-size:24px;flex-shrink:0}
+.panel-fullscreen.chart-panel .chart-tools{flex-shrink:0}
+.panel-fullscreen .panel-fs-status{display:flex}
+
+/* ===== 图表全屏上方：转置记录表 ===== */
+.mini-record{
+  display:none;
+  margin:0 0 10px;
+  padding:6px 12px;
+  border:1px solid #dce6ed;
+  border-radius:10px;
+  background:#fbfdff;
+  overflow:auto;
+  max-height:96px;
+}
+.panel-fullscreen.chart-panel .mini-record{display:block}
+.mini-record table{width:100%;font-size:14px;border-collapse:collapse;margin:0 auto}
+.mini-record th,.mini-record td{border:1px solid #dce6ed;padding:4px 4px;text-align:center;line-height:1.2;white-space:nowrap}
+.mini-record th{background:#eaf4ff;color:#315b7d;font-weight:900;font-size:14px}
+.mini-record .row-label{background:#f5faff;color:#315b7d;font-weight:900;font-size:13px;width:78px;text-align:center}
+.mini-record td{font-size:15px;font-weight:800;color:#244a68}
+.mini-record td.empty{color:#a4b1bb;font-weight:700}
+
+/* ===== 面板全屏退出按钮（浮动在右下角，不占行） ===== */
+.panel-exit{
+  display:none;position:absolute;right:16px;bottom:14px;z-index:9800;
+  align-items:center;justify-content:center;gap:6px;
+  height:40px;padding:0 16px;
+  border:1px solid #bcd6ea;border-radius:10px;
+  background:#fff;color:#2166a8;font-weight:900;font-size:14px;
+  box-shadow:0 6px 18px rgba(35,65,85,.22);cursor:pointer;
+  transition:.15s;
+}
+.panel-exit:hover{background:#eaf4ff}
+.panel-exit:active{transform:scale(.96)}
+.panel-fullscreen .panel-exit{display:flex}
+
+/* ===== 面板全屏：缩小内边距，让图表更大 ===== */
+.panel-fullscreen{
+  position:fixed !important;left:0;top:0;right:0;bottom:0;
+  width:100vw;height:100vh;z-index:9700;
+  border:0;border-radius:0;
+  display:flex;flex-direction:column;
+  padding:12px 16px 14px;overflow:hidden;
+}
+.panel-fullscreen h2{font-size:26px}
+.panel-fullscreen .panel-fs{display:none}
+.panel-fullscreen .reveal-btn{font-size:17px;padding:10px 20px}
+.panel-fullscreen .chart-tools button{font-size:15px;padding:8px 13px}
+.panel-fullscreen .table-wrap{flex:1;min-height:0;overflow:auto}
+.panel-fullscreen table{max-width:1000px;margin:0 auto;font-size:20px}
+.panel-fullscreen th{font-size:20px;padding:15px 10px}
+.panel-fullscreen td{padding:15px 10px}
+.panel-fullscreen .hidden-value{font-size:20px}
+.panel-fullscreen .value{font-size:22px}
+.panel-fullscreen .value.phen{font-size:20px}
+.panel-fullscreen .show-btn{font-size:18px;padding:8px 14px}
+.panel-fullscreen .chart-wrap{flex:1;min-height:0;height:auto}
+</style>
+</head>
+<body>
+<div class="app">
+  <section class="left-col">
+    <div class="left-header"><h1 id="mainTitle">给水加热 · 水温变化实验</h1></div>
+    <div class="left-main" id="fsWrapper">
+      <div class="card stage" id="stageEl">
+        <svg id="apparatus" viewBox="0 0 980 680" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <linearGradient id="water" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#b9e5f8" stop-opacity=".86"/><stop offset="1" stop-color="#7dc2e6" stop-opacity=".72"/></linearGradient>
+            <linearGradient id="glass" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity=".18"/><stop offset="50%" stop-color="#dff5ff" stop-opacity=".42"/><stop offset="100%" stop-color="#fff" stop-opacity=".12"/></linearGradient>
+            <radialGradient id="glow"><stop offset="0" stop-color="#ffd166" stop-opacity=".8"/><stop offset="100%" stop-color="#ffd166" stop-opacity="0"/></radialGradient>
+            <!-- 云团式白气的柔和模糊 -->
+            <filter id="steamBlur" x="-80%" y="-80%" width="260%" height="260%">
+              <feGaussianBlur stdDeviation="4.2"/>
+            </filter>
+            <filter id="soften" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="1.4"/></filter>
+            <mask id="hideThermoArea">
+              <rect width="980" height="680" fill="white"/>
+              <rect x="482" y="150" width="22" height="250" fill="black"/>
+            </mask>
+          </defs>
+          <rect width="980" height="680" fill="#f8fcff"/>
+          <rect y="572" width="980" height="108" fill="#e6edf1"/>
+          <rect y="572" width="980" height="8" fill="#c8d4db"/>
+
+          <rect x="222" y="548" width="430" height="42" rx="4" fill="#5e6e79"/>
+          <rect x="238" y="588" width="398" height="12" rx="5" fill="#485862"/>
+          <path d="M258 600 L230 618 L230 626 L277 626 L292 600Z" fill="#566670"/>
+          <path d="M593 600 L621 618 L621 626 L573 626 L558 600Z" fill="#566670"/>
+          <rect x="299" y="48" width="14" height="570" rx="7" fill="#536672"/>
+          <rect x="304" y="40" width="4" height="570" fill="#83929b" opacity=".65"/>
+          <rect x="289" y="98" width="56" height="37" rx="7" fill="#687a84"/>
+          <circle cx="287" cy="117" r="11" fill="#566873"/><circle cx="287" cy="117" r="5" fill="#8f9da4"/>
+          <rect x="336" y="111" width="268" height="12" rx="6" fill="#5d707c"/>
+          <rect x="596" y="108" width="24" height="18" rx="6" fill="#6f808a"/>
+          <rect x="289" y="441" width="56" height="37" rx="7" fill="#687a84"/>
+          <circle cx="287" cy="460" r="11" fill="#566873"/><circle cx="287" cy="460" r="5" fill="#8f9da4"/>
+          <rect x="336" y="452" width="150" height="12" rx="6" fill="#5d707c"/>
+
+          <g id="thermo">
+            <circle cx="493" cy="119" r="5" fill="#384b57"/>
+            <path d="M493 123v24" fill="none" stroke="#384b57" stroke-width="3"/>
+            <path d="M493 146q-7 0-7 8t7 8q7 0 7-8t-7-8" fill="none" stroke="#384b57" stroke-width="2"/>
+            <rect x="482" y="150" width="22" height="250" rx="11" fill="#f8fbfd" stroke="#697b86" stroke-width="2"/>
+            <rect x="488" y="170" width="10" height="210" rx="5" fill="#e4eef3"/>
+            <rect id="mercury" x="489" y="338" width="8" height="42" rx="4" fill="#df5149"/>
+            <circle cx="493" cy="390" r="10" fill="#df5149"/>
+            <g stroke="#6a7b86" stroke-width="1.6">
+              <line x1="505" y1="170" x2="516" y2="170"/>
+              <line x1="505" y1="212" x2="516" y2="212"/>
+              <line x1="505" y1="254" x2="516" y2="254"/>
+              <line x1="505" y1="296" x2="516" y2="296"/>
+              <line x1="505" y1="338" x2="516" y2="338"/>
+              <line x1="505" y1="380" x2="516" y2="380"/>
+            </g>
+            <text x="525" y="174" font-size="12" fill="#627581">100</text>
+            <text x="525" y="216" font-size="12" fill="#627581">80</text>
+            <text x="525" y="258" font-size="12" fill="#627581">60</text>
+            <text x="525" y="300" font-size="12" fill="#627581">40</text>
+            <text x="525" y="342" font-size="12" fill="#627581">20</text>
+            <text x="525" y="384" font-size="12" fill="#627581">0</text>
+          </g>
+
+          <rect x="394" y="438" width="234" height="14" rx="3" fill="#77736c"/>
+          <rect x="398" y="430" width="226" height="8" fill="#9a9890"/>
+          <g opacity=".7" stroke="#55524d" stroke-width="1"><path d="M401 432l18 20M423 432l18 20M445 432l18 20M467 432l18 20M489 432l18 20M511 432l18 20M533 432l18 20M555 432l18 20M577 432l18 20M599 432l18 20"/><path d="M419 452l18-20M441 452l18-20M463 452l18-20M485 452l18-20M507 452l18-20M529 452l18-20M551 452l18-20M573 452l18-20M595 452l18-20"/></g>
+
+          <path d="M425 274 L429 416 Q430 429 443 432 H579 Q592 429 593 416 L597 274 Q511 286 425 274 Z" fill="url(#glass)" stroke="#556c79" stroke-width="2.5"/>
+          <path d="M425 274 A86 12 0 0 1 597 274" fill="none" stroke="#556c79" stroke-width="2.5" mask="url(#hideThermoArea)"/>
+          <path d="M425 274 A86 12 0 0 0 597 274" fill="none" stroke="#556c79" stroke-width="2.5"/>
+
+          <path id="waterBody" d="M438 359 Q510 368 584 359 L589 413 Q589 422 578 424 H444 Q432 422 437 413 Z" fill="url(#water)"/>
+          <path id="waterSurface" d="M438 359 Q510 368 584 359" fill="none" stroke="#62b8de" stroke-width="2.5"/>
+          <text id="waterVol" x="550" y="399" text-anchor="middle" font-size="16" font-weight="800" fill="#2873b9">30 mL</text>
+
+          <g id="bubbleLayer" opacity=".9"></g>
+          <g id="steamLayer" filter="url(#steamBlur)"></g>
+
+          <g id="lamp"><ellipse cx="512" cy="548" rx="64" ry="17" fill="#8d9aa3"/><path d="M468 545Q470 511 512 511Q554 511 556 545Z" fill="#e7edf0" stroke="#657682" stroke-width="2"/><ellipse cx="512" cy="545" rx="43" ry="8" fill="#d6e0e5"/><path d="M495 512Q501 501 512 499Q523 501 529 512" fill="#73848e"/><path id="flameGlow" d="M512 493Q490 470 512 445Q534 470 512 493Z" fill="url(#glow)" opacity=".65"/><path id="flame" d="M512 492Q498 474 512 452Q526 474 512 492Z" fill="#f6a21a"/></g>
+
+          <text x="210" y="300" font-size="15" font-weight="900" fill="#465963" text-anchor="end">铁架台</text>
+          <text x="640" y="444" font-size="14" font-weight="800" fill="#465963">陶土网</text>
+          <text x="612" y="288" font-size="14" font-weight="800" fill="#465963">烧杯</text>
+          <text x="460" y="255" font-size="14" font-weight="800" fill="#465963" text-anchor="end">温度计</text>
+          <text x="585" y="520" font-size="14" font-weight="800" fill="#465963" text-anchor="start">酒精灯</text>
+        </svg>
+        <div class="status" id="status">常温水，尚未加热</div>
+        <div class="reading"><strong id="bigTemp">20℃</strong><span>温度计示数</span></div>
+        <button type="button" class="fs-btn" id="fsBtn" title="全屏显示实验区">⛶ 全屏</button>
+      </div>
+
+      <div class="card controls" id="controls">
+        <button class="start" id="start">🔥 开始加热</button>
+        <button class="stop" id="stop" disabled>⏹ 停止加热</button>
+        <button class="heat" id="heat">🔥 加热1分钟</button>
+        <button class="reset" id="reset">↻ 重置</button>
+        <div class="speed-box" id="speedBox">
+          <span class="speed-label">倍速</span>
+          <button class="speed-btn active" data-speed="1">1×</button>
+          <button class="speed-btn" data-speed="2">2×</button>
+          <button class="speed-btn" data-speed="3">3×</button>
+          <button class="speed-btn" data-speed="5">5×</button>
+          <button class="speed-btn" data-speed="10">10×</button>
+        </div>
+        <div class="speed-box-single" id="speedBoxSingle">
+          <span class="speed-label">倍速</span>
+          <button class="speed-btn" id="speedBtn" title="点击切换倍速">1×</button>
+        </div>
+        <div class="time"><b><span id="min">0</span>:<span id="sec">00</span></b><small>实验时间</small></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="right-col">
+    <div class="card record-panel" id="recordPanel">
+      <div class="record-header">
+        <h2>水的加热实验记录表<button class="panel-fs" id="recordFs" title="全屏显示记录表">⛶</button></h2>
+        <button class="reveal-btn" id="reveal">👁 揭示本分钟</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th style="width:17%">时间 / 分</th><th style="width:24%">温度 / ℃</th><th>现象</th></tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <button type="button" class="panel-exit" id="recordExit" title="退出全屏">⤡ 退出全屏</button>
+    </div>
+    <div class="card chart-panel" id="chartPanel">
+      <div class="chart-header">
+        <h2>温度变化统计图<button class="panel-fs" id="chartFs" title="全屏显示统计图">⛶</button></h2>
+        <div class="panel-fs-status" id="panelFsStatus">
+          <span class="fs-item">实验时间 <b id="fsTime">0:00</b></span>
+          <span class="fs-item">当前温度 <b id="fsTemp">20℃</b></span>
+        </div>
+        <div class="chart-tools">
+          <button id="tipBtn">💡 操作提示</button>
+          <button id="drawMode" class="active">✏️ 学生画图</button>
+          <button id="refMode">✅ 参考图</button>
+          <button id="clearDraw">🧹 清除作图</button>
+        </div>
+      </div>
+      <div class="mini-record" id="miniRecord">
+        <table>
+          <tbody id="miniTbody"></tbody>
+        </table>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="chart"></canvas>
+        <div class="chart-tip" id="chartTip"></div>
+        <div class="chart-tip-big" id="chartTipBig"></div>
+      </div>
+      <button type="button" class="panel-exit" id="chartExit" title="退出全屏">⤡ 退出全屏</button>
+    </div>
+  </section>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const S={temp:20,minute:0,second:0,records:[],revealed:new Set(),started:false,running:false,elapsed:0,drawing:true,reference:false,studentBars:{},speed:1};
+const KEY_TEMPS=[20,40,58,73,86,95,100];
+const MAX_ELAPSED=600;
+const BOIL_START=360;
+const LOSS_DURATION=300;
+const MAX_LOSS_PX=30;
+const $=id=>document.getElementById(id);
+const chart=$('chart'),ctx=chart.getContext('2d');
+let bubbles=[];        // 正在上升的气泡
+let stuckBubbles=[];   // 附着在杯底的气泡
+let steamPuffs=[];
+let lastSteamTime=0;
+let lastFrameTime=performance.now();
+let tipTimer=null;
+let surfaceT=0;
+
+function toast(t){const e=$('toast');e.textContent=t;e.classList.add('show');clearTimeout(window._t);window._t=setTimeout(()=>e.classList.remove('show'),1600)}
+function fitCanvas(){const r=chart.getBoundingClientRect(),d=Math.min(devicePixelRatio||1,2);chart.width=Math.max(1,r.width*d);chart.height=Math.max(1,r.height*d);ctx.setTransform(d,0,0,d,0,0)}
+
+/* ========== 温度模型 ========== */
+function getTemperatureForElapsed(elapsed){
+  if(elapsed >= 360) return 100;
+  const e = Math.max(0, elapsed);
+  const m = e / 60;
+  const i = Math.min(KEY_TEMPS.length - 2, Math.floor(m));
+  const t = m - i;
+  const p0 = KEY_TEMPS[Math.max(0, i-1)];
+  const p1 = KEY_TEMPS[i];
+  const p2 = KEY_TEMPS[i+1];
+  const p3 = KEY_TEMPS[Math.min(KEY_TEMPS.length-1, i+2)];
+  const v = 0.5 * ((2*p1) + (-p0+p2)*t + (2*p0-5*p1+4*p2-p3)*t*t + (-p0+3*p1-3*p2+p3)*t*t*t);
+  return Math.max(20, Math.min(100, v));
+}
+function tempForMinute(m){
+  if(m <= 0) return 20;
+  if(m >= KEY_TEMPS.length) return 100;
+  return KEY_TEMPS[m];
+}
+/* ===== 现象文字（按图片内容） ===== */
+function phenomenon(m, t){
+  if(m <= 1) return '杯底出现少量细小气泡';
+  if(m === 2) return '气泡数量增多';
+  if(m === 3) return '气泡开始向水面上升';
+  if(m === 4) return '气泡由大变小，水面开始有热气冒出';
+  if(m === 5) return '气泡由小变大，产生少量白气';
+  if(m === 6) return '大量气泡冲出水面，水面上有大量白气';
+  return '持续沸腾，温度保持不变，水量明显减少';
+}
+function waterLoss(){
+  if(!S.started) return 0;
+  if(S.elapsed <= BOIL_START) return 0;
+  return Math.min(1, (S.elapsed - BOIL_START) / LOSS_DURATION);
+}
+
+/* ========== 计时 ========== */
+function updateStartBtn(){
+  const b = $('start');
+  if(!S.started) b.textContent = '🔥 开始加热';
+  else if(!S.running) b.textContent = '🔥 继续加热';
+  else b.textContent = '🔥 加热中';
+  $('stop').disabled = !S.running;
+}
+function startHeating(){
+  if(!S.started){
+    S.started=true; S.running=true; S.elapsed=0; S.minute=0; S.second=0;
+    toast('开始加热，酒精灯已点燃');
+  } else if(!S.running){
+    S.running=true; toast('继续加热');
+  } else { toast('正在加热中'); return; }
+  updateStartBtn(); updateVisual();
+}
+function stopHeating(){
+  if(!S.running) return;
+  S.running = false;
+  toast('已停止加热');
+  updateStartBtn(); updateVisual();
+}
+function skipMinute(){
+  if(!S.started) startHeating();
+  if(S.elapsed>=MAX_ELAPSED){toast('实验已完成');return;}
+  S.elapsed=Math.min(MAX_ELAPSED, S.elapsed+60);
+  if(S.elapsed>=MAX_ELAPSED){
+    S.running=false; S.started=false;
+    toast('实验完成，已停止加热');
+  }
+  const newMinute=Math.floor(S.elapsed/60);
+  for(let m=S.minute+1;m<=newMinute;m++) recordMinute(m);
+  S.minute=newMinute;
+  updateStartBtn(); updateVisual(); drawChart();
+}
+function recordMinute(m){
+  if(S.records.some(r=>r.m===m)) return;
+  const t=tempForMinute(m);
+  S.records.push({m:m, t:t, phen:phenomenon(m, t)});
+  S.records.sort((a,b)=>a.m-b.m);
+  renderTable(); drawChart();
+}
+function revealCurrent(){
+  const m=Math.floor(S.elapsed/60);
+  if(!S.records.some(r=>r.m===m)){toast('该分钟还没有数据，请等待');return;}
+  S.revealed.add(m);
+  renderTable();
+  toast('已揭示第'+m+'分钟数据');
+}
+
+/* ========== 表格 ========== */
+function renderTable(){
+  const tb=$('tbody');
+  tb.innerHTML='';
+  const curMin=Math.floor(S.elapsed/60);
+  const rowCount=Math.max(6, Math.min(10, curMin+1));
+  for(let i=1;i<=rowCount;i++){
+    const r=S.records.find(x=>x.m===i);
+    const tr=document.createElement('tr');
+    const td1=document.createElement('td'); td1.textContent=i;
+    const td2=document.createElement('td'); td2.appendChild(makeRevealCell(i,r,'temp'));
+    const td3=document.createElement('td'); td3.appendChild(makeRevealCell(i,r,'phen'));
+    tr.append(td1,td2,td3);
+    tb.appendChild(tr);
+  }
+  renderMiniRecord();
+}
+function makeRevealCell(m,r,type){
+  const wrap=document.createElement('div'); wrap.className='reveal-cell';
+  const revealed=S.revealed.has(m)&&r;
+  if(!revealed){
+    const span=document.createElement('span'); span.className='hidden-value'; span.textContent='未揭示';
+    wrap.appendChild(span);
+    if(r){
+      const b=document.createElement('button'); b.className='show-btn'; b.textContent='显示';
+      b.onclick=()=>{S.revealed.add(m); renderTable();};
+      wrap.appendChild(b);
+    }
+  }else{
+    const span=document.createElement('span');
+    span.className = type==='temp' ? 'value' : 'value phen';
+    span.textContent = type==='temp' ? r.t+'℃' : r.phen;
+    wrap.appendChild(span);
+  }
+  return wrap;
+}
+function renderMiniRecord(){
+  const tb=$('miniTbody');
+  if(!tb) return;
+  tb.innerHTML='';
+  const curMin=Math.floor(S.elapsed/60);
+  const rowCount=Math.max(6, Math.min(10, curMin+1));
+  const tr1=document.createElement('tr');
+  const th0=document.createElement('th'); th0.className='row-label'; th0.textContent='时间/分';
+  tr1.appendChild(th0);
+  for(let i=1;i<=rowCount;i++){
+    const th=document.createElement('th'); th.textContent=i;
+    tr1.appendChild(th);
+  }
+  const tr2=document.createElement('tr');
+  const thT=document.createElement('th'); thT.className='row-label'; thT.textContent='温度/℃';
+  tr2.appendChild(thT);
+  for(let i=1;i<=rowCount;i++){
+    const td=document.createElement('td');
+    if(S.started && S.elapsed >= i*60){
+      td.textContent = tempForMinute(i)+'';
+    } else {
+      td.textContent = '—';
+      td.classList.add('empty');
+    }
+    tr2.appendChild(td);
+  }
+  tb.appendChild(tr1);
+  tb.appendChild(tr2);
+}
+
+/* ========== 画面更新 ========== */
+function updateVisual(){
+  const minutes=Math.floor(S.elapsed/60);
+  const seconds=Math.floor(S.elapsed%60);
+  const mmss = minutes + ':' + String(seconds).padStart(2,'0');
+  $('min').textContent=minutes;
+  $('sec').textContent=String(seconds).padStart(2,'0');
+  $('fsTime').textContent = mmss;
+
+  S.temp = getTemperatureForElapsed(S.elapsed);
+  const tempTxt = Math.round(S.temp)+'℃';
+  $('bigTemp').textContent = tempTxt;
+  $('fsTemp').textContent = tempTxt;
+
+  let statusTxt;
+  if(!S.started) statusTxt='常温水，尚未加热';
+  else if(!S.running) statusTxt='已停止加热';
+  else if(S.temp>=99.5){
+    statusTxt = S.elapsed > BOIL_START+30 ? '持续沸腾，水量逐渐减少' : '大量气泡冲出水面，有大量白气';
+  }
+  else if(S.temp>=90) statusTxt='气泡上升时变小，白气增多';
+  else if(S.temp>=80) statusTxt='气泡由大变小，有少量白气产生';
+  else if(S.temp>=58) statusTxt='气泡开始向水面上升';
+  else if(S.temp>=22) statusTxt='杯底附着细小气泡，并逐渐增多';
+  else statusTxt='水温正在上升';
+  $('status').textContent=statusTxt;
+
+  const ratio=Math.max(0,Math.min(1,(S.temp-0)/100));
+  const h=210*ratio;
+  const bottom=380;
+  $('mercury').setAttribute('y',bottom-h);
+  $('mercury').setAttribute('height',h);
+
+  const flame=$('flame'), glow=$('flameGlow');
+  const flicker=1+Math.sin(performance.now()/120)*.08;
+  flame.setAttribute('transform',`translate(512 455) scale(${flicker} 1) translate(-512 -455)`);
+  glow.setAttribute('opacity',S.running?'0.72':'0');
+  flame.setAttribute('opacity',S.running?'1':'0');
+
+  const mL=Math.max(12, Math.round(30 - waterLoss()*18));
+  $('waterVol').textContent = mL + ' mL';
+}
+
+/* ========== 气泡 ========== */
+function getSurfaceY(){ return 359 + waterLoss()*MAX_LOSS_PX; }
+
+/*
+  气泡阶段：
+   none   —— 温度太低，暂无可见气泡
+   stick  —— 杯底附着细小气泡，不上升（第1~2分钟）
+   shrink —— 气泡脱离杯底上升，上升中由大变小（第3~4分钟）
+   grow   —— 气泡上升中由小变大（第5分钟起）
+*/
+function bubbleMode(){
+  if(S.temp < 22) return 'none';
+  if(S.temp < 58) return 'stick';
+  if(S.temp < 95) return 'shrink';
+  return 'grow';
+}
+
+/* 生成一个附着在杯底的小气泡 */
+function spawnStuckBubble(){
+  let x = 452 + Math.random()*118;
+  // 尽量不与已有气泡重叠
+  for(let k=0;k<12;k++){
+    const ok = stuckBubbles.every(b=>Math.abs(b.x-x) > b.r + 2.6);
+    if(ok) break;
+    x = 452 + Math.random()*118;
+  }
+  const r = 1.5 + Math.random()*1.6;
+  stuckBubbles.push({
+    x: x,
+    y: 418.5 + Math.random()*3,   // 紧贴杯底内壁
+    r: r,
+    wob: Math.random()*Math.PI*2
+  });
+}
+
+/* 生成一个上升气泡 */
+function makeRiser(x, y, r0, r1){
+  return {
+    x: x, y: y, p: 0,
+    dp: 0.020 + Math.random()*0.016,
+    v: 0.55 + Math.random()*0.7,
+    r0: r0, r1: r1, r: r0,
+    alpha: 0.45 + Math.random()*0.45
+  };
+}
+
+function animateBubbles(){
+  const layer=$('bubbleLayer');
+  const speedFactor = Math.min(5, S.speed);
+  const mode = bubbleMode();
+
+  if(S.running){
+    if(mode === 'stick'){
+      /* —— 第1~2分钟：气泡只附着在杯底，不上升 —— */
+      const target = Math.round(3 + Math.max(0,(S.temp-22))/(58-22)*21); // 3 → 24 个
+      if(stuckBubbles.length < target && Math.random() < 0.5){
+        spawnStuckBubble();
+      }
+    } else if(mode === 'shrink' || mode === 'grow'){
+      /* —— 气泡开始脱离杯底，逐个向上浮起 —— */
+      if(stuckBubbles.length){
+        const keep = [];
+        stuckBubbles.forEach(b=>{
+          if(Math.random() < 0.025*speedFactor){
+            const r0 = mode==='grow' ? (0.9 + Math.random()*1.1) : Math.max(b.r, 2.4);
+            const r1 = mode==='grow' ? (4.5 + Math.random()*2.8) : (0.4 + Math.random()*0.5);
+            bubbles.push(makeRiser(b.x, b.y, r0, r1));
+          } else {
+            keep.push(b);
+          }
+        });
+        stuckBubbles = keep;
+      }
+      /* —— 持续产生新的上升气泡 —— */
+      let chance = 0;
+      if(mode === 'grow')     chance = 1.35;
+      else if(S.temp >= 90)   chance = 0.55;
+      else if(S.temp >= 80)   chance = 0.34;
+      else if(S.temp >= 70)   chance = 0.20;
+      else                    chance = 0.12;
+      let n = Math.floor(chance);
+      if(Math.random() < (chance - n)) n++;
+      const surfaceY = getSurfaceY();
+      for(let i=0;i<n;i++){
+        const bottomY = 419 + Math.random()*5;
+        if(bottomY - 3 <= surfaceY) continue;
+        const r0 = mode==='grow' ? (0.8 + Math.random()*1.2) : (3.4 + Math.random()*1.8);
+        const r1 = mode==='grow' ? (4.5 + Math.random()*2.8) : (0.4 + Math.random()*0.5);
+        bubbles.push(makeRiser(448 + Math.random()*126, bottomY, r0, r1));
+      }
+    }
+  }
+
+  /* 更新上升气泡 */
+  const surfaceY = getSurfaceY() - 2;
+  bubbles.forEach(b=>{
+    b.p += b.dp * speedFactor;
+    b.y -= b.v * speedFactor;
+    b.r = b.r0 + (b.r1 - b.r0) * b.p;
+    b.alpha += 0.001;
+  });
+  bubbles = bubbles.filter(b => {
+    if(b.y <= surfaceY) return false;
+    if(b.r < 0.55) return false;
+    if(b.r > 14) return false;
+    if(b.p > 1.05) return false;
+    return true;
+  });
+
+  /* 绘制 */
+  layer.innerHTML='';
+
+  // 杯底附着的小气泡（轻微原地抖动）
+  stuckBubbles.forEach(b=>{
+    b.wob += 0.05 * speedFactor;
+    const dx = Math.sin(b.wob) * 0.45;
+    const dy = Math.cos(b.wob * 1.3) * 0.28;
+    const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('cx', (b.x + dx).toFixed(1));
+    c.setAttribute('cy', (b.y + dy).toFixed(1));
+    c.setAttribute('r', b.r.toFixed(2));
+    c.setAttribute('fill', 'none');
+    c.setAttribute('stroke', '#ffffff');
+    c.setAttribute('stroke-width', Math.min(2.2, 0.9 + b.r*0.5).toFixed(2));
+    c.setAttribute('opacity', '0.8');
+    layer.appendChild(c);
+  });
+
+  // 上升中的气泡
+  bubbles.forEach(b=>{
+    const c=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('cx',b.x.toFixed(1)); c.setAttribute('cy',b.y.toFixed(1)); c.setAttribute('r',b.r.toFixed(2));
+    c.setAttribute('fill','none'); c.setAttribute('stroke','#ffffff');
+    c.setAttribute('stroke-width',Math.min(2.8,1.0+b.r*.16).toFixed(2));
+    c.setAttribute('opacity',Math.min(.95,b.alpha).toFixed(3));
+    layer.appendChild(c);
+  });
+
+  requestAnimationFrame(animateBubbles);
+}
+
+/* ========== 白气（云团式：模糊圆 + 交错升腾 + 缩放淡出） ========== */
+const STEAM_COUNT = 18;
+
+function initSteam(){
+  steamPuffs = [];
+  for(let i=0;i<STEAM_COUNT;i++){
+    steamPuffs.push(newPuff(true));
+  }
+}
+
+function newPuff(initial){
+  return {
+    t: initial ? Math.random() : 0,             // 生命周期进度 0..1
+    dur: 2.0 + Math.random()*1.5,               // 单次循环时长（秒）
+    x: 442 + Math.random()*140,                 // 烧杯口附近横坐标
+    size: 7 + Math.random()*10,                 // 基础半径
+    threshold: Math.random()*0.65,              // 出现阈值（越大越晚出现）
+    wobblePhase: Math.random()*Math.PI*2,       // 摆动相位
+    wobbleAmp: 4 + Math.random()*7,             // 摆动幅度
+    drift: (Math.random()-0.5)*18               // 生命周期内横向漂移
+  };
+}
+
+function steamLevel(){
+  if(!S.started || !S.running) return 0;
+  if(S.temp >= 99.5) return 1;
+  if(S.temp >= 90) return 0.45 + (S.temp-90)/9.5 * 0.45;
+  if(S.temp >= 80) return 0.15 + (S.temp-80)/10 * 0.30;
+  if(S.temp >= 70) return (S.temp-70)/10 * 0.15;
+  return 0;
+}
+
+function animateSteam(now){
+  if(!lastSteamTime) lastSteamTime = now;
+  let dt = (now - lastSteamTime)/1000;
+  lastSteamTime = now;
+  if(dt > 0.1) dt = 0.1;
+
+  const level = steamLevel();
+  const layer = $('steamLayer');
+  layer.innerHTML = '';
+
+  if(level < 0.03){
+    requestAnimationFrame(animateSteam);
+    return;
+  }
+
+  const surfaceY = getSurfaceY() - 6;
+  const riseH = 62 + level * 60;                // 越高越热升得越高
+  const speedMul = Math.max(0.6, Math.min(3, S.speed));
+
+  steamPuffs.forEach(p => {
+    if(level < p.threshold) return;
+
+    // 推进生命周期
+    p.t += (dt / p.dur) * speedMul;
+    if(p.t >= 1){
+      Object.assign(p, newPuff(false));
+    }
+
+    const t = p.t;
+    const easeUp = 1 - Math.pow(1 - t, 1.5);    // 缓出上升
+    const y = surfaceY - easeUp * riseH;
+    const wob = Math.sin(now/700 + p.wobblePhase) * p.wobbleAmp * (0.3 + t*0.7);
+    const x = p.x + wob + p.drift * t;
+
+    const grow = 0.55 + t * 1.35;               // 半径生长
+    const size = p.size * grow * (0.5 + level*0.6);
+
+    // 透明度：淡入 → 稳定 → 淡出
+    let a;
+    if(t < 0.18) a = t / 0.18;
+    else if(t > 0.72) a = (1 - t) / 0.28;
+    else a = 1;
+    a *= (0.22 + level*0.42);                   // 最高约 0.6
+
+    const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('cx', x.toFixed(1));
+    c.setAttribute('cy', y.toFixed(1));
+    c.setAttribute('r', size.toFixed(2));
+    c.setAttribute('fill','#bdd0dd');           // 浅蓝灰：浅底可见、不脏
+    c.setAttribute('opacity', a.toFixed(3));
+    layer.appendChild(c);
+  });
+
+  requestAnimationFrame(animateSteam);
+}
+
+/* ========== 水面 ========== */
+function animateSurface(){
+  surfaceT += 0.03 * S.speed;
+  const loss = waterLoss();
+  const baseY = 359 + loss * MAX_LOSS_PX;
+  const amp = 2.5 * (1 - loss * 0.5);
+  const y = baseY + Math.sin(surfaceT) * amp;
+  const cy = y + 9;
+  const dTop = `M438 ${y.toFixed(2)} Q510 ${cy.toFixed(2)} 584 ${y.toFixed(2)}`;
+  $('waterSurface').setAttribute('d', dTop);
+  $('waterBody').setAttribute('d', dTop + ' L589 413 Q589 422 578 424 H444 Q432 422 437 413 Z');
+  requestAnimationFrame(animateSurface);
+}
+
+/* ========== 主时钟 ========== */
+function tickTime(now){
+  const delta=(now-lastFrameTime)/1000*S.speed;
+  lastFrameTime=now;
+  if(S.running && S.elapsed<MAX_ELAPSED){
+    S.elapsed+=delta;
+    if(S.elapsed>=MAX_ELAPSED){
+      S.elapsed=MAX_ELAPSED; S.running=false; S.started=false;
+      toast('实验完成，已停止加热');
+      updateStartBtn();
+    }
+    const newMinute=Math.floor(S.elapsed/60);
+    if(newMinute>S.minute){
+      for(let m=S.minute+1;m<=newMinute;m++) recordMinute(m);
+      S.minute=newMinute;
+    }
+    updateVisual();
+  }
+  requestAnimationFrame(tickTime);
+}
+
+/* ========== 图表 ========== */
+function isChartPanelFs(){ return chartPanel.classList.contains('panel-fullscreen'); }
+
+function chartGeometry(){
+  const w=chart.clientWidth,h=chart.clientHeight;
+  const big=isChartPanelFs();
+  const p = big ? {l:92,r:30,t:26,b:72} : {l:60,r:20,t:16,b:42};
+  let maxMin = 6;
+  if(big){
+    const recMax = S.records.length ? Math.max(...S.records.map(r=>r.m)) : 0;
+    const curMin = Math.floor(S.elapsed/60);
+    maxMin = Math.max(6, recMax, curMin);
+    maxMin = Math.min(10, maxMin);
+  }
+  return {w,h,p,cw:w-p.l-p.r,ch:h-p.t-p.b,maxMin,big};
+}
+function xForMinute(m,g){return g.p.l+((m-.5)/g.maxMin)*g.cw}
+function tempForY(y,g){return Math.max(0,Math.min(120,((g.p.t+g.ch-y)/g.ch)*120))}
+
+function drawChart(){
+  fitCanvas();
+  const g=chartGeometry();
+  const big=g.big;
+  const fs=big?1.7:1;
+  const {w,h,p,cw,ch,maxMin}=g;
+  ctx.clearRect(0,0,w,h);
+  ctx.fillStyle='#fcfeff';
+  ctx.fillRect(0,0,w,h);
+
+  // 横向网格
+  ctx.lineWidth=1;
+  ctx.strokeStyle='#dce6ed';
+  ctx.font=Math.round(14*fs)+'px Arial';
+  ctx.fillStyle='#617482';
+  ctx.textAlign='right';
+  for(let t=0;t<=120;t+=20){
+    const y=p.t+ch-(t/120)*ch;
+    ctx.beginPath();
+    ctx.moveTo(p.l,y);
+    ctx.lineTo(w-p.r,y);
+    ctx.stroke();
+    ctx.fillText(t,p.l-10*fs,y+5*fs);
+  }
+
+  // 纵向网格
+  ctx.strokeStyle='#eef4f8';
+  for(let m=1;m<=maxMin;m++){
+    const x=xForMinute(m,g);
+    ctx.beginPath();
+    ctx.moveTo(x,p.t);
+    ctx.lineTo(x,p.t+ch);
+    ctx.stroke();
+  }
+
+  // 坐标轴
+  ctx.strokeStyle='#5d6d77';
+  ctx.beginPath();
+  ctx.moveTo(p.l,p.t);
+  ctx.lineTo(p.l,p.t+ch);
+  ctx.lineTo(w-p.r,p.t+ch);
+  ctx.stroke();
+
+  // 横坐标刻度
+  ctx.font=Math.round(14*fs)+'px Arial';
+  ctx.fillStyle='#657580';
+  ctx.textAlign='center';
+  for(let m=1;m<=maxMin;m++){
+    const x=xForMinute(m,g);
+    ctx.fillText(m,x,p.t+ch+26*fs);
+  }
+
+  const bw=Math.min(big?60:42, cw/11);
+
+  // 参考图
+  if(S.reference){
+    for(let m=1;m<=maxMin;m++){
+      const t=tempForMinute(m);
+      const x=xForMinute(m,g);
+      const bh=(t/120)*ch;
+      const y=p.t+ch-bh;
+      ctx.fillStyle='rgba(243, 156, 18, 0.50)';
+      ctx.fillRect(x-bw/2,y,bw,bh);
+      ctx.fillStyle='#7f5a00';
+      ctx.font='bold '+Math.round(13*fs)+'px Arial';
+      ctx.fillText(t+'℃',x,y-8*fs);
+      if(t>=100){
+        ctx.fillStyle='#b94a3a';
+        ctx.font='bold '+Math.round(12*fs)+'px Microsoft YaHei';
+        ctx.fillText('沸腾',x,y-24*fs);
+      }
+    }
+  }
+
+  // 学生柱状图
+  Object.entries(S.studentBars).forEach(([m,t])=>{
+    const mm=+m;
+    if(mm>maxMin) return;
+    const x=xForMinute(mm,g);
+    const bh=(t/120)*ch;
+    const y=p.t+ch-bh;
+    ctx.fillStyle='rgba(47, 126, 219, 0.9)';
+    ctx.fillRect(x-bw/2,y,bw,bh);
+    ctx.fillStyle='#1a3a5c';
+    ctx.font='bold '+Math.round(13*fs)+'px Arial';
+    ctx.fillText(Math.round(t)+'℃',x,y-7*fs);
+  });
+
+  // 横轴标题：居中
+  ctx.fillStyle='#304858';
+  ctx.font='bold '+Math.round(14*fs)+'px Microsoft YaHei';
+  ctx.textAlign='center';
+  ctx.fillText('时间 / 分', p.l + cw/2, h - 6*fs);
+
+  // 纵轴标题
+  ctx.save();
+  ctx.translate(16*fs, h/2);
+  ctx.rotate(-Math.PI/2);
+  ctx.textAlign='center';
+  ctx.font='bold '+Math.round(14*fs)+'px Microsoft YaHei';
+  ctx.fillText('温度 / ℃',0,0);
+  ctx.restore();
+}
+
+let dragMinute=null;
+function pointerToCanvas(e){const r=chart.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top}}
+chart.addEventListener('pointerdown',e=>{
+  if(!S.drawing)return;
+  chart.setPointerCapture(e.pointerId);
+  const p=pointerToCanvas(e),g=chartGeometry();
+  let closest=1,dist=Infinity;
+  for(let m=1;m<=g.maxMin;m++){
+    const d=Math.abs(p.x-xForMinute(m,g));
+    if(d<dist){dist=d;closest=m}
+  }
+  if(dist>52)return;
+  dragMinute=closest;
+  updateBarFromPointer(p.y,g);
+});
+chart.addEventListener('pointermove',e=>{
+  if(dragMinute===null||!S.drawing)return;
+  const p=pointerToCanvas(e),g=chartGeometry();
+  updateBarFromPointer(p.y,g);
+});
+chart.addEventListener('pointerup',()=>{dragMinute=null});
+chart.addEventListener('pointercancel',()=>{dragMinute=null});
+function updateBarFromPointer(y,g){
+  const t=Math.round(tempForY(y,g));
+  S.studentBars[dragMinute]=t;
+  drawChart();
+}
+
+/* ========== 按钮事件 ========== */
+$('start').onclick=startHeating;
+$('stop').onclick=stopHeating;
+$('heat').onclick=skipMinute;
+$('reveal').onclick=revealCurrent;
+$('clearDraw').onclick=()=>{S.studentBars={};S.reference=false;drawChart();toast('已清除学生作图');};
+$('reset').onclick=()=>{
+  S.started=false;S.running=false;S.elapsed=0;S.temp=20;S.minute=0;S.second=0;
+  S.records=[];S.revealed.clear();S.studentBars={};S.reference=false;
+  bubbles=[]; stuckBubbles=[]; steamPuffs=[];
+  initSteam();
+  renderTable();drawChart();updateVisual();updateStartBtn();
+  toast('已重置');
+};
+$('drawMode').onclick=function(){
+  S.drawing=!S.drawing;
+  this.classList.toggle('active');
+  if(S.drawing) toast('已开启绘图模式');
+  else toast('已关闭绘图模式');
+  updateTipText(); drawChart();
+};
+$('refMode').onclick=function(){
+  S.reference=!S.reference;
+  this.classList.toggle('active');
+  if(S.reference) toast('已显示参考图（橙色）');
+  else toast('已隐藏参考图');
+  drawChart();
+};
+
+/* ========== 倍速 ========== */
+const SPEEDS=[1,2,3,5,10];
+function applySpeed(v){
+  S.speed=v;
+  document.querySelectorAll('.speed-btn[data-speed]').forEach(b=>{
+    b.classList.toggle('active', Number(b.dataset.speed)===v);
+  });
+  const sb=$('speedBtn');
+  sb.textContent=v+'×';
+  sb.classList.toggle('active', v>1);
+}
+document.querySelectorAll('.speed-btn[data-speed]').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    applySpeed(Number(btn.dataset.speed));
+    toast('已切换为 '+S.speed+'× 倍速');
+  });
+});
+$('speedBtn').addEventListener('click',()=>{
+  const idx=(SPEEDS.indexOf(S.speed)+1)%SPEEDS.length;
+  applySpeed(SPEEDS[idx]);
+  toast('已切换为 '+S.speed+'× 倍速');
+});
+applySpeed(1);
+
+/* ========== 操作提示 ========== */
+function updateTipText(){
+  const text = S.drawing ? '白板操作：非全屏时拖动第 1～6 分钟柱形；全屏时可拖动第 1～10 分钟柱形。' : '绘图模式已关闭，不能拖动绘制。';
+  $('chartTipBig').textContent = text;
+}
+$('tipBtn').onclick=function(){
+  const tipEl=$('chartTipBig');
+  if (tipEl.classList.contains('show')) {
+    tipEl.classList.remove('show');
+    if(tipTimer) clearTimeout(tipTimer);
+    return;
+  }
+  updateTipText();
+  tipEl.classList.add('show');
+  if(tipTimer) clearTimeout(tipTimer);
+  tipTimer=setTimeout(()=>{tipEl.classList.remove('show');},5000);
+};
+$('chartTipBig').addEventListener('click', function(){
+  this.classList.remove('show');
+  if(tipTimer) clearTimeout(tipTimer);
+});
+
+/* ========== 面板聚焦 ========== */
+const recordPanel=$('recordPanel');
+const chartPanel=$('chartPanel');
+recordPanel.addEventListener("click",()=>{
+  recordPanel.classList.add("is-focus");
+  chartPanel.classList.remove("is-focus");
+});
+chartPanel.addEventListener("click",()=>{
+  chartPanel.classList.add("is-focus");
+  recordPanel.classList.remove("is-focus");
+});
+
+/* ========== 实验区全屏 ========== */
+const fsWrapper=$('fsWrapper');
+const stageEl=$('stageEl');
+const controls=$('controls');
+const fsBtn=$('fsBtn');
+let fsState=false;
+let pseudoFs=false;
+
+function applyStageFsLayout(on){
+  if(on){
+    document.body.classList.add('fs-active');
+    if(pseudoFs) document.body.classList.add('fs-pseudo');
+    else document.body.classList.remove('fs-pseudo');
+    if(fsBtn.parentNode!==controls) controls.appendChild(fsBtn);
+    fsBtn.textContent='⤡ 退出全屏';
+    fsBtn.title='退出全屏（Esc）';
+  }else{
+    document.body.classList.remove('fs-active','fs-pseudo');
+    if(fsBtn.parentNode!==stageEl) stageEl.appendChild(fsBtn);
+    fsBtn.textContent='⛶ 全屏';
+    fsBtn.title='全屏显示实验区';
+  }
+  setTimeout(drawChart,60);
+  setTimeout(drawChart,240);
+}
+function enterStageFs(){
+  if(fsState) return;
+  if(fullPanel) closePanelFs();
+  const begin=(pseudo)=>{
+    if(fsState) return;
+    fsState=true; pseudoFs=pseudo;
+    if(pseudo){
+      document.documentElement.style.overflow='hidden';
+      document.body.style.overflow='hidden';
+    }
+    applyStageFsLayout(true);
+    toast('已全屏，按 Esc 退出');
+  };
+  const req=fsWrapper.requestFullscreen||fsWrapper.webkitRequestFullscreen;
+  if(!req){ begin(true); return; }
+  try{
+    const p=req.call(fsWrapper);
+    if(p&&typeof p.then==='function') p.then(()=>begin(false)).catch(()=>begin(true));
+    else begin(false);
+  }catch(err){ begin(true); }
+}
+function exitStageFs(){
+  if(!fsState) return;
+  const wasPseudo=pseudoFs;
+  fsState=false; pseudoFs=false;
+  if(wasPseudo){
+    document.documentElement.style.overflow='';
+    document.body.style.overflow='';
+    applyStageFsLayout(false);
+  }else{
+    const exit=document.exitFullscreen||document.webkitExitFullscreen;
+    if(exit){
+      try{
+        const p=exit.call(document);
+        if(p&&typeof p.then==='function') p.then(()=>applyStageFsLayout(false)).catch(()=>applyStageFsLayout(false));
+        else applyStageFsLayout(false);
+      }catch(e){ applyStageFsLayout(false); }
+    }else{
+      applyStageFsLayout(false);
+    }
+  }
+}
+fsBtn.addEventListener('click',()=>{ fsState ? exitStageFs() : enterStageFs(); });
+function onFsChange(){
+  const el=document.fullscreenElement||document.webkitFullscreenElement;
+  if(el===fsWrapper){
+    if(!fsState){ fsState=true; pseudoFs=false; applyStageFsLayout(true); }
+  }else{
+    if(fsState && !pseudoFs){ fsState=false; applyStageFsLayout(false); }
+  }
+}
+document.addEventListener('fullscreenchange',onFsChange);
+document.addEventListener('webkitfullscreenchange',onFsChange);
+
+/* ========== 面板全屏 ========== */
+let fullPanel=null;
+function closePanelFs(){
+  if(!fullPanel) return;
+  fullPanel.classList.remove('panel-fullscreen');
+  fullPanel=null;
+  setTimeout(drawChart,80);
+}
+function togglePanelFs(panel){
+  if(fullPanel===panel){ closePanelFs(); return; }
+  const doOpen=()=>{
+    if(fullPanel) fullPanel.classList.remove('panel-fullscreen');
+    fullPanel=panel;
+    panel.classList.add('panel-fullscreen');
+    renderMiniRecord(); updateVisual();
+    setTimeout(drawChart,80);
+    setTimeout(drawChart,260);
+  };
+  if(fsState){
+    exitStageFs();
+    setTimeout(doOpen,180);
+  }else{
+    doOpen();
+  }
+}
+$('recordFs').addEventListener('click',e=>{ e.stopPropagation(); togglePanelFs(recordPanel); });
+$('chartFs').addEventListener('click',e=>{ e.stopPropagation(); togglePanelFs(chartPanel); });
+$('recordExit').addEventListener('click',e=>{ e.stopPropagation(); closePanelFs(); });
+$('chartExit').addEventListener('click',e=>{ e.stopPropagation(); closePanelFs(); });
+
+/* ========== Esc ========== */
+window.addEventListener('keydown',e=>{
+  if(e.key==='Escape'||e.keyCode===27){
+    if(fullPanel) closePanelFs();
+    if(fsState && pseudoFs) exitStageFs();
+  }
+});
+
+/* ========== 尺寸自适应 ========== */
+if(window.ResizeObserver){
+  new ResizeObserver(()=>drawChart()).observe(chart);
+}
+window.addEventListener('resize',()=>{ drawChart(); });
+
+/* ========== 启动 ========== */
+initSteam();
+animateBubbles();
+animateSurface();
+requestAnimationFrame(animateSteam);
+requestAnimationFrame(tickTime);
+renderTable();
+drawChart();
+updateVisual();
+updateStartBtn();
+updateTipText();
+</script>
+
+
+
+
+<!-- ================= 开物AI科学 · 版权模块（单击显示 / 双击打开官网） ================= -->
+<style id="kaiming-copyright-style">
+  #kaiming-copyright {
+    position: fixed;
+    bottom: 173px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    pointer-events: none;
+    z-index: 999999;
+    transition: opacity 0.45s ease;
+    opacity: 0;
+    display: none;
+  }
+  #kaiming-copyright .inner {
+    display: inline-block;
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #eafaf2;
+    padding: 9px 26px;
+    border-radius: 60px;
+    /* 原稿为 14px；此处改为 16px 以符合本机 verify_html.py 的「字号不得小于 16px」硬规则 */
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.6px;
+    border: 1px solid rgba(255, 245, 210, 0.3);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+    font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+    white-space: nowrap;
+  }
+</style>
+
+<div id="kaiming-copyright">
+  <div class="inner">© 2026 开物AI科学 ｜ AI 赋能 · 教育公平</div>
+</div>
+
+<script id="kaiming-copyright-script">
+(function () {
+  "use strict";
+
+  /* 目标：单击标题 → 显示版权 3.5 秒；双击标题 → 打开 www.kaiwuaiscience.com */
+
+  const HOMEPAGE = "https://www.kaiwuaiscience.com";
+  const SHOW_MS = 3500;      // 版权显示时长
+  const DBL_WINDOW = 280;    // 双击判定的时间窗（毫秒）
+  const FADE_MS = 450;       // 淡出时长，与 CSS transition 一致
+
+  function bindCopyright() {
+    // 首选 #mainTitle（注入脚本会保证它存在）；后三个选择器是手写粘贴时的兜底
+    const title = document.getElementById("mainTitle") ||
+                  document.querySelector("h1, .title, .page-title, .main-title");
+    const box = document.getElementById("kaiming-copyright");
+    if (!title || !box) return;
+
+    title.style.cursor = "pointer";
+    title.style.userSelect = "none";
+    title.style.webkitUserSelect = "none";
+
+    let clickTimer = null;
+    let hideTimer = null;
+    let seq = 0;   // 每次显示/隐藏都 +1，用来作废在飞的定时器
+
+    function showCopyright() {
+      const my = ++seq;
+      if (hideTimer) clearTimeout(hideTimer);
+      box.style.display = "block";
+      /* 强制重绘，让 0 → 1 的淡入真的发生。
+         这里刻意不用 requestAnimationFrame：rAF 在页面不产生新帧时（后台标签页、
+         无头渲染、大屏久置）不保证触发——一旦它晚于下方的隐藏定时器回调，
+         就会把 opacity 又设成 1，导致版权条永久停在屏幕上。 */
+      void box.offsetHeight;
+      box.style.opacity = "1";
+      hideTimer = setTimeout(function () {
+        if (my !== seq) return;      // 期间又被点过，交给新的那一次收尾
+        box.style.opacity = "0";
+        setTimeout(function () {
+          if (my === seq) box.style.display = "none";
+        }, FADE_MS);
+      }, SHOW_MS);
+    }
+
+    function hideCopyright() {
+      const my = ++seq;              // 作废所有在飞的定时器，避免"淡出到一半又被点亮"卡住
+      if (hideTimer) clearTimeout(hideTimer);
+      if (box.style.display !== "block") return;
+      box.style.opacity = "0";
+      setTimeout(function () {
+        if (my === seq) box.style.display = "none";
+      }, FADE_MS);
+    }
+
+    function openHomepage() {
+      // 双击时隐藏版权，并跳转官网
+      hideCopyright();
+      window.open(HOMEPAGE, "_blank", "noopener,noreferrer");
+    }
+
+    title.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (clickTimer) return;   // 已在等待双击窗口，忽略这次单击
+      clickTimer = setTimeout(function () {
+        clickTimer = null;
+        showCopyright();        // 确认是单击
+      }, DBL_WINDOW);
+    });
+
+    title.addEventListener("dblclick", function (e) {
+      e.stopPropagation();
+      if (clickTimer) {         // 取消挂起的单击
+        clearTimeout(clickTimer);
+        clickTimer = null;
+      }
+      openHomepage();
+    });
+
+    // 点击页面其它地方，立即隐藏版权
+    document.addEventListener("click", function (e) {
+      if (e.target === title) return;
+      hideCopyright();
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bindCopyright);
+  } else {
+    bindCopyright();
+  }
+})();
+</script>
+<!-- ================= 开物AI科学 · 版权模块 结束 ================= -->
+
+</body>
+</html>

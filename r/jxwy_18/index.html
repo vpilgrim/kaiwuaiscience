@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AR 太阳系 (广角高清版)</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+
+    <style>
+        /* 全局样式 */
+        body { margin: 0; overflow: hidden; background-color: #000; color: #00aaff; font-family: "Segoe UI", sans-serif; user-select: none; }
+        
+        /* 3D 画布 */
+        #scene-container { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; }
+        #svg-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; }
+        .planet-label { fill: rgba(255, 255, 255, 0.9); font-size: 14px; font-weight: bold; text-anchor: middle; text-shadow: 0 0 3px #000; }
+
+        /* AR 背景视频 - 关键修改：object-fit: cover 配合 16:9 信号可获得最佳视野 */
+        #bg_video { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            object-fit: cover; /* 铺满屏幕 */
+            z-index: -1; display: none; transform: scaleX(-1); 
+        }
+
+        /* --- 左下角状态栏 --- */
+        #status-panel {
+            position: fixed; bottom: 20px; left: 20px; width: 260px;
+            background: rgba(0, 15, 30, 0.75); border: 1px solid #00aaff; border-radius: 8px;
+            padding: 15px; z-index: 100; backdrop-filter: blur(5px);
+            box-shadow: 0 0 15px rgba(0, 170, 255, 0.2); font-size: 13px; color: #ccc;
+        }
+        #status-panel h3 { margin: 0 0 10px 0; color: #00aaff; border-bottom: 1px solid rgba(0, 170, 255, 0.3); padding-bottom: 5px; font-size: 15px; }
+        .status-row { display: flex; justify-content: space-between; margin-bottom: 5px; }
+        .status-val { font-family: monospace; color: white; font-weight: bold; }
+        .active-dot { display: inline-block; width: 8px; height: 8px; background: #333; border-radius: 50%; margin-right: 5px; }
+        .active-dot.on { background: #00FF00; box-shadow: 0 0 5px #00FF00; }
+
+        /* --- 右下角控制栏 --- */
+        #controls-bar {
+            position: fixed; bottom: 20px; right: 20px; z-index: 100;
+            display: flex; flex-direction: column; gap: 8px; align-items: flex-end;
+        }
+        .hud-btn {
+            background: rgba(0, 20, 40, 0.8); border: 1px solid #00aaff; color: #00aaff;
+            padding: 8px 15px; border-radius: 4px; cursor: pointer; font-size: 13px;
+            transition: all 0.2s; width: 140px; text-align: center; letter-spacing: 1px;
+        }
+        .hud-btn:hover { background: rgba(0, 170, 255, 0.2); box-shadow: 0 0 10px rgba(0, 170, 255, 0.3); color: white; }
+        .hud-btn.active { background: #00aaff; color: black; font-weight: bold; }
+        .slider-box {
+            background: rgba(0, 20, 40, 0.8); border: 1px solid #555; border-radius: 4px;
+            padding: 8px; width: 140px; text-align: center; color: #ccc; font-size: 12px;
+        }
+        input[type=range] { width: 100%; cursor: pointer; accent-color: #00aaff; }
+
+        /* --- 右上角小窗 (修复比例变形) --- */
+        #camera-preview-box {
+            position: fixed; top: 20px; right: 20px; 
+            width: 240px; /* 固定宽度 */
+            height: auto; /* 高度自适应 */
+            aspect-ratio: 16 / 9; /* 强制 16:9 比例，解决扁平问题 */
+            z-index: 90; border: 2px solid #00aaff; border-radius: 8px;
+            overflow: hidden; background: black; display: none;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        #output_canvas { 
+            width: 100%; height: 100%; 
+            object-fit: cover; /* 保证填满小窗 */
+            transform: scaleX(-1); 
+        }
+
+        /* --- 信息面板 --- */
+        #info-panel {
+            position: absolute; top: 50%; right: 20%; transform: translateY(-50%); width: 320px;
+            background: rgba(5, 15, 25, 0.9); border: 1px solid #00aaff; border-radius: 12px;
+            padding: 25px; color: #eee; z-index: 50; display: none;
+            box-shadow: 0 0 30px rgba(0, 170, 255, 0.25);
+        }
+        #info-panel h2 { margin-top: 0; color: #FFD700; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; font-size: 22px; }
+        #info-panel p { line-height: 1.6; font-size: 14px; color: #ccc; text-align: justify; }
+        #close-info-btn { margin-top: 15px; width: 100%; padding: 8px; background: #333; border: none; color: white; cursor: pointer; border-radius: 4px; }
+        #close-info-btn:hover { background: #555; }
+
+        /* --- 说明弹窗 --- */
+        #instructions-modal {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 400px; background: rgba(0, 0, 0, 0.9); border: 2px solid #00aaff;
+            padding: 30px; border-radius: 15px; z-index: 200; display: none;
+            color: white; box-shadow: 0 0 50px rgba(0,0,0,0.8);
+        }
+        #instructions-modal h2 { margin-top: 0; color: #00aaff; text-align: center;}
+        #instructions-modal ul { line-height: 1.8; color: #ddd; }
+        
+        .loading { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000; font-size: 18px; background: rgba(0,0,0,0.8); color:#00aaff; padding: 20px 40px; border: 1px solid #00aaff; border-radius: 8px; text-align: center;}
+    </style>
+</head>
+<body>
+
+    <div id="loading" class="loading">正在初始化高清广角相机...<br><span style="font-size:12px; color:white">请允许摄像头权限</span></div>
+
+    <div id="status-panel">
+        <h3>系统状态监控</h3>
+        <div class="status-row">
+            <span><span id="dot-left" class="active-dot"></span>左手 (旋转/缩放)</span>
+            <span id="val-left" class="status-val">待机</span>
+        </div>
+        <div class="status-row">
+            <span><span id="dot-right" class="active-dot"></span>右手 (UI交互)</span>
+            <span id="val-right" class="status-val">待机</span>
+        </div>
+        <div style="margin-top:10px; border-top:1px solid #333; padding-top:5px; font-size:12px; color:#888;">
+            数据流: <span id="debug-delta" style="color:#00aaff">X:0 Y:0</span>
+        </div>
+    </div>
+
+    <div id="controls-bar">
+        <div class="slider-box">
+            <label>左手灵敏度: <span id="sens-val" style="color:#00aaff">20</span></label>
+            <input type="range" id="sens-slider" min="5" max="50" step="1" value="20">
+        </div>
+        <button class="hud-btn" id="btn-ar">AR 模式: 关</button>
+        <button class="hud-btn" id="btn-cam-toggle">摄像头小窗: 关</button>
+        <button class="hud-btn" id="btn-reset">重置视角</button>
+        <button class="hud-btn" id="btn-help">操作说明</button>
+    </div>
+
+    <div id="camera-preview-box"><canvas id="output_canvas"></canvas></div>
+    <video id="bg_video" playsinline></video>
+
+    <div id="scene-container">
+        <canvas id="three-canvas"></canvas>
+        <svg id="svg-overlay" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+
+    <div id="info-panel">
+        <h2 id="panel-title">星球名称</h2>
+        <p id="panel-desc">描述...</p>
+        <div style="margin-top:15px; font-size:12px; color:#666;">* 右手捏合可拖拽</div>
+        <button id="close-info-btn" onclick="document.getElementById('info-panel').style.display='none'">关闭面板</button>
+    </div>
+
+    <div id="instructions-modal">
+        <h2>手势操作指南</h2>
+        <ul>
+            <li><strong>✋ 左手 (姿态控制)</strong>
+                <ul>
+                    <li><strong>平移手掌</strong>: 在空中移动手掌，旋转太阳系。</li>
+                    <li><strong>张开/捏合</strong>: 张开五指放大，捏合缩小。</li>
+                </ul>
+            </li>
+            <li><strong>🤏 右手 (界面交互)</strong>
+                <ul>
+                    <li><strong>捏合</strong>: 拖拽信息面板。</li>
+                    <li><strong>点击</strong>: 点击星球查看百科。</li>
+                </ul>
+            </li>
+        </ul>
+        <div style="text-align:center; margin-top:20px;">
+            <button class="hud-btn" onclick="document.getElementById('instructions-modal').style.display='none'">我知道了</button>
+        </div>
+    </div>
+
+    <video class="input_video" style="display:none"></video>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        let camera, scene, renderer, controls;
+        let svgOverlay, solarSystemGroup, starField, ambientLight, camLight;
+        const planets = []; 
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        
+        let isARMode = false;
+        let isCamOpen = false;
+        let rotationSensitivity = 20.0; 
+
+        let prevLeft = { x: null, y: null, pinchDist: null };
+        let currentScale = 1.0;
+
+        // UI Refs
+        const domDotLeft = document.getElementById('dot-left');
+        const domValLeft = document.getElementById('val-left');
+        const domDotRight = document.getElementById('dot-right');
+        const domValRight = document.getElementById('val-right');
+        const domDebug = document.getElementById('debug-delta');
+
+        // 星球数据
+        const planetsData = [
+            { name: "太阳 (Sun)", size: 15, distance: 0, color: 0xFFD700, emissive: true, desc: "太阳系中心的恒星，占据了太阳系总质量的99.86%，为地球生命提供光和热。" },
+            { name: "水星 (Mercury)", size: 2, distance: 30, color: 0xAAAAAA, speed: 0.04, desc: "距离太阳最近的行星，昼夜温差极大，表面布满了陨石坑。" },
+            { name: "金星 (Venus)", size: 3.5, distance: 45, color: 0xDDBB88, speed: 0.03, desc: "太阳系中最热的行星，拥有厚厚的二氧化碳大气层，是夜空中最亮的天体。" },
+            { name: "地球 (Earth)", size: 3.6, distance: 65, color: 0x2244FF, speed: 0.02, desc: "我们赖以生存的家园，目前已知唯一孕育生命的星球。" },
+            { name: "火星 (Mars)", size: 2.5, distance: 85, color: 0xFF3300, speed: 0.016, desc: "红色星球，表面覆盖氧化铁，拥有太阳系最高的山峰奥林帕斯山。" },
+            { name: "木星 (Jupiter)", size: 10, distance: 125, color: 0xDDAA77, speed: 0.008, desc: "太阳系最大的气态巨行星，拥有著名的大红斑风暴。" },
+            { name: "土星 (Saturn)", size: 8.5, distance: 165, color: 0xDDBB55, speed: 0.006, hasRing: true, desc: "拥有壮观的行星环系统，密度很低，甚至能漂浮在水面上。" },
+            { name: "天王星 (Uranus)", size: 6, distance: 205, color: 0x66CCFF, speed: 0.004, desc: "冰巨星，自转轴倾斜角度极大，几乎是躺着在轨道上滚动。" },
+            { name: "海王星 (Neptune)", size: 5.8, distance: 240, color: 0x3333AA, speed: 0.003, desc: "距离太阳最远的深蓝色行星，拥有太阳系最强烈的风暴。" }
+        ];
+
+        initThree();
+        initUI();
+        initMediaPipe();
+        animate();
+
+        function initThree() {
+            scene = new THREE.Scene();
+            solarSystemGroup = new THREE.Group();
+            scene.add(solarSystemGroup);
+
+            renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('three-canvas'), antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+            renderer.setClearColor(0x000000, 1);
+
+            camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 4000);
+            camera.position.set(0, 100, 300);
+
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.enablePan = false;
+
+            ambientLight = new THREE.AmbientLight(0x404040, 2); 
+            scene.add(ambientLight);
+            
+            const sunLight = new THREE.PointLight(0xffffff, 3, 500); 
+            solarSystemGroup.add(sunLight);
+
+            camLight = new THREE.DirectionalLight(0xffffff, 0); 
+            scene.add(camLight);
+
+            svgOverlay = document.getElementById('svg-overlay');
+            starField = createStarfield(); 
+            scene.add(starField);
+
+            planetsData.forEach(createPlanetSystem);
+
+            window.addEventListener('resize', onWindowResize);
+            window.addEventListener('click', onMouseClick);
+        }
+
+        function initUI() {
+            document.getElementById('btn-ar').addEventListener('click', function() {
+                isARMode = !isARMode;
+                const bgVideo = document.getElementById('bg_video');
+                if (isARMode) {
+                    this.textContent = "AR 模式: 开";
+                    this.classList.add('active');
+                    renderer.setClearColor(0x000000, 0); 
+                    bgVideo.style.display = 'block';
+                    starField.visible = false;
+                    ambientLight.intensity = 4.0; 
+                    camLight.intensity = 1.5;
+                    updateOrbitVisibility(true);
+                } else {
+                    this.textContent = "AR 模式: 关";
+                    this.classList.remove('active');
+                    renderer.setClearColor(0x000000, 1); 
+                    bgVideo.style.display = 'none';
+                    starField.visible = true;
+                    ambientLight.intensity = 2.0;
+                    camLight.intensity = 0;
+                    updateOrbitVisibility(false);
+                }
+            });
+
+            document.getElementById('btn-cam-toggle').addEventListener('click', function() {
+                isCamOpen = !isCamOpen;
+                document.getElementById('camera-preview-box').style.display = isCamOpen ? 'block' : 'none';
+                this.textContent = isCamOpen ? "摄像头小窗: 开" : "摄像头小窗: 关";
+                this.classList.toggle('active');
+            });
+
+            document.getElementById('btn-reset').addEventListener('click', () => {
+                solarSystemGroup.rotation.set(0,0,0);
+                solarSystemGroup.scale.set(1,1,1);
+                currentScale = 1.0;
+                camera.position.set(0, 100, 300);
+                controls.reset();
+            });
+
+            document.getElementById('btn-help').addEventListener('click', () => {
+                document.getElementById('instructions-modal').style.display = 'block';
+            });
+
+            document.getElementById('sens-slider').addEventListener('input', (e) => {
+                rotationSensitivity = parseFloat(e.target.value);
+                document.getElementById('sens-val').textContent = rotationSensitivity;
+            });
+        }
+
+        function updateOrbitVisibility(isAR) {
+            planets.forEach(p => {
+                if (p.orbitMesh) {
+                    p.orbitMesh.material.opacity = isAR ? 0.6 : 0.15;
+                    p.orbitMesh.material.color.setHex(isAR ? 0x00aaff : 0xffffff);
+                }
+            });
+        }
+
+        function initMediaPipe() {
+            const inputVideo = document.getElementsByClassName('input_video')[0];
+            const bgVideo = document.getElementById('bg_video');
+            const outputCanvas = document.getElementById('output_canvas');
+            const ctx = outputCanvas.getContext('2d');
+
+            const hands = new Hands({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
+            
+            hands.setOptions({
+                maxNumHands: 2,
+                modelComplexity: 0, 
+                minDetectionConfidence: 0.5,
+                minTrackingConfidence: 0.5
+            });
+
+            hands.onResults(results => {
+                document.getElementById('loading').style.display = 'none';
+                
+                if (isCamOpen) {
+                    ctx.save();
+                    ctx.clearRect(0, 0, outputCanvas.width, outputCanvas.height);
+                    ctx.drawImage(results.image, 0, 0, outputCanvas.width, outputCanvas.height);
+                    if (results.multiHandLandmarks) {
+                        for (const landmarks of results.multiHandLandmarks) {
+                            drawConnectors(ctx, landmarks, HAND_CONNECTIONS, {color: '#00aaff', lineWidth: 2});
+                            drawLandmarks(ctx, landmarks, {color: '#FFD700', lineWidth: 1});
+                        }
+                    }
+                    ctx.restore();
+                }
+
+                let leftDetected = false;
+                let rightDetected = false;
+
+                if (results.multiHandLandmarks) {
+                    for (const landmarks of results.multiHandLandmarks) {
+                        const wrist = landmarks[0];
+                        const thumb = landmarks[4];
+                        const index = landmarks[8];
+                        
+                        const dist = Math.hypot(thumb.x - index.x, thumb.y - index.y);
+                        
+                        if (wrist.x > 0.5) {
+                            leftDetected = true;
+                            domDotLeft.classList.add('on');
+                            domValLeft.textContent = `位移控制中`;
+
+                            const currentX = wrist.x;
+                            const currentY = wrist.y;
+
+                            if (prevLeft.x !== null) {
+                                const deltaX = currentX - prevLeft.x;
+                                const deltaY = currentY - prevLeft.y;
+                                domDebug.textContent = `dX:${(deltaX*100).toFixed(1)} dY:${(deltaY*100).toFixed(1)}`;
+
+                                if (Math.abs(deltaX) > 0.0005 || Math.abs(deltaY) > 0.0005) {
+                                    solarSystemGroup.rotation.y += deltaX * rotationSensitivity; 
+                                    solarSystemGroup.rotation.x += deltaY * rotationSensitivity;
+                                }
+                            }
+
+                            if (prevLeft.pinchDist !== null) {
+                                const distDelta = dist - prevLeft.pinchDist;
+                                if (Math.abs(distDelta) > 0.002) {
+                                    currentScale += distDelta * 2.5;
+                                    currentScale = Math.max(0.2, Math.min(currentScale, 6.0));
+                                    solarSystemGroup.scale.set(currentScale, currentScale, currentScale);
+                                    domValLeft.textContent = distDelta > 0 ? "正在放大" : "正在缩小";
+                                }
+                            }
+                            prevLeft.x = currentX;
+                            prevLeft.y = currentY;
+                            prevLeft.pinchDist = dist;
+                        } else {
+                            rightDetected = true;
+                            domDotRight.classList.add('on');
+                            if (dist < 0.08) {
+                                domValRight.textContent = "拖拽面板";
+                                const panel = document.getElementById('info-panel');
+                                if (panel.style.display !== 'none') {
+                                    panel.style.left = ((1 - index.x) * window.innerWidth) + 'px';
+                                    panel.style.top = (index.y * window.innerHeight) + 'px';
+                                    panel.style.transform = 'translate(-50%, -50%)';
+                                }
+                            } else {
+                                domValRight.textContent = "就绪";
+                            }
+                        }
+                    }
+                }
+
+                if (!leftDetected) {
+                    domDotLeft.classList.remove('on');
+                    domValLeft.textContent = "未检测";
+                    prevLeft.x = null; prevLeft.y = null; prevLeft.pinchDist = null;
+                }
+                if (!rightDetected) {
+                    domDotRight.classList.remove('on');
+                    domValRight.textContent = "未检测";
+                }
+            });
+
+            // 关键修改：请求高清宽屏分辨率，解决画面放大和比例问题
+            const cameraUtils = new Camera(inputVideo, {
+                onFrame: async () => {
+                   await hands.send({image: inputVideo});
+                },
+                width: 1280, 
+                height: 720 
+            });
+            cameraUtils.start();
+
+            inputVideo.addEventListener('loadeddata', () => {
+                if (inputVideo.srcObject) {
+                    bgVideo.srcObject = inputVideo.srcObject;
+                    bgVideo.play();
+                }
+            });
+        }
+
+        function createPlanetSystem(data) {
+            let material = data.emissive ? new THREE.MeshBasicMaterial({ color: data.color }) : new THREE.MeshStandardMaterial({ color: data.color, roughness: 0.8 });
+            const mesh = new THREE.Mesh(new THREE.SphereGeometry(data.size, 32, 32), material);
+            const angle = Math.random() * Math.PI * 2;
+            mesh.position.set(data.distance * Math.cos(angle), 0, data.distance * Math.sin(angle));
+            mesh.userData = data; 
+            solarSystemGroup.add(mesh);
+
+            let orbitMesh = null;
+            if (data.distance > 0) {
+                orbitMesh = new THREE.Mesh(new THREE.RingGeometry(data.distance - 0.2, data.distance + 0.2, 64), new THREE.MeshBasicMaterial({ color: 0xffffff, opacity: 0.15, transparent: true, side: THREE.DoubleSide }));
+                orbitMesh.rotation.x = -Math.PI / 2;
+                solarSystemGroup.add(orbitMesh);
+            }
+            if (data.hasRing) {
+                const ring = new THREE.Mesh(new THREE.RingGeometry(data.size + 2, data.size + 8, 64), new THREE.MeshStandardMaterial({ color: 0xAA9977, side: THREE.DoubleSide, transparent:true, opacity: 0.7 }));
+                ring.rotation.x = Math.PI / 2.2;
+                mesh.add(ring);
+            }
+            const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            label.textContent = data.name;
+            label.setAttribute("class", "planet-label");
+            const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            group.appendChild(label);
+            svgOverlay.appendChild(group);
+            planets.push({ mesh: mesh, labelGroup: group, data: data, angle: angle });
+        }
+
+        function createStarfield() {
+            const geo = new THREE.BufferGeometry();
+            const vertices = [];
+            for (let i = 0; i < 4000; i++) vertices.push(THREE.MathUtils.randFloatSpread(2000), THREE.MathUtils.randFloatSpread(2000), THREE.MathUtils.randFloatSpread(2000));
+            geo.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+            return new THREE.Points(geo, new THREE.PointsMaterial({ color: 0x888888, size: 1.5 }));
+        }
+
+        function onMouseClick(event) {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(solarSystemGroup.children, true); 
+            const planetIntersects = intersects.filter(hit => hit.object.userData && hit.object.userData.name);
+
+            if (planetIntersects.length > 0) {
+                const data = planetIntersects[0].object.userData;
+                const panel = document.getElementById('info-panel');
+                document.getElementById('panel-title').textContent = data.name;
+                document.getElementById('panel-title').style.color = '#' + data.color.toString(16).padStart(6, '0');
+                document.getElementById('panel-desc').textContent = data.desc;
+                panel.style.display = 'block';
+            }
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (isARMode && camLight) {
+                camLight.position.copy(camera.position);
+                camLight.target.position.set(0, 0, 0); 
+            }
+
+            const tempV = new THREE.Vector3();
+            planets.forEach(p => {
+                if (p.data.distance > 0) {
+                    p.angle += p.data.speed;
+                    p.mesh.position.set(p.data.distance * Math.cos(p.angle), 0, p.data.distance * Math.sin(p.angle));
+                }
+                p.mesh.rotation.y += 0.01;
+                p.mesh.getWorldPosition(tempV);
+                tempV.project(camera);
+                const x = (tempV.x * 0.5 + 0.5) * window.innerWidth;
+                const y = (tempV.y * -0.5 + 0.5) * window.innerHeight;
+                
+                if (tempV.z > 1 || Math.abs(tempV.x) > 1.05 || Math.abs(tempV.y) > 1.05) {
+                    p.labelGroup.style.display = 'none';
+                } else {
+                    p.labelGroup.style.display = 'block';
+                    p.labelGroup.setAttribute("transform", `translate(${x}, ${y - 20})`);
+                }
+            });
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+    </script>
+
+
+<!-- ================= 开物AI科学 · 版权模块（单击显示 / 双击打开官网） ================= -->
+<style id="kaiming-copyright-style">
+  #kaiming-copyright {
+    position: fixed;
+    bottom: 26px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    pointer-events: none;
+    z-index: 999999;
+    transition: opacity 0.45s ease;
+    opacity: 0;
+    display: none;
+  }
+  #kaiming-copyright .inner {
+    display: inline-block;
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #eafaf2;
+    padding: 9px 26px;
+    border-radius: 60px;
+    /* 原稿为 14px；此处改为 16px 以符合本机 verify_html.py 的「字号不得小于 16px」硬规则 */
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.6px;
+    border: 1px solid rgba(255, 245, 210, 0.3);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+    font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+    white-space: nowrap;
+  }
+</style>
+
+<div id="kaiming-copyright">
+  <div class="inner">© 2026 开物AI科学 ｜ AI 赋能 · 教育公平</div>
+</div>
+
+<script id="kaiming-copyright-script">
+(function () {
+  "use strict";
+
+  /* 目标：单击标题 → 显示版权 3.5 秒；双击标题 → 打开 www.kaiwuaiscience.com */
+
+  const HOMEPAGE = "https://www.kaiwuaiscience.com";
+  const SHOW_MS = 3500;      // 版权显示时长
+  const DBL_WINDOW = 280;    // 双击判定的时间窗（毫秒）
+  const FADE_MS = 450;       // 淡出时长，与 CSS transition 一致
+
+  function bindCopyright() {
+    // 首选 #mainTitle（注入脚本会保证它存在）；后三个选择器是手写粘贴时的兜底
+    const title = document.getElementById("status-panel") ||
+                  document.querySelector("h1, .title, .page-title, .main-title");
+    const box = document.getElementById("kaiming-copyright");
+    if (!title || !box) return;
+
+    title.style.cursor = "pointer";
+    title.style.userSelect = "none";
+    title.style.webkitUserSelect = "none";
+
+    let clickTimer = null;
+    let hideTimer = null;
+    let seq = 0;   // 每次显示/隐藏都 +1，用来作废在飞的定时器
+
+    function showCopyright() {
+      const my = ++seq;
+      if (hideTimer) clearTimeout(hideTimer);
+      box.style.display = "block";
+      /* 强制重绘，让 0 → 1 的淡入真的发生。
+         这里刻意不用 requestAnimationFrame：rAF 在页面不产生新帧时（后台标签页、
+         无头渲染、大屏久置）不保证触发——一旦它晚于下方的隐藏定时器回调，
+         就会把 opacity 又设成 1，导致版权条永久停在屏幕上。 */
+      void box.offsetHeight;
+      box.style.opacity = "1";
+      hideTimer = setTimeout(function () {
+        if (my !== seq) return;      // 期间又被点过，交给新的那一次收尾
+        box.style.opacity = "0";
+        setTimeout(function () {
+          if (my === seq) box.style.display = "none";
+        }, FADE_MS);
+      }, SHOW_MS);
+    }
+
+    function hideCopyright() {
+      const my = ++seq;              // 作废所有在飞的定时器，避免"淡出到一半又被点亮"卡住
+      if (hideTimer) clearTimeout(hideTimer);
+      if (box.style.display !== "block") return;
+      box.style.opacity = "0";
+      setTimeout(function () {
+        if (my === seq) box.style.display = "none";
+      }, FADE_MS);
+    }
+
+    function openHomepage() {
+      // 双击时隐藏版权，并跳转官网
+      hideCopyright();
+      window.open(HOMEPAGE, "_blank", "noopener,noreferrer");
+    }
+
+    title.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (clickTimer) return;   // 已在等待双击窗口，忽略这次单击
+      clickTimer = setTimeout(function () {
+        clickTimer = null;
+        showCopyright();        // 确认是单击
+      }, DBL_WINDOW);
+    });
+
+    title.addEventListener("dblclick", function (e) {
+      e.stopPropagation();
+      if (clickTimer) {         // 取消挂起的单击
+        clearTimeout(clickTimer);
+        clickTimer = null;
+      }
+      openHomepage();
+    });
+
+    // 点击页面其它地方，立即隐藏版权
+    document.addEventListener("click", function (e) {
+      if (e.target === title) return;
+      hideCopyright();
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bindCopyright);
+  } else {
+    bindCopyright();
+  }
+})();
+</script>
+<!-- ================= 开物AI科学 · 版权模块 结束 ================= -->
+
+</body>
+</html>

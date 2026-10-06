@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>能量大转盘</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            min-height: 100vh;
+            background: 
+                linear-gradient(45deg, #ffd70033 10%, #00bfff33 90%),
+                repeating-linear-gradient(
+                    -45deg,
+                    #ffffff05 0px,
+                    #ffffff05 15px,
+                    #00000005 15px,
+                    #00000005 30px
+                ),
+                radial-gradient(circle at 20% 80%, #ff6b6b22 25%, transparent 25%),
+                radial-gradient(circle at 80% 20%, #4ecdc422 25%, transparent 25%),
+                #f0f8ff;
+            animation: energyFlow 20s linear infinite;
+            display: flex;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            position: relative;
+            padding: 20px;
+        }
+
+        @keyframes energyFlow {
+            0% { background-position: 0 0, 0 0, 0 0, 0 0; }
+            100% { background-position: 100px 100px, 200px 200px, 100% 100%, 100% 100%; }
+        }
+
+        /* 新布局 */
+        .layout {
+            display: flex;
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+            gap: 30px;
+        }
+
+        /* 左侧标题区域 */
+        .title-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 200px;
+            padding: 20px;
+            z-index: 10;
+        }
+
+        .main-title {
+            writing-mode: vertical-lr;
+            text-orientation: upright;
+            font-size: 4rem;
+            font-weight: 800;
+            background: linear-gradient(45deg, #ff6b6b, #4ECDC4, #45B7D1, #96CEB4);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            letter-spacing: 10px;
+            margin-bottom: 30px;
+            line-height: 1.1;
+        }
+
+        /* 转盘容器 - 最大化 */
+        .wheel-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            min-height: 80vh;
+        }
+
+        .container {
+            position: relative;
+            width: 80vmin;
+            height: 80vmin;
+            max-width: 700px;
+            max-height: 700px;
+            filter: drop-shadow(0 0 20px rgba(0,0,0,0.2));
+            z-index: 5;
+        }
+
+        #wheel {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 3px solid #333;
+            background: conic-gradient(
+                #FF6B6B 0deg 45deg,
+                #4ECDC4 45deg 90deg,
+                #45B7D1 90deg 135deg,
+                #96CEB4 135deg 180deg,
+                #FFEEAD 180deg 225deg,
+                #D4A5A5 225deg 270deg,
+                #77C9D4 270deg 315deg,
+                #FF9A8B 315deg 360deg
+            );
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+
+        .label-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+        }
+
+        .label {
+            position: absolute;
+            width: 100px;
+            font-size: 24px; /* 增大字体大小 */
+            font-weight: bold;
+            text-align: center;
+            color: #2d3436;
+            text-shadow: 0 0 8px rgba(255,255,255,0.9); /* 增强文字阴影 */
+            left: calc(50% + 160px * var(--cos) - 50px); /* 调整位置计算 */
+            top: calc(50% + 160px * var(--sin) - 25px);
+            padding: 12px 8px; /* 增加内边距 */
+            background: rgba(255,255,255,0.25); /* 提高背景透明度 */
+            backdrop-filter: blur(6px); /* 增强模糊效果 */
+            border-radius: 12px; /* 增加圆角 */
+            border: 2px solid rgba(255,255,255,0.6); /* 增强边框 */
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15); /* 增强阴影 */
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            /* 完全修正角度问题 */
+            transform: none;
+        }
+
+        .label:hover {
+            transform: scale(1.15);
+            background: rgba(255,255,255,0.4);
+            z-index: 10;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+        }
+
+        /* 指针样式 */
+        .pointer {
+            position: absolute;
+            width: 14px; /* 增加宽度 */
+            height: 45%;
+            left: 50%;
+            top: 5%;
+            transform: translateX(-50%);
+            transform-origin: bottom center;
+            z-index: 20;
+            background: linear-gradient(to bottom, #ff4757 20%, #2ed573 80%);
+            border-radius: 8px; /* 增加圆角 */
+            clip-path: polygon(0% 0%, 100% 0%, 60% 100%, 40% 100%);
+            transition: transform 4s cubic-bezier(0.33, 0, 0.15, 1);
+            box-shadow: 0 0 20px rgba(255,71,87,0.5); /* 增强阴影 */
+        }
+
+        .pointer::after {
+            content: "➤";
+            position: absolute;
+            bottom: -24px; /* 增加距离 */
+            left: 50%;
+            color: #fff200;
+            font-size: 32px; /* 增大箭头 */
+            transform: translateX(-50%) rotate(90deg);
+            filter: drop-shadow(0 0 12px rgba(255,242,0,0.7)); /* 增强发光 */
+            animation: glow 1.2s ease-in-out infinite;
+        }
+
+        #pointer2 {
+            height: 35%;
+            width: 12px;
+            top: 15%;
+            background: linear-gradient(to bottom, #2ed573 20%, #3742fa 80%);
+            clip-path: polygon(30% 0%, 70% 0%, 60% 100%, 40% 100%);
+        }
+
+        @keyframes glow {
+            0%, 100% { 
+                opacity: 0.9; 
+                transform: translateX(-50%) rotate(90deg) scale(1);
+                text-shadow: 0 0 8px rgba(255, 242, 0, 0.7);
+            }
+            50% { 
+                opacity: 1; 
+                transform: translateX(-50%) rotate(90deg) scale(1.3);
+                text-shadow: 0 0 20px rgba(255, 242, 0, 1);
+            }
+        }
+
+        /* 右侧按钮区域 */
+        .button-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 200px;
+            padding: 20px;
+            z-index: 10;
+        }
+
+        /* 按钮样式 */
+        .spin-button {
+            position: relative;
+            padding: 20px 60px;
+            font-size: 2rem; /* 增大字体 */
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            z-index: 10;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4); /* 增强阴影 */
+            transition: all 0.4s;
+            font-weight: bold;
+            letter-spacing: 2px; /* 增加字间距 */
+            overflow: hidden;
+            margin: 20px 0;
+            width: 100%;
+            max-width: 240px; /* 增加宽度 */
+        }
+
+        .spin-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: 0.5s;
+        }
+
+        .spin-button:hover {
+            transform: translateY(-8px) scale(1.05); /* 增加悬停效果 */
+            box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+        }
+
+        .spin-button:hover::before {
+            left: 100%;
+        }
+
+        /* 装饰元素 */
+        .energy-ball {
+            position: absolute;
+            width: 150px; /* 增大尺寸 */
+            height: 150px;
+            border-radius: 50%;
+            filter: blur(40px); /* 增强模糊效果 */
+            opacity: 0.5; /* 提高透明度 */
+            z-index: 1;
+        }
+
+        .ball-1 {
+            top: 10%;
+            left: 10%;
+            background: radial-gradient(#ff6b6b, transparent 70%);
+            animation: float 8s infinite ease-in-out;
+        }
+
+        .ball-2 {
+            bottom: 15%;
+            right: 10%;
+            background: radial-gradient(#4ECDC4, transparent 70%);
+            animation: float 10s infinite ease-in-out;
+        }
+
+        .ball-3 {
+            top: 30%;
+            right: 15%;
+            background: radial-gradient(#FFEEAD, transparent 70%);
+            animation: float 9s infinite ease-in-out;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0); }
+            25% { transform: translate(30px, -20px); }
+            50% { transform: translate(0, -40px); }
+            75% { transform: translate(-30px, -10px); }
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 900px) {
+            .layout {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .title-container, .button-container {
+                width: 100%;
+                flex-direction: row;
+                justify-content: center;
+            }
+            
+            .main-title {
+                writing-mode: horizontal-tb;
+                text-orientation: mixed;
+                letter-spacing: 2px;
+                margin: 0 20px 0 0;
+            }
+            
+            .container {
+                width: 90vmin;
+                height: 90vmin;
+            }
+            
+            .spin-button {
+                max-width: 320px;
+                padding: 18px 50px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                width: 95vmin;
+                height: 95vmin;
+            }
+            
+            .main-title {
+                font-size: 3rem;
+            }
+            
+            .label {
+                font-size: 20px;
+                width: 80px;
+                left: calc(50% + 140px * var(--cos) - 40px);
+                top: calc(50% + 140px * var(--sin) - 20px);
+                padding: 10px 6px;
+            }
+            
+            .spin-button {
+                padding: 16px 40px;
+                font-size: 1.8rem;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .main-title {
+                font-size: 2.5rem;
+            }
+            
+            .label {
+                font-size: 18px;
+                width: 70px;
+                left: calc(50% + 120px * var(--cos) - 35px);
+                top: calc(50% + 120px * var(--sin) - 18px);
+            }
+            
+            .spin-button {
+                font-size: 1.6rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 装饰性能量球体 -->
+    <div class="energy-ball ball-1"></div>
+    <div class="energy-ball ball-2"></div>
+    <div class="energy-ball ball-3"></div>
+    
+    <div class="layout">
+        <!-- 左侧标题区域 -->
+        <div class="title-container">
+            <h1 class="main-title" id="mainTitle">能量大转盘</h1>
+        </div>
+        
+        <!-- 转盘区域 -->
+        <div class="wheel-container">
+            <div class="container">
+                <div id="wheel">
+                    <div class="label-container">
+                        <div class="label" style="--angle: 22.5; --rotate: -22.5">核能</div>
+                        <div class="label" style="--angle: 67.5; --rotate: -67.5">化学能</div>
+                        <div class="label" style="--angle: 112.5; --rotate: -112.5">风能</div>
+                        <div class="label" style="--angle: 157.5; --rotate: -157.5">机械能</div>
+                        <div class="label" style="--angle: 202.5; --rotate: -202.5">热能</div>
+                        <div class="label" style="--angle: 247.5; --rotate: -247.5">电能</div>
+                        <div class="label" style="--angle: 292.5; --rotate: -292.5">光能</div>
+                        <div class="label" style="--angle: 337.5; --rotate: -337.5">声能</div>
+                    </div>
+                </div>
+                <div class="pointer" id="pointer1"></div>
+                <div class="pointer" id="pointer2"></div>
+            </div>
+        </div>
+        
+        <!-- 右侧按钮区域 -->
+        <div class="button-container">
+            <button class="spin-button" onclick="spin()">
+                开始转动
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // 初始化标签位置
+        function initLabels() {
+            document.querySelectorAll('.label').forEach(label => {
+                const angle = parseFloat(label.style.getPropertyValue('--angle'));
+                const radians = angle * Math.PI / 180;
+                label.style.setProperty('--cos', Math.cos(radians).toFixed(4));
+                label.style.setProperty('--sin', Math.sin(radians).toFixed(4));
+            });
+        }
+
+        // 获取扇形区域（0-7）
+        function getSector(degrees) {
+            return Math.floor((degrees % 360) / 45);
+        }
+
+        function spin() {
+            const pointer1 = document.getElementById('pointer1');
+            const pointer2 = document.getElementById('pointer2');
+            const button = document.querySelector('.spin-button');
+            
+            // 禁用按钮
+            button.disabled = true;
+            button.textContent = '转动中...';
+            
+            // 重置动画
+            pointer1.style.transition = 'none';
+            pointer2.style.transition = 'none';
+            pointer1.style.transform = 'translateX(-50%) rotate(0deg)';
+            pointer2.style.transform = 'translateX(-50%) rotate(0deg)';
+
+            // 触发重绘
+            void pointer1.offsetWidth;
+            void pointer2.offsetWidth;
+
+            let sector1, sector2;
+            do {
+                const baseRot = 1440; // 基础4圈
+                const finalRot1 = Math.random() * 360;
+                const finalRot2 = Math.random() * 360;
+
+                sector1 = getSector(baseRot + finalRot1);
+                sector2 = getSector(baseRot * 1.5 + finalRot2);
+
+                pointer1.style.transition = 'transform 4s cubic-bezier(0.33, 0, 0.15, 1)';
+                pointer2.style.transition = 'transform 4s cubic-bezier(0.33, 0, 0.15, 1)';
+                
+                pointer1.style.transform = `translateX(-50%) rotate(${baseRot + finalRot1}deg)`;
+                pointer2.style.transform = `translateX(-50%) rotate(${baseRot * 1.5 + finalRot2}deg)`;
+            } while (sector1 === sector2);
+
+            // 添加转动动画效果
+            pointer1.animate(
+                [
+                    { filter: 'drop-shadow(0 0 10px #ff6b6b)' },
+                    { filter: 'drop-shadow(0 0 30px #ff4757)' },
+                    { filter: 'drop-shadow(0 0 10px #ff6b6b)' }
+                ],
+                {
+                    duration: 1000,
+                    iterations: 4
+                }
+            );
+
+            pointer2.animate(
+                [
+                    { filter: 'drop-shadow(0 0 10px #4ECDC4)' },
+                    { filter: 'drop-shadow(0 0 30px #2ed573)' },
+                    { filter: 'drop-shadow(0 0 10px #4ECDC4)' }
+                ],
+                {
+                    duration: 1000,
+                    iterations: 4
+                }
+            );
+
+            // 启用按钮
+            setTimeout(() => {
+                button.disabled = false;
+                button.textContent = '开始转动';
+            }, 4000);
+        }
+
+        document.addEventListener('DOMContentLoaded', initLabels);
+    </script>
+<!-- ================= 开物AI科学 · 版权模块（单击显示 / 双击打开官网） ================= -->
+<style id="kaiming-copyright-style">
+  #kaiming-copyright {
+    position: fixed;
+    bottom: 26px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    pointer-events: none;
+    z-index: 999999;
+    transition: opacity 0.45s ease;
+    opacity: 0;
+    display: none;
+  }
+  #kaiming-copyright .inner {
+    display: inline-block;
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #eafaf2;
+    padding: 9px 26px;
+    border-radius: 60px;
+    /* 原稿为 14px；此处改为 16px 以符合本机 verify_html.py 的「字号不得小于 16px」硬规则 */
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.6px;
+    border: 1px solid rgba(255, 245, 210, 0.3);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+    font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+    white-space: nowrap;
+  }
+</style>
+
+<div id="kaiming-copyright">
+  <div class="inner">© 2026 开物AI科学 ｜ AI 赋能 · 教育公平</div>
+</div>
+
+<script id="kaiming-copyright-script">
+(function () {
+  "use strict";
+
+  /* 目标：单击标题 → 显示版权 3.5 秒；双击标题 → 打开 www.kaiwuaiscience.com */
+
+  const HOMEPAGE = "https://www.kaiwuaiscience.com";
+  const SHOW_MS = 3500;      // 版权显示时长
+  const DBL_WINDOW = 280;    // 双击判定的时间窗（毫秒）
+  const FADE_MS = 450;       // 淡出时长，与 CSS transition 一致
+
+  function bindCopyright() {
+    // 首选 #mainTitle（注入脚本会保证它存在）；后三个选择器是手写粘贴时的兜底
+    const title = document.getElementById("mainTitle") ||
+                  document.querySelector("h1, .title, .page-title, .main-title");
+    const box = document.getElementById("kaiming-copyright");
+    if (!title || !box) return;
+
+    title.style.cursor = "pointer";
+    title.style.userSelect = "none";
+    title.style.webkitUserSelect = "none";
+
+    let clickTimer = null;
+    let hideTimer = null;
+    let seq = 0;   // 每次显示/隐藏都 +1，用来作废在飞的定时器
+
+    function showCopyright() {
+      const my = ++seq;
+      if (hideTimer) clearTimeout(hideTimer);
+      box.style.display = "block";
+      /* 强制重绘，让 0 → 1 的淡入真的发生。
+         这里刻意不用 requestAnimationFrame：rAF 在页面不产生新帧时（后台标签页、
+         无头渲染、大屏久置）不保证触发——一旦它晚于下方的隐藏定时器回调，
+         就会把 opacity 又设成 1，导致版权条永久停在屏幕上。 */
+      void box.offsetHeight;
+      box.style.opacity = "1";
+      hideTimer = setTimeout(function () {
+        if (my !== seq) return;      // 期间又被点过，交给新的那一次收尾
+        box.style.opacity = "0";
+        setTimeout(function () {
+          if (my === seq) box.style.display = "none";
+        }, FADE_MS);
+      }, SHOW_MS);
+    }
+
+    function hideCopyright() {
+      const my = ++seq;              // 作废所有在飞的定时器，避免"淡出到一半又被点亮"卡住
+      if (hideTimer) clearTimeout(hideTimer);
+      if (box.style.display !== "block") return;
+      box.style.opacity = "0";
+      setTimeout(function () {
+        if (my === seq) box.style.display = "none";
+      }, FADE_MS);
+    }
+
+    function openHomepage() {
+      // 双击时隐藏版权，并跳转官网
+      hideCopyright();
+      window.open(HOMEPAGE, "_blank", "noopener,noreferrer");
+    }
+
+    title.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (clickTimer) return;   // 已在等待双击窗口，忽略这次单击
+      clickTimer = setTimeout(function () {
+        clickTimer = null;
+        showCopyright();        // 确认是单击
+      }, DBL_WINDOW);
+    });
+
+    title.addEventListener("dblclick", function (e) {
+      e.stopPropagation();
+      if (clickTimer) {         // 取消挂起的单击
+        clearTimeout(clickTimer);
+        clickTimer = null;
+      }
+      openHomepage();
+    });
+
+    // 点击页面其它地方，立即隐藏版权
+    document.addEventListener("click", function (e) {
+      if (e.target === title) return;
+      hideCopyright();
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bindCopyright);
+  } else {
+    bindCopyright();
+  }
+})();
+</script>
+<!-- ================= 开物AI科学 · 版权模块 结束 ================= -->
+
+</body>
+</html>

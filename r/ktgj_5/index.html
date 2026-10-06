@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>冷与热 · 物态积分实验室</title>
+<style>
+/* ========== 全局：锁定视口，绝不出现滚动条 ========== */
+*{margin:0;padding:0;box-sizing:border-box;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+input{user-select:text;-webkit-user-select:text}
+:root{
+  --font-t:'YouYuan','幼圆','Microsoft YaHei','PingFang SC',sans-serif;
+  --ink:#eaf6fb;
+  --cs:clamp(58px,10.5vmin,110px);        /* 冰块立方体边长 */
+  --bw:clamp(78px,13.5vmin,140px);        /* 烧杯宽度 */
+  --bh:clamp(72px,12vmin,126px);          /* 烧杯高度 */
+  --fb:clamp(46px,7.2vmin,78px);          /* 物体被架起的高度（高于火焰尖，不穿模） */
+}
+html,body{height:100%;overflow:hidden;overscroll-behavior:none}
+body{
+  height:100vh;height:100dvh;
+  display:flex;flex-direction:column;
+  font-family:'Microsoft YaHei','PingFang SC',sans-serif;
+  color:var(--ink);
+  background:#071825;
+  background-image:
+    radial-gradient(ellipse 90% 70% at 50% -10%, #10394e 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 50% 115%, #0a2130 0%, transparent 55%);
+}
+
+/* ========== 顶栏 ========== */
+header{
+  flex:0 0 auto;
+  display:flex;align-items:center;gap:clamp(10px,1.5vw,26px);
+  padding:clamp(8px,1.2vh,14px) clamp(12px,2vw,28px) clamp(4px,.8vh,10px);
+}
+.logo svg{width:clamp(26px,3.4vmin,38px);height:auto;flex:0 0 auto}
+.title-wrap h1{
+  font-family:var(--font-t);font-weight:700;
+  font-size:clamp(22px,3.6vmin,38px);letter-spacing:2px;
+  background:linear-gradient(180deg,#fff,#a9e2f5);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+}
+.toolbar{display:flex;gap:10px;margin-left:auto;flex:0 0 auto}
+.tool{
+  width:clamp(38px,4.8vmin,50px);height:clamp(38px,4.8vmin,50px);
+  border-radius:50%;border:1px solid rgba(255,255,255,.18);
+  background:rgba(255,255,255,.06);color:var(--ink);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:.2s;
+}
+.tool:hover{background:rgba(255,255,255,.14)}
+.tool:active{transform:scale(.9)}
+.tool svg{width:60%;height:60%;fill:currentColor}
+.tool.off{color:#5c7684}
+.tool.flaming{color:#ff9d2e;filter:drop-shadow(0 0 6px rgba(255,157,46,.7))}
+.tool.flaming.fast{color:#ffd23e}
+
+/* ========== 主面板：5列 x 2行 ========== */
+main{
+  flex:1 1 auto;min-height:0;
+  display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(2,1fr);
+  gap:clamp(8px,1.3vmin,18px);
+  padding:0 clamp(12px,2vw,28px) clamp(10px,1.6vh,18px);
+}
+
+/* ========== 小组卡片：背景随物态变化 ========== */
+.card{
+  min-height:0;min-width:0;
+  display:flex;flex-direction:column;
+  border-radius:clamp(12px,1.6vmin,20px);
+  border:1px solid rgba(255,255,255,.13);
+  box-shadow:0 10px 26px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.1);
+  padding:clamp(6px,1vmin,12px) clamp(8px,1.2vmin,14px);
+  transition:box-shadow .8s, border-color .8s, background .8s;
+}
+.card.is-ice{
+  background:linear-gradient(165deg,rgba(90,170,230,.20),rgba(40,100,160,.07));
+  border-color:rgba(159,224,255,.4);
+}
+.card.is-mix{
+  background:linear-gradient(165deg,rgba(120,205,255,.24),rgba(70,150,215,.09));
+  border-color:rgba(180,230,255,.5);
+}
+.card.is-water{
+  background:linear-gradient(165deg,rgba(50,200,240,.18),rgba(25,130,175,.08));
+  border-color:rgba(87,208,240,.5);
+}
+.card.is-steam{
+  background:
+    radial-gradient(ellipse 90% 70% at 50% 30%, rgba(255,150,80,.22), transparent 70%),
+    linear-gradient(165deg,rgba(255,150,80,.16),rgba(150,70,30,.08));
+  border-color:rgba(255,171,118,.6);
+  box-shadow:0 10px 26px rgba(0,0,0,.35), 0 0 26px rgba(255,140,80,.25);
+}
+
+/* ===== 主行：动画舞台 + 温度计 ===== */
+.row-mid{flex:1 1 auto;min-height:0;display:flex;gap:clamp(6px,1vmin,12px)}
+.stage{
+  flex:1 1 auto;min-width:0;position:relative;overflow:hidden;
+  perspective:600px;border-radius:12px;
+  transition:background .8s;
+  background:radial-gradient(ellipse 80% 60% at 50% 100%, rgba(255,130,50,.1), transparent 72%);
+}
+.stage[data-state=ice]{background:radial-gradient(ellipse 80% 60% at 50% 100%, rgba(140,205,255,.14), transparent 72%)}
+.stage[data-state=mix]{background:radial-gradient(ellipse 80% 60% at 50% 100%, rgba(170,220,255,.16), transparent 72%)}
+.stage[data-state=steam]{background:radial-gradient(ellipse 80% 60% at 50% 100%, rgba(255,140,60,.18), transparent 72%)}
+
+/* ---- 组名：悬浮在舞台顶层左上角 ---- */
+.name-row{
+  position:absolute;top:6px;left:8px;z-index:6;
+  display:flex;align-items:center;gap:6px;max-width:85%;
+}
+.crown{width:clamp(15px,2vmin,22px);height:auto;flex:0 0 auto;fill:#ffd23e;opacity:0;transform:scale(.3);transition:.4s;filter:drop-shadow(0 0 5px rgba(255,210,60,.6))}
+.crown.on{opacity:1;transform:scale(1)}
+.name{
+  font-family:var(--font-t);font-weight:700;
+  font-size:clamp(15px,2.4vmin,26px);color:#fff;cursor:pointer;
+  background:rgba(7,24,37,.35);border:none;padding:2px 8px;border-radius:8px;
+  max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:1px;
+  text-shadow:0 2px 6px rgba(0,0,0,.6);
+}
+.name:hover{background:rgba(255,255,255,.16)}
+
+/* ---- 物体支脚（架高烧杯，火焰在下方加热） ---- */
+.stand{
+  position:absolute;left:50%;bottom:0;transform:translateX(-50%);
+  width:clamp(64px,10vmin,104px);height:var(--fb);z-index:1;
+  background:linear-gradient(180deg,rgba(200,230,245,.28),rgba(160,190,210,.12));
+  clip-path:polygon(12% 100%, 88% 100%, 70% 0, 30% 0);
+}
+.shadow{
+  position:absolute;left:50%;bottom:calc(var(--fb) - clamp(4px,.6vmin,8px));
+  transform:translateX(-50%);
+  width:clamp(80px,12.5vmin,130px);height:clamp(6px,1vmin,10px);
+  background:radial-gradient(ellipse,rgba(0,0,0,.4),transparent 70%);
+  z-index:1;
+}
+
+/* ---- 火焰：在支脚下方燃烧，火尖低于烧杯底 ---- */
+.flame{
+  position:absolute;left:50%;bottom:clamp(2px,.4vmin,6px);
+  width:clamp(34px,5.6vmin,58px);height:clamp(36px,6vmin,62px);
+  transform:translateX(-50%);pointer-events:none;z-index:0;
+  opacity:0;transition:opacity .8s;
+}
+body.flame-on .flame{opacity:1}
+.flame i{
+  position:absolute;left:50%;bottom:0;transform:translateX(-50%);
+  transform-origin:50% 100%;
+  border-radius:50% 50% 45% 45%/62% 62% 38% 38%;
+}
+.f-o{width:100%;height:100%;background:radial-gradient(ellipse at 50% 78%,rgba(255,157,46,.95),rgba(255,90,31,.85) 55%,rgba(255,60,20,0) 78%);filter:blur(2px);animation:flick 1.1s ease-in-out infinite}
+.f-m{width:60%;height:64%;background:radial-gradient(ellipse at 50% 75%,rgba(255,220,80,.95),rgba(255,157,46,.8) 60%,transparent 82%);filter:blur(1px);animation:flick .8s .12s ease-in-out infinite}
+.f-i{width:32%;height:38%;background:radial-gradient(ellipse at 50% 70%,#fff,rgba(200,235,255,.9) 55%,transparent);animation:flick .55s .05s ease-in-out infinite}
+@keyframes flick{50%{transform:translateX(-50%) scale(.9,1.2)}}
+body.flame-fast .flame{filter:brightness(1.3)}
+body.flame-fast .f-o{animation-duration:.45s}
+body.flame-fast .f-m{animation-duration:.32s}
+body.flame-fast .f-i{animation-duration:.22s}
+
+/* ---- 3D 冰块立方体 ---- */
+.cube-wrap{
+  position:absolute;left:50%;bottom:calc(var(--fb) + clamp(8px,1.2vmin,14px));
+  transform:translateX(-50%);width:var(--cs);height:var(--cs);
+  transition:opacity .5s,transform .5s,bottom .5s;z-index:2;
+}
+.cube{position:relative;width:100%;height:100%;transform-style:preserve-3d;animation:spin 14s linear infinite}
+@keyframes spin{from{transform:rotateX(-22deg) rotateY(0)}to{transform:rotateX(-22deg) rotateY(360deg)}}
+.fc{
+  position:absolute;inset:0;border-radius:10px;
+  background:linear-gradient(135deg,rgba(200,240,255,.4),rgba(120,195,240,.16));
+  border:1.5px solid rgba(225,248,255,.6);
+  box-shadow:inset 0 0 22px rgba(255,255,255,.22);
+}
+.fc::after{content:'';position:absolute;inset:14%;border-radius:6px;border:1px solid rgba(255,255,255,.28)}
+.f1{transform:translateZ(calc(var(--cs)/2))}
+.f2{transform:rotateY(180deg) translateZ(calc(var(--cs)/2))}
+.f3{transform:rotateY(90deg) translateZ(calc(var(--cs)/2))}
+.f4{transform:rotateY(-90deg) translateZ(calc(var(--cs)/2))}
+.f5{transform:rotateX(90deg) translateZ(calc(var(--cs)/2))}
+.f6{transform:rotateX(-90deg) translateZ(calc(var(--cs)/2))}
+.melting .fc{animation:iceGlow 1.2s infinite}
+@keyframes iceGlow{50%{background:linear-gradient(135deg,rgba(230,250,255,.6),rgba(150,215,245,.3));box-shadow:inset 0 0 30px rgba(255,255,255,.5)}}
+
+/* ---- 立体烧杯（圆柱玻璃杯） ---- */
+.beaker{
+  position:absolute;left:50%;bottom:var(--fb);transform:translateX(-50%);
+  width:var(--bw);height:var(--bh);
+  border:3px solid rgba(215,240,250,.5);border-top:none;
+  border-radius:4px 4px 18px 18px;
+  /* 圆柱曲率：左暗→中亮→右暗，模拟受光 */
+  background:linear-gradient(90deg,
+    rgba(120,190,230,.03) 0%,
+    rgba(200,235,255,.14) 16%,
+    rgba(220,245,255,.18) 42%,
+    rgba(160,215,245,.12) 68%,
+    rgba(90,160,210,.03) 100%);
+  /* 左右壁厚度感 */
+  box-shadow:
+    inset 7px 0 10px rgba(255,255,255,.10),
+    inset -10px 0 16px rgba(0,40,70,.30),
+    inset 0 -8px 14px rgba(0,30,60,.22);
+  transition:opacity .5s,transform .5s;z-index:2;
+}
+/* 玻璃高光条（受光面） */
+.beaker::before{
+  content:'';position:absolute;top:8%;left:10%;width:4px;height:62%;
+  background:rgba(255,255,255,.5);border-radius:4px;filter:blur(1.5px);
+}
+/* 加宽的玻璃口沿（俯视椭圆环感） */
+.beaker::after{
+  content:'';position:absolute;top:-7px;left:-7px;right:-7px;height:8px;
+  background:linear-gradient(90deg,rgba(235,250,255,.35),rgba(255,255,255,.7) 40%,rgba(235,250,255,.35));
+  border-radius:50%/55%;
+}
+/* 杯底椭圆反光（立体底面） */
+.bk-bottom{
+  position:absolute;left:8%;right:8%;bottom:2px;height:10px;
+  background:radial-gradient(ellipse at 50% 100%,rgba(255,255,255,.28),transparent 72%);
+  border-radius:50%;pointer-events:none;
+}
+.bk-liquid{
+  position:absolute;left:3px;right:3px;bottom:3px;height:46%;
+  border-radius:0 0 15px 15px;overflow:hidden;
+  color:rgba(90,205,245,.68);
+  transition:height .8s cubic-bezier(.34,1.2,.5,1),color .5s;
+}
+.bk-liquid .wv{position:absolute;top:-2px;left:0;width:100%;height:12px;display:block;color:inherit}
+.wv .p1{fill:currentColor;animation:waveMove 2.4s linear infinite}
+.wv .p2{fill:currentColor;opacity:.5;animation:waveMove 2.4s linear infinite reverse}
+@keyframes waveMove{from{transform:translateX(0)}to{transform:translateX(-30px)}}
+.boil .bk-liquid{height:52%;color:rgba(120,220,250,.8)}
+.steam .bk-liquid{height:26%;color:rgba(160,230,250,.4)}
+.mix .bk-liquid{height:62%;color:rgba(110,210,245,.78)}
+.bub{position:absolute;bottom:-8px;width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.65);opacity:0;left:15%;animation:rise 1.6s ease-in infinite}
+.bub:nth-child(2){left:38%;animation-delay:.5s;width:5px;height:5px}
+.bub:nth-child(3){left:60%;animation-delay:.9s}
+.bub:nth-child(4){left:80%;animation-delay:1.2s;width:5px;height:5px}
+@keyframes rise{
+  0%{transform:translateY(0) scale(.6);opacity:0}
+  25%{opacity:.9}
+  90%{transform:translateY(-150%) scale(1.15);opacity:.5}
+  100%{transform:translateY(-190%) scale(1.2);opacity:0}
+}
+.beaker .bubs{display:none;position:absolute;inset:0;pointer-events:none}
+.boil .bubs{display:block}
+
+/* ---- 蒸汽雾团 ---- */
+.puffs{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .8s;z-index:3}
+.puff{
+  position:absolute;left:50%;bottom:calc(var(--fb) + var(--bh) + 4px);
+  width:clamp(22px,3.6vmin,34px);height:clamp(22px,3.6vmin,34px);border-radius:50%;
+  background:rgba(255,255,255,.6);filter:blur(7px);
+  animation:puffUp 2.6s ease-out infinite;
+}
+.puff:nth-child(1){margin-left:-32px}
+.puff:nth-child(2){margin-left:2px;animation-delay:.9s;width:clamp(26px,4vmin,40px);height:clamp(26px,4vmin,40px)}
+.puff:nth-child(3){margin-left:24px;animation-delay:1.7s}
+@keyframes puffUp{
+  0%{transform:translateY(6px) scale(.5);opacity:0}
+  25%{opacity:.65}
+  100%{transform:translateY(-56px) scale(1.6);opacity:0}
+}
+
+/* ---- 各状态显隐 ---- */
+.stage[data-state=water] .cube-wrap,
+.stage[data-state=steam] .cube-wrap{opacity:0;transform:translateX(-50%) scale(.3) rotateX(40deg);pointer-events:none}
+.stage[data-state=ice] .beaker,
+.stage[data-state=ice] .puffs{opacity:0;transform:translateX(-50%) scale(.5);pointer-events:none}
+.stage[data-state=ice] .stand{opacity:0}
+.stage[data-state=mix] .puffs{opacity:0}
+.stage[data-state=steam] .puffs{opacity:1}
+.stage[data-state=mix] .cube-wrap{
+  transform:translateX(-50%) scale(.66);
+  bottom:calc(var(--fb) + var(--bh)*.30);
+}
+.stage[data-state=mix] .cube{animation-duration:18s}
+
+/* ---- 变身闪光 / 庆祝粒子 ---- */
+.flashfx{position:absolute;inset:0;background:radial-gradient(circle,#fff,transparent 70%);opacity:0;pointer-events:none;border-radius:12px;z-index:4}
+.stage.flash .flashfx{animation:flashA .7s ease-out}
+@keyframes flashA{0%{opacity:.9}100%{opacity:0}}
+.spark{
+  position:absolute;left:50%;top:55%;width:9px;height:9px;border-radius:50%;
+  background:#ffd9b0;box-shadow:0 0 8px #ffab76;pointer-events:none;z-index:4;
+  animation:sparkA .9s ease-out forwards;
+}
+@keyframes sparkA{to{transform:translate(var(--dx),var(--dy)) scale(.15);opacity:0}}
+
+/* ---- 温度计（可点击，0°/100° 线由 JS 精确定位） ---- */
+.thermo{flex:0 0 auto;width:clamp(44px,6vmin,64px);display:flex;justify-content:center;min-height:0;position:relative}
+.t-body{height:100%;display:flex;flex-direction:column;align-items:center;width:100%}
+.t-stem{
+  position:relative;flex:1 1 auto;min-height:0;
+  width:clamp(14px,2vmin,20px);
+  background:
+    linear-gradient(90deg,rgba(255,255,255,.05),rgba(255,255,255,.3) 30%,rgba(255,255,255,.05) 60%,rgba(255,255,255,.22)),
+    repeating-linear-gradient(180deg,transparent 0 18px,rgba(255,255,255,.22) 18px 19.5px);
+  border-radius:8px 8px 0 0;
+  border:1px solid rgba(255,255,255,.2);border-bottom:none;
+}
+.t-fill{
+  position:absolute;left:2px;right:2px;bottom:0;border-radius:6px 6px 0 0;
+  height:9%;transition:height .6s cubic-bezier(.34,1.25,.5,1),background .5s;
+  min-height:3px;
+  box-shadow:inset 2px 0 3px rgba(255,255,255,.45),inset -2px 0 4px rgba(0,0,0,.25);
+}
+.t-bulb{
+  flex:0 0 auto;width:clamp(26px,3.6vmin,38px);height:clamp(26px,3.6vmin,38px);
+  margin-top:-4px;border-radius:50%;transition:background .5s;
+  border:1px solid rgba(255,255,255,.25);
+  box-shadow:inset -4px -5px 8px rgba(0,0,0,.3),inset 3px 4px 6px rgba(255,255,255,.35),0 4px 10px rgba(0,0,0,.4);
+}
+.thermo.pulse .t-bulb{animation:bulbP .35s}
+@keyframes bulbP{50%{transform:scale(1.25)}}
+.t-mark{position:absolute;right:-3px;width:calc(100% + 6px);border-top:1.5px dashed #ff7d7d;opacity:.85}
+.t-mark b{position:absolute;left:calc(100% + 3px);top:-7px;font-size:clamp(8px,1.1vmin,11px);font-weight:400;color:#ffb3b3;white-space:nowrap}
+/* 点击热区：上半 +1 / 下半 -1 */
+.tz{position:absolute;left:-10px;right:-10px;z-index:6;border-radius:12px;cursor:pointer}
+.tz-hot{top:0;height:58%}
+.tz-cold{top:58%;bottom:0}
+.tz:hover{background:rgba(255,255,255,.09)}
+.tz:active{background:rgba(255,255,255,.18)}
+.tz b{
+  position:absolute;left:-2px;width:19px;height:19px;border-radius:50%;
+  background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.35);
+  color:#cfe9f5;font-size:13px;font-weight:400;
+  display:flex;align-items:center;justify-content:center;
+}
+.tz-hot b{top:2px}
+.tz-cold b{bottom:2px}
+
+/* ===== 底行：状态徽章（左） + 温度读数（右） ===== */
+.row-bot{
+  flex:0 0 auto;
+  display:flex;align-items:center;justify-content:space-between;
+  gap:8px;padding-top:clamp(4px,.6vmin,8px);
+}
+.badge{
+  display:inline-block;white-space:nowrap;
+  font-family:var(--font-t);font-weight:700;letter-spacing:2px;
+  font-size:clamp(15px,2.7vmin,30px);
+  padding:clamp(3px,.5vmin,7px) clamp(12px,2vmin,26px);
+  border-radius:99px;border:1.5px solid;transition:.4s;
+}
+.b-ice{color:#bfeaff;border-color:rgba(159,224,255,.5);background:rgba(120,200,255,.1)}
+.b-ice.melt{color:#fff;border-color:#fff;animation:meltPulse 1.2s infinite}
+@keyframes meltPulse{50%{box-shadow:0 0 16px rgba(200,240,255,.9)}}
+.b-water{color:#8ce4ff;border-color:rgba(87,208,240,.55);background:rgba(60,190,235,.12)}
+.b-steam{color:#ffc79c;border-color:rgba(255,171,118,.6);background:rgba(255,140,80,.14)}
+.readout{text-align:center;line-height:1.1;flex:0 0 auto}
+.readout .num{
+  font-family:var(--font-t);font-weight:700;font-size:clamp(24px,4.2vmin,46px);letter-spacing:1px;
+  transition:color .5s;white-space:nowrap;
+}
+.readout .num em{font-style:normal;font-size:.5em;margin-left:2px}
+
+/* ========== Toast ========== */
+#toasts{position:fixed;top:clamp(56px,8vh,80px);left:50%;transform:translateX(-50%);z-index:50;display:flex;flex-direction:column;gap:10px;align-items:center;pointer-events:none;max-width:92vw}
+.toast{
+  display:flex;align-items:center;gap:10px;
+  background:rgba(10,35,48,.92);border:1px solid rgba(255,255,255,.22);
+  border-radius:99px;padding:10px 22px;
+  font-family:var(--font-t);font-weight:700;font-size:clamp(14px,2vmin,20px);letter-spacing:1px;
+  box-shadow:0 10px 30px rgba(0,0,0,.5);
+  animation:toastIn .45s cubic-bezier(.2,1.4,.4,1),toastOut .4s ease-in 2.9s forwards;
+}
+.toast svg{width:clamp(18px,2.4vmin,26px);height:auto;flex:0 0 auto}
+@keyframes toastIn{from{transform:translateY(-30px) scale(.7);opacity:0}}
+@keyframes toastOut{to{transform:translateY(-16px);opacity:0}}
+
+/* ========== 模态框 ========== */
+#backdrop{position:fixed;inset:0;z-index:60;background:rgba(4,14,20,.7);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:.25s}
+#backdrop.show{opacity:1;pointer-events:auto}
+.modal{
+  width:min(420px,86vw);
+  background:linear-gradient(160deg,#123243,#0b2231);
+  border:1px solid rgba(255,255,255,.2);border-radius:18px;
+  padding:clamp(20px,3vmin,30px);text-align:center;
+  transform:scale(.85);transition:.25s cubic-bezier(.2,1.4,.4,1);
+  box-shadow:0 30px 60px rgba(0,0,0,.6);
+}
+#backdrop.show .modal{transform:scale(1)}
+.modal h3{font-family:var(--font-t);font-weight:700;font-size:clamp(19px,2.6vmin,25px);letter-spacing:2px;margin-bottom:10px}
+.modal p{font-size:clamp(13px,1.8vmin,16px);color:#a8c8d6;line-height:1.6;margin-bottom:16px}
+.modal input{width:100%;font-size:17px;padding:10px 14px;margin-bottom:18px;border-radius:10px;border:1px solid rgba(255,255,255,.25);background:rgba(0,0,0,.3);color:#fff;text-align:center;outline:none;font-family:var(--font-t);font-weight:700}
+.modal input:focus{border-color:#57d0f0}
+.m-actions{display:flex;gap:12px;justify-content:center}
+.m-actions button{min-width:110px;padding:10px 0;border-radius:99px;border:none;cursor:pointer;font-family:var(--font-t);font-weight:700;font-size:17px;letter-spacing:2px;transition:.15s}
+#mCancel{background:rgba(255,255,255,.1);color:#bcd9e6}
+#mOk{background:#ff8a50;color:#33170a;box-shadow:0 4px 0 #c25a2e}
+.m-actions button:active{transform:translateY(3px);box-shadow:none}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <svg viewBox="0 0 24 44" fill="none">
+      <rect x="9" y="0" width="6" height="26" rx="3" fill="rgba(255,255,255,.2)" stroke="rgba(255,255,255,.5)"/>
+      <rect x="10" y="21" width="4" height="4" rx="2" fill="#ff8a50"/>
+      <circle cx="12" cy="36" r="7" fill="#ff8a50" stroke="rgba(255,255,255,.5)"/>
+      <circle cx="9.8" cy="34" r="2" fill="rgba(255,255,255,.7)"/>
+    </svg>
+  </div>
+  <div class="title-wrap"><h1 id="mainTitle">冷与热 · 物态积分实验室</h1></div>
+  <div class="toolbar">
+    <button class="tool" id="btnFlame" title="火焰加热：常速 / 快速 / 熄灭">
+      <svg viewBox="0 0 24 24"><path d="M12 2c1 3.5-2 4.5-2 7 0 1.1.9 2 2 2s2-.9 2-2c0-.7-.3-1.3-.6-1.8C15.5 8.5 17 10.6 17 13.5A5 5 0 0 1 7 13.5C7 8.5 11.5 7 12 2zm0 19a7.5 7.5 0 0 0 7.5-7.5c0-1.1-.2-2.1-.5-3 .3 3.4-1.7 5-3.4 5.9.5-2.4-.4-4.3-1.8-5.7.2 2.6-1.1 3.8-2.3 5-1 1-1.5 2-1.5 3.1A2 2 0 0 0 12 21z"/></svg>
+    </button>
+    <button class="tool" id="btnSound" title="音效开关">
+      <svg viewBox="0 0 24 24" id="icoSound"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg>
+    </button>
+    <button class="tool" id="btnReset" title="重置全部温度">
+      <svg viewBox="0 0 24 24"><path d="M12 5V2L7 6.5 12 11V8a6 6 0 1 1-6 6H4a8 8 0 1 0 8-9z"/></svg>
+    </button>
+  </div>
+</header>
+
+<main id="board"></main>
+<div id="toasts"></div>
+
+<div id="backdrop">
+  <div class="modal">
+    <h3 id="mTitle"></h3>
+    <p id="mText"></p>
+    <input id="mInput" maxlength="8" hidden>
+    <div class="m-actions">
+      <button id="mCancel">取消</button>
+      <button id="mOk">确定</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ================= 核心参数 ================= */
+const GROUPS = 10;
+const STEP   = 25;          // 点一次温度计 = ±25°C（即±1分）
+const MIN_T  = -25, MAX_T = 250;
+const RATE   = 50/2340;     // 火焰常速：约40分钟升高50°C（≈+2分）
+const HOLD_MS = 60000;      // 相变保温时长（融化/沸腾时温度不变）
+/* ★ 不做存档：每次打开网页都是全新开始 */
+
+const $ = s => document.querySelector(s);
+const board = $('#board');
+let audio = null, muted = false, flameSpeed = 1;   // 0熄灭 / 1常速 / 20快速
+let groups = [], refs = [];
+let lastTick = Date.now();
+
+/* ================= 音效（每类事件音色不同） ================= */
+function ctx(){ if(!audio) audio = new (window.AudioContext||window.webkitAudioContext)(); if(audio.state==='suspended') audio.resume(); return audio; }
+function tone(f0,f1,dur,type='sine',vol=.18,delay=0){
+  if(muted) return;
+  try{
+    const c=ctx(), t=c.currentTime+delay;
+    const o=c.createOscillator(), g=c.createGain();
+    o.type=type; o.frequency.setValueAtTime(f0,t);
+    o.frequency.exponentialRampToValueAtTime(Math.max(f1,1),t+dur);
+    g.gain.setValueAtTime(0,t);
+    g.gain.linearRampToValueAtTime(vol,t+.02);
+    g.gain.exponentialRampToValueAtTime(.001,t+dur);
+    o.connect(g).connect(c.destination); o.start(t); o.stop(t+dur+.05);
+  }catch(e){}
+}
+function noise(dur,vol,f0,f1,delay=0){
+  if(muted) return;
+  try{
+    const c=ctx(), t=c.currentTime+delay, len=Math.floor(c.sampleRate*dur);
+    const buf=c.createBuffer(1,len,c.sampleRate), d=buf.getChannelData(0);
+    for(let i=0;i<len;i++) d[i]=Math.random()*2-1;
+    const src=c.createBufferSource(); src.buffer=buf;
+    const bp=c.createBiquadFilter(); bp.type='bandpass'; bp.Q.value=1.2;
+    bp.frequency.setValueAtTime(f0,t);
+    bp.frequency.exponentialRampToValueAtTime(Math.max(f1,10),t+dur);
+    const g=c.createGain();
+    g.gain.setValueAtTime(vol,t);
+    g.gain.exponentialRampToValueAtTime(.001,t+dur);
+    src.connect(bp).connect(g).connect(c.destination); src.start(t);
+  }catch(e){}
+}
+const sndHeat  = ()=>{ tone(880,1250,.1,'square',.1); tone(1250,1600,.12,'sine',.12,.07); };
+const sndCool  = ()=>{ tone(600,330,.18,'sine',.14); };
+const sndDeny  = ()=>{ tone(180,140,.15,'sine',.12); };
+const sndCrk   = ()=>{ noise(.05,.3,2200,900); noise(.05,.26,1800,700,.11); noise(.06,.3,1500,500,.22); };
+const sndWater = ()=>{ tone(300,170,.09,'sine',.2); tone(380,200,.09,'sine',.18,.14); tone(260,140,.12,'sine',.2,.28); tone(900,260,.3,'sine',.1,.3); };
+const sndSteam = ()=>{ noise(1.1,.32,500,3400); tone(500,1500,.9,'sine',.07); };
+const sndIce   = ()=>{ tone(1300,1290,1.1,'sine',.16); tone(1950,1940,.9,'sine',.08,.03); tone(650,645,1.3,'sine',.1,.05); };
+
+/* ================= 状态判断 ================= */
+const EPS = 0.01;
+function stateOf(t){
+  if(Math.abs(t) < EPS) return 'mix';
+  if(t < 0) return 'ice';
+  if(t < 100) return 'water';
+  return 'steam';
+}
+const STN = {ice:'is-ice', mix:'is-mix', water:'is-water', steam:'is-steam'};
+
+/* ================= 构建卡片 ================= */
+const CUBE = '<div class="cube-wrap"><div class="cube">'
+  + '<div class="fc f1"></div><div class="fc f2"></div><div class="fc f3"></div>'
+  + '<div class="fc f4"></div><div class="fc f5"></div><div class="fc f6"></div>'
+  + '</div></div>';
+const WAVE = '<svg class="wv" viewBox="0 0 120 12" preserveAspectRatio="none">'
+  + '<path class="p2" d="M-30 6 Q -15 0 0 6 T 30 6 T 60 6 T 90 6 T 120 6 V12 H-30 Z"/>'
+  + '<path class="p1" d="M0 6 Q 15 0 30 6 T 60 6 T 90 6 T 120 6 V12 H0 Z"/></svg>';
+const BEAKER = '<div class="beaker"><div class="bk-bottom"></div><div class="bk-liquid">' + WAVE
+  + '<div class="bubs"><i class="bub"></i><i class="bub"></i><i class="bub"></i><i class="bub"></i></div>'
+  + '</div></div>';
+const PUFFS = '<div class="puffs"><i class="puff"></i><i class="puff"></i><i class="puff"></i></div>';
+const FLAME = '<div class="flame"><i class="f-o"></i><i class="f-m"></i><i class="f-i"></i></div>';
+const STAND = '<div class="stand"></div>';
+const CROWN = '<svg class="crown" viewBox="0 0 24 16"><path d="M2 13 1 4l5.2 4L12 1l5.8 7L23 4l-1 9H2zm0 2h20v1.5H2z"/></svg>';
+
+function build(){
+  /* ★ 每次打开：全部从 -25°C 的冰块开始 */
+  groups = Array.from({length:GROUPS},(_,i)=>({name:`第${i+1}组`,temp:MIN_T,holdUntil:0}));
+  for(let i=0;i<GROUPS;i++){
+    const card = document.createElement('section');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="row-mid">
+        <div class="stage" data-state="ice">
+          <div class="name-row">${CROWN}<button class="name" title="点击修改组名">${groups[i].name}</button></div>
+          <div class="shadow"></div>
+          ${FLAME}${STAND}${CUBE}${BEAKER}${PUFFS}<div class="flashfx"></div>
+        </div>
+        <div class="thermo" title="点上半截升温，点下半截降温">
+          <div class="t-body">
+            <div class="t-stem">
+              <div class="t-fill"></div>
+              <span class="t-mark m-zero"><b>0°</b></span>
+              <span class="t-mark m-boil"><b>100°</b></span>
+            </div>
+            <div class="t-bulb"></div>
+          </div>
+          <div class="tz tz-hot"><b>＋</b></div>
+          <div class="tz tz-cold"><b>－</b></div>
+        </div>
+      </div>
+      <div class="row-bot">
+        <span class="badge b-ice">固态 · 冰</span>
+        <div class="readout"><div class="num"><span class="v">-25</span><em>°C</em></div></div>
+      </div>`;
+    board.appendChild(card);
+    refs.push({
+      card, name: card.querySelector('.name'),
+      badge: card.querySelector('.badge'), crown: card.querySelector('.crown'),
+      stage: card.querySelector('.stage'), cubeWrap: card.querySelector('.cube-wrap'),
+      fill: card.querySelector('.t-fill'), bulb: card.querySelector('.t-bulb'),
+      num: card.querySelector('.num .v'), numBox: card.querySelector('.num'),
+      thermo: card.querySelector('.thermo'),
+      hot: card.querySelector('.tz-hot'), cold: card.querySelector('.tz-cold'),
+      mZero: card.querySelector('.m-zero'), mBoil: card.querySelector('.m-boil'),
+    });
+    /* 刻度线由代码按量程精确定位：0°C 贴近玻璃泡，100°C 在中上部 */
+    refs[i].mZero.style.top = ((1 - (0   - MIN_T)/(MAX_T - MIN_T))*100).toFixed(1) + '%';
+    refs[i].mBoil.style.top = ((1 - (100 - MIN_T)/(MAX_T - MIN_T))*100).toFixed(1) + '%';
+    refs[i].hot.addEventListener('click', ()=>clickT(i,+STEP));
+    refs[i].cold.addEventListener('click', ()=>clickT(i,-STEP));
+    refs[i].name.addEventListener('click', ()=>editName(i));
+    update(i);
+  }
+  refreshCrowns();
+}
+
+/* ================= 刷新显示 ================= */
+function badgeText(g){
+  const st = stateOf(g.temp);
+  if(g.holdUntil && Date.now() < g.holdUntil){
+    return st==='mix' ? '融化中 · 0°C' : '沸腾中 · 100°C';
+  }
+  if(st==='ice')  return g.temp > -8 ? '即将融化' : '固态 · 冰';
+  if(st==='mix')  return '冰水混合物';
+  if(st==='water')return g.temp >= 75 ? '快沸腾了！' : '液态 · 水';
+  return '气态 · 水蒸气';
+}
+function update(i){
+  const g = groups[i], t = g.temp, st = stateOf(t), r = refs[i];
+  const frac = (t-MIN_T)/(MAX_T-MIN_T);
+  const hue = 210 - frac*190;
+  const col = `hsl(${hue} 90% 62%)`;
+  r.fill.style.height = (frac*100).toFixed(1)+'%';
+  r.fill.style.background = col;
+  r.bulb.style.background = `radial-gradient(circle at 35% 32%, hsl(${hue} 95% 78%), ${col} 55%, hsl(${hue} 88% 45%))`;
+  r.num.textContent = Math.round(t);
+  r.numBox.style.color = col;
+  r.stage.dataset.state = st;
+  r.stage.classList.toggle('boil', (st==='water'||st==='steam') && t>=75);
+  r.cubeWrap.classList.toggle('melting', st==='ice' && t>-8);
+  r.badge.className = 'badge ' + (st==='ice'?'b-ice':st==='water'?'b-water':st==='steam'?'b-steam':'b-ice')
+                    + (st==='ice' && t>-8 ? ' melt':'');
+  r.badge.textContent = badgeText(g);
+  r.card.className = 'card ' + STN[st];
+}
+function refreshCrowns(){
+  const max = Math.max(...groups.map(g=>g.temp));
+  refs.forEach((r,i)=>r.crown.classList.toggle('on', max>MIN_T+EPS && Math.abs(groups[i].temp-max)<EPS));
+}
+
+/* ================= 温度统一入口 ================= */
+function setTemp(i, nt, fromClick){
+  const g = groups[i];
+  const before = stateOf(g.temp);
+  nt = Math.min(MAX_T, Math.max(MIN_T, nt));
+  if(Math.abs(nt-g.temp) < 0.001){
+    if(fromClick){ sndDeny(); pulse(i); }
+    return;
+  }
+  g.temp = nt;
+  const after = stateOf(g.temp);
+  update(i); refreshCrowns();
+  if(before !== after){
+    flashStage(i);
+    if(after==='mix')  { sndCrk();   toast(`${g.name} 到达 0°C，出现冰水混合物！吸热但温度不变`, 'mix'); }
+    else if(after==='water'){
+      if(before==='steam'){ sndCool(); toast(`${g.name} 冷却下来，水蒸气变回了水`, 'water'); }
+      else { sndWater(); toast(`${g.name} 的冰全部融化，变成水啦！`, 'water'); }
+    }
+    else if(after==='steam'){ sndSteam(); burst(i); toast(`${g.name} 到达 100°C，水沸腾变成水蒸气！`, 'steam'); }
+    else { sndIce(); toast(`${g.name} 降到 0°C 以下，水又凝结成冰了`, 'ice'); }
+    pulse(i);
+  } else if(fromClick){
+    if(fromClick==='up') sndHeat(); else sndCool();
+    pulse(i);
+  }
+}
+function clickT(i, d){
+  const g = groups[i];
+  const nt = g.temp + d;
+  if((d>0 && g.temp>=MAX_T) || (d<0 && g.temp<=MIN_T)){ sndDeny(); pulse(i); return; }
+  setTemp(i, nt, d>0 ? 'up' : 'down');
+}
+function pulse(i){
+  const t = refs[i].thermo;
+  t.classList.remove('pulse'); void t.offsetWidth; t.classList.add('pulse');
+}
+function flashStage(i){
+  const s = refs[i].stage;
+  s.classList.remove('flash'); void s.offsetWidth; s.classList.add('flash');
+}
+function burst(i){
+  const st = refs[i].stage;
+  for(let k=0;k<10;k++){
+    const s = document.createElement('i');
+    s.className='spark';
+    const a = Math.random()*Math.PI*2, r = 44 + Math.random()*52;
+    s.style.setProperty('--dx', Math.cos(a)*r+'px');
+    s.style.setProperty('--dy', (Math.sin(a)*r-34)+'px');
+    s.style.animationDelay = (Math.random()*.15)+'s';
+    st.appendChild(s);
+    setTimeout(()=>s.remove(), 1100);
+  }
+}
+
+/* ================= 火焰自动加热（课堂时钟） ================= */
+function tick(){
+  const now = Date.now();
+  let dt = (now - lastTick)/1000; lastTick = now;
+  if(dt > 2) dt = 2;
+  if(!flameSpeed) return;
+  const dT = RATE * flameSpeed * dt;
+  groups.forEach((g,i)=>{
+    if(g.temp >= MAX_T) return;
+    if(g.holdUntil && now < g.holdUntil){ update(i); return; }
+    if(g.holdUntil && now >= g.holdUntil) g.holdUntil = 0;
+    const t = g.temp, nt = t + dT;
+    if(t < 0 && nt >= 0){
+      g.temp = 0;
+      g.holdUntil = now + HOLD_MS/flameSpeed;
+    } else if(t < 100 && nt >= 100){
+      g.temp = 100;
+      g.holdUntil = now + HOLD_MS/flameSpeed;
+    } else {
+      g.temp = Math.min(nt, MAX_T);
+    }
+    update(i);
+  });
+  refreshCrowns();
+}
+setInterval(tick, 500);
+
+/* ================= Toast ================= */
+const ICONS = {
+  ice:  '<svg viewBox="0 0 24 24" fill="#bfeaff"><path d="M12 1v22M3.3 6.5l17.4 11M20.7 6.5 3.3 17.5M12 1l-2.5 3h5L12 1zm0 22l-2.5-3h5L12 23zM3.3 6.5 4 2.8l3.3 1.9-4 1.8zm17.4 11-.7 3.7-3.3-1.9 4-1.8zM20.7 6.5 20 2.8l-3.3 1.9 4 1.8zM3.3 17.5l.7 3.7 3.3-1.9-4-1.8z"/></svg>',
+  mix:  '<svg viewBox="0 0 24 24" fill="none"><path d="M12 3v18M5 7l14 10M19 7 5 17" stroke="#bfeaff" stroke-width="1.6"/><path d="M15 15s3 3.4 3 5a3 3 0 1 1-6 0c0-1.6 3-5 3-5z" fill="#57d0f0"/></svg>',
+  water:'<svg viewBox="0 0 24 24" fill="#57d0f0"><path d="M12 2s7 8.5 7 13a7 7 0 1 1-14 0c0-4.5 7-13 7-13z"/></svg>',
+  steam:'<svg viewBox="0 0 24 24" fill="none" stroke="#ffab76" stroke-width="2.4" stroke-linecap="round"><path d="M5 8q3.5-3.5 7 0t7 0M5 13q3.5-3.5 7 0t7 0M5 18q3.5-3.5 7 0t7 0"/></svg>'
+};
+function toast(msg, kind){
+  const t = document.createElement('div');
+  t.className='toast';
+  t.innerHTML = (ICONS[kind]||ICONS.water) + '<span>'+msg+'</span>';
+  $('#toasts').appendChild(t);
+  setTimeout(()=>t.remove(), 3400);
+}
+
+/* ================= 模态框 ================= */
+let mCb = null;
+function openModal({title, text, input=''}){
+  $('#mTitle').textContent = title;
+  $('#mText').textContent = text;
+  const inp = $('#mInput');
+  inp.hidden = input===null;
+  inp.value = input || '';
+  $('#backdrop').classList.add('show');
+  if(!inp.hidden){ setTimeout(()=>{inp.focus(); inp.select();}, 120); }
+}
+function closeModal(){ $('#backdrop').classList.remove('show'); mCb=null; }
+$('#mCancel').addEventListener('click', closeModal);
+$('#mOk').addEventListener('click', ()=>{ const cb=mCb; closeModal(); if(cb) cb($('#mInput').value); });
+$('#backdrop').addEventListener('click', e=>{ if(e.target.id==='backdrop') closeModal(); });
+
+function editName(i){
+  mCb = (v)=>{
+    v = (v||'').trim();
+    if(v){ groups[i].name = v; refs[i].name.textContent = v; toast(`组名已改为「${v}」`, 'water'); }
+  };
+  openModal({title:'修改组名', text:'给第 '+(i+1)+' 组起个响亮的名字吧（最多 8 个字）', input: groups[i].name});
+}
+$('#btnReset').addEventListener('click', ()=>{
+  mCb = ()=>{
+    groups.forEach(g=>{ g.temp = MIN_T; g.holdUntil = 0; });
+    refs.forEach((_,i)=>update(i));
+    refreshCrowns();
+    toast('所有小组已重置，回到 -25°C 的冰块状态', 'ice');
+  };
+  openModal({title:'重置全部温度？', text:'十个小组都会回到 -25°C 的冰块，火焰继续按当前速度加热。确定吗？', input:null});
+});
+
+/* ================= 火焰 / 音效开关 ================= */
+function syncFlameBtn(){
+  const b = $('#btnFlame');
+  b.className = 'tool' + (flameSpeed ? ' flaming' : ' off') + (flameSpeed===20 ? ' fast' : '');
+  document.body.classList.toggle('flame-on', !!flameSpeed);
+  document.body.classList.toggle('flame-fast', flameSpeed===20);
+  b.title = flameSpeed===0 ? '火焰已熄灭（点击恢复常速）' : flameSpeed===1 ? '火焰：常速（40分钟约+2分）' : '火焰：快速演示（约2分钟+2分）';
+}
+$('#btnFlame').addEventListener('click', ()=>{
+  flameSpeed = flameSpeed===1 ? 20 : (flameSpeed===20 ? 0 : 1);
+  groups.forEach(g=>{ if(g.holdUntil) g.holdUntil = 0; });
+  syncFlameBtn();
+  toast(flameSpeed===1 ? '火焰：常速加热，一节课（40分钟）约升 50°C'
+       : flameSpeed===20 ? '火焰：快速演示模式，约 2 分钟升 50°C'
+       : '火焰已熄灭，停止自动加热', flameSpeed ? 'steam' : 'ice');
+});
+function syncSoundBtn(){
+  const b = $('#btnSound');
+  b.classList.toggle('off', muted);
+  $('#icoSound').innerHTML = muted
+    ? '<path d="M3 9v6h4l5 5V4L7 9H3zm18.6 3 2.1-2.1-1.4-1.4-2.1 2.1-2.1-2.1-1.4 1.4 2.1 2.1-2.1 2.1 1.4 1.4 2.1-2.1 2.1 2.1 1.4-1.4-2.1-2.1z"/>'
+    : '<path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/>';
+}
+$('#btnSound').addEventListener('click', ()=>{ muted=!muted; syncSoundBtn(); if(!muted) sndHeat(); });
+document.addEventListener('pointerdown', ()=>{ try{ctx();}catch(e){} }, {once:true});
+
+/* ================= 启动：全新开始 ================= */
+build();
+syncFlameBtn();
+syncSoundBtn();
+lastTick = Date.now();
+</script>
+<!-- ================= 开物AI科学 · 版权模块（单击显示 / 双击打开官网） ================= -->
+<style id="kaiming-copyright-style">
+  #kaiming-copyright {
+    position: fixed;
+    bottom: 26px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    pointer-events: none;
+    z-index: 999999;
+    transition: opacity 0.45s ease;
+    opacity: 0;
+    display: none;
+  }
+  #kaiming-copyright .inner {
+    display: inline-block;
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #eafaf2;
+    padding: 9px 26px;
+    border-radius: 60px;
+    /* 原稿为 14px；此处改为 16px 以符合本机 verify_html.py 的「字号不得小于 16px」硬规则 */
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.6px;
+    border: 1px solid rgba(255, 245, 210, 0.3);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+    font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+    white-space: nowrap;
+  }
+</style>
+
+<div id="kaiming-copyright">
+  <div class="inner">© 2026 开物AI科学 ｜ AI 赋能 · 教育公平</div>
+</div>
+
+<script id="kaiming-copyright-script">
+(function () {
+  "use strict";
+
+  /* 目标：单击标题 → 显示版权 3.5 秒；双击标题 → 打开 www.kaiwuaiscience.com */
+
+  const HOMEPAGE = "https://www.kaiwuaiscience.com";
+  const SHOW_MS = 3500;      // 版权显示时长
+  const DBL_WINDOW = 280;    // 双击判定的时间窗（毫秒）
+  const FADE_MS = 450;       // 淡出时长，与 CSS transition 一致
+
+  function bindCopyright() {
+    // 首选 #mainTitle（注入脚本会保证它存在）；后三个选择器是手写粘贴时的兜底
+    const title = document.getElementById("mainTitle") ||
+                  document.querySelector("h1, .title, .page-title, .main-title");
+    const box = document.getElementById("kaiming-copyright");
+    if (!title || !box) return;
+
+    title.style.cursor = "pointer";
+    title.style.userSelect = "none";
+    title.style.webkitUserSelect = "none";
+    /* 有些 3D 页面把 HUD 浮层（标题就在里面）设成 pointer-events:none，
+       好让鼠标事件穿透给下层画布；结果标题被"穿透"了——用户点它时事件落到画布上，
+       单击毫无反应，页面看起来就像没加版权。在标题自身把指针事件打开即可
+       （CSS 里后代可以覆盖祖先的 none，无需改动页面原有样式）。 */
+    title.style.pointerEvents = "auto";
+
+    let clickTimer = null;
+    let hideTimer = null;
+    let seq = 0;   // 每次显示/隐藏都 +1，用来作废在飞的定时器
+
+    function showCopyright() {
+      const my = ++seq;
+      if (hideTimer) clearTimeout(hideTimer);
+      box.style.display = "block";
+      /* 强制重绘，让 0 → 1 的淡入真的发生。
+         这里刻意不用 requestAnimationFrame：rAF 在页面不产生新帧时（后台标签页、
+         无头渲染、大屏久置）不保证触发——一旦它晚于下方的隐藏定时器回调，
+         就会把 opacity 又设成 1，导致版权条永久停在屏幕上。 */
+      void box.offsetHeight;
+      box.style.opacity = "1";
+      hideTimer = setTimeout(function () {
+        if (my !== seq) return;      // 期间又被点过，交给新的那一次收尾
+        box.style.opacity = "0";
+        setTimeout(function () {
+          if (my === seq) box.style.display = "none";
+        }, FADE_MS);
+      }, SHOW_MS);
+    }
+
+    function hideCopyright() {
+      const my = ++seq;              // 作废所有在飞的定时器，避免"淡出到一半又被点亮"卡住
+      if (hideTimer) clearTimeout(hideTimer);
+      if (box.style.display !== "block") return;
+      box.style.opacity = "0";
+      setTimeout(function () {
+        if (my === seq) box.style.display = "none";
+      }, FADE_MS);
+    }
+
+    function openHomepage() {
+      // 双击时隐藏版权，并跳转官网
+      hideCopyright();
+      window.open(HOMEPAGE, "_blank", "noopener,noreferrer");
+    }
+
+    title.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (clickTimer) return;   // 已在等待双击窗口，忽略这次单击
+      clickTimer = setTimeout(function () {
+        clickTimer = null;
+        showCopyright();        // 确认是单击
+      }, DBL_WINDOW);
+    });
+
+    title.addEventListener("dblclick", function (e) {
+      e.stopPropagation();
+      if (clickTimer) {         // 取消挂起的单击
+        clearTimeout(clickTimer);
+        clickTimer = null;
+      }
+      openHomepage();
+    });
+
+    // 点击页面其它地方，立即隐藏版权
+    document.addEventListener("click", function (e) {
+      if (e.target === title) return;
+      hideCopyright();
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bindCopyright);
+  } else {
+    bindCopyright();
+  }
+})();
+</script>
+<!-- ================= 开物AI科学 · 版权模块 结束 ================= -->
+
+</body>
+</html>

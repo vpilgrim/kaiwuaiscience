@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>乾坤随机点名系统</title>
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+QingKe+HuangYou&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0a1832 0%, #1a1f38 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'ZCOOL QingKe HuangYou', sans-serif;
+            color: #e6c38a;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        /* 古风装饰元素 */
+        .decoration {
+            position: absolute;
+            z-index: -1;
+            opacity: 0.2;
+        }
+        
+        .decoration.top-left {
+            top: 20px;
+            left: 20px;
+            width: 120px;
+            height: 120px;
+            border-top: 3px solid #e6c38a;
+            border-left: 3px solid #e6c38a;
+        }
+        
+        .decoration.bottom-right {
+            bottom: 20px;
+            right: 20px;
+            width: 120px;
+            height: 120px;
+            border-bottom: 3px solid #e6c38a;
+            border-right: 3px solid #e6c38a;
+        }
+        
+        /* 主容器 */
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background: rgba(16, 22, 58, 0.7);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 0 40px rgba(58, 84, 117, 0.6);
+            border: 1px solid rgba(230, 195, 138, 0.3);
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* 标题区域 */
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            position: relative;
+        }
+        
+        .header h1 {
+            font-family: 'Ma Shan Zheng', cursive;
+            font-size: 4.5rem;
+            color: #e6c38a;
+            text-shadow: 0 0 20px rgba(230, 195, 138, 0.7);
+            letter-spacing: 6px;
+            margin-bottom: 15px;
+            position: relative;
+            display: inline-block;
+        }
+        
+        .header h1::after {
+            content: "";
+            position: absolute;
+            bottom: -10px;
+            left: 10%;
+            width: 80%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #e6c38a, transparent);
+        }
+        
+        /* 显示区域 */
+        .display-container {
+            position: relative;
+            margin-bottom: 40px;
+        }
+        
+        .display-box {
+            background: rgba(10, 24, 50, 0.9);
+            border: 3px solid #3a5475;
+            border-radius: 15px;
+            height: 300px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.8);
+        }
+        
+        .display-box::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent 48%, rgba(230, 195, 138, 0.1) 50%, transparent 52%);
+            animation: flow 8s linear infinite;
+        }
+        
+        #display {
+            font-size: 4.5rem;
+            text-align: center;
+            color: #e6c38a;
+            text-shadow: 0 0 20px rgba(230, 195, 138, 0.7);
+            padding: 20px;
+            z-index: 2;
+            font-family: 'Ma Shan Zheng', cursive;
+        }
+        
+        /* 按钮区域 */
+        .button-container {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .button {
+            padding: 18px 50px;
+            font-size: 1.8rem;
+            background: #2a4365;
+            color: #e6c38a;
+            border: 2px solid #3a5475;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Ma Shan Zheng', cursive;
+            letter-spacing: 3px;
+            outline: none;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .button:hover {
+            background: #3a5475;
+            box-shadow: 0 0 25px rgba(58, 84, 117, 0.8);
+            transform: translateY(-3px);
+        }
+        
+        .button.active {
+            background: #d9534f;
+            border-color: #ac2925;
+        }
+        
+        .button::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent 48%, rgba(255,255,255,0.1) 50%, transparent 52%);
+            animation: flow 6s linear infinite;
+        }
+        
+        /* 文件上传区域 */
+        .upload-section {
+            background: rgba(10, 24, 50, 0.6);
+            border: 2px dashed #3a5475;
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-section:hover {
+            border-color: #e6c38a;
+            box-shadow: 0 0 20px rgba(230, 195, 138, 0.3);
+        }
+        
+        .upload-section h2 {
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+            color: #e6c38a;
+        }
+        
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            margin: 15px 0;
+        }
+        
+        .file-input-wrapper input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        
+        .file-label {
+            display: inline-block;
+            padding: 12px 30px;
+            background: #2a4365;
+            color: #e6c38a;
+            border-radius: 50px;
+            font-size: 1.3rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid #3a5475;
+        }
+        
+        .file-label:hover {
+            background: #3a5475;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .file-info {
+            margin-top: 15px;
+            font-size: 1.1rem;
+            color: #a0aec0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .file-info .highlight {
+            color: #e6c38a;
+            font-weight: 500;
+        }
+        
+        /* 学生计数 */
+        .student-count {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 1.4rem;
+            color: #a0aec0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .count-badge {
+            background: rgba(230, 195, 138, 0.2);
+            border: 1px solid rgba(230, 195, 138, 0.5);
+            border-radius: 10px;
+            padding: 8px 20px;
+            font-weight: 500;
+            color: #e6c38a;
+        }
+        
+        /* 动画效果 */
+        @keyframes flow {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes flicker {
+            0% { opacity: 0.8; }
+            50% { opacity: 0.3; }
+            100% { opacity: 0.8; }
+        }
+        
+        .flicker {
+            animation: flicker 0.1s infinite;
+        }
+        
+        @keyframes stamp {
+            0% { transform: scale(5); opacity: 0; }
+            50% { opacity: 0.5; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .stamp {
+            position: absolute;
+            font-family: 'Ma Shan Zheng', cursive;
+            font-size: 6rem;
+            color: rgba(210, 50, 50, 0.8);
+            transform: rotate(-15deg);
+            z-index: 10;
+            opacity: 0;
+        }
+        
+        .stamp.animate {
+            animation: stamp 0.8s ease-out forwards;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 3rem;
+            }
+            
+            #display {
+                font-size: 3rem;
+            }
+            
+            .button {
+                padding: 15px 40px;
+                font-size: 1.5rem;
+            }
+            
+            .display-box {
+                height: 250px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 2.2rem;
+            }
+            
+            #display {
+                font-size: 2.5rem;
+            }
+            
+            .button {
+                padding: 12px 30px;
+                font-size: 1.3rem;
+            }
+            
+            .display-box {
+                height: 200px;
+            }
+            
+            .file-label {
+                padding: 10px 25px;
+                font-size: 1.1rem;
+            }
+        }
+        
+        /* 加载指示器 */
+        .loader {
+            display: none;
+            width: 40px;
+            height: 40px;
+            margin: 20px auto;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #e6c38a;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- 装饰元素 -->
+    <div class="decoration top-left"></div>
+    <div class="decoration bottom-right"></div>
+    
+    <div class="container">
+        <!-- 标题区域 -->
+        <div class="header">
+            <h1 id="mainTitle">乾坤随机点名系统</h1>
+        </div>
+        
+        <!-- 显示区域 -->
+        <div class="display-container">
+            <div class="display-box">
+                <div id="display">准备就绪</div>
+                <div class="stamp" id="stamp">点</div>
+            </div>
+        </div>
+        
+        <!-- 按钮区域 -->
+        <div class="button-container">
+            <button class="button" id="random-button">开始随机</button>
+        </div>
+        
+        <!-- 学生计数 -->
+        <div class="student-count">
+            <span>当前名单学生数:</span>
+            <div class="count-badge" id="student-count">0</div>
+        </div>
+        
+        <!-- 文件上传区域 -->
+        <div class="upload-section">
+            <h2>上传班级名单</h2>
+            <div class="file-input-wrapper">
+                <input type="file" id="file-input" accept=".xlsx,.xls,.txt">
+                <div class="file-label">选择名单文件</div>
+            </div>
+            <div class="file-info">
+                <span>支持格式: <span class="highlight">.xlsx</span>, <span class="highlight">.xls</span>, <span class="highlight">.txt</span></span>
+            </div>
+            <div class="loader" id="loader"></div>
+        </div>
+    </div>
+
+    <script>
+        // 默认学生名单
+        const defaultStudents = [
+            '赵欣怡', '钟庭宇', '廖一诺', '杜艺澄', '陆骏',
+            '蔡明昊', '苏妍', '陈沁瑶', '徐青阳', '姚若彤',
+            '林思远', '魏皓宇', '郑明昊', '韦念之', '魏梓玥',
+            '梁书瑶', '孙梓玥', '林沁瑶', '贾景行', '孙予安',
+            '林言蹊', '丁若曦', '魏雨萱', '罗楚言', '钟景行',
+            '范一诺', '夏予安', '沈语汐', '汪沁瑶', '石砚舟',
+            '何庭宇', '杜欣怡', '曾瑞霖', '许若彤', '秦若彤',
+            '李宁萱', '胡文博', '梁浩然', '李伊诺', '秦安然',
+            '罗以宁', '丁沐辰', '陆皓宇', '许一诺', '王佳琪',
+            '崔书瑶', '邱语汐', '蔡昊', '陈思远', '邹嘉怡',
+            '赵轩', '孟俊熙', '赵梓玥', '陈俊熙', '金瑞霖',
+            '金予安'
+        ];
+        
+        let students = [...defaultStudents];
+        let isRunning = false;
+        let intervalId;
+        
+        // 获取DOM元素
+        const display = document.getElementById('display');
+        const randomButton = document.getElementById('random-button');
+        const fileInput = document.getElementById('file-input');
+        const studentCount = document.getElementById('student-count');
+        const stamp = document.getElementById('stamp');
+        const loader = document.getElementById('loader');
+        
+        // 更新学生计数显示
+        function updateStudentCount() {
+            studentCount.textContent = students.length;
+        }
+        
+        // 初始化
+        updateStudentCount();
+        
+        // 文件上传处理
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            // 显示加载动画
+            loader.style.display = 'block';
+            display.textContent = "正在解析文件...";
+            
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                try {
+                    // 处理不同格式的文件
+                    if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+                        // 处理Excel文件
+                        const data = new Uint8Array(event.target.result);
+                        const workbook = XLSX.read(data, {type: 'array'});
+                        
+                        // 获取第一个工作表
+                        const firstSheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[firstSheetName];
+                        
+                        // 将工作表转换为JSON
+                        const jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+                        
+                        // 提取第一列作为学生姓名
+                        students = jsonData
+                            .filter(row => row.length > 0) // 过滤空行
+                            .map(row => row[0]) // 获取第一列
+                            .filter(name => name && typeof name === 'string') // 确保是字符串
+                            .map(name => name.trim()) // 去除空格
+                            .filter(name => name.length > 0); // 过滤空姓名
+                    } else {
+                        // 处理TXT文件
+                        const content = event.target.result;
+                        students = content.split('\n')
+                            .map(name => name.trim())
+                            .filter(name => name.length > 0);
+                    }
+                    
+                    // 如果解析不到数据，使用默认名单
+                    if (students.length === 0) {
+                        students = [...defaultStudents];
+                        display.textContent = "未能解析到有效名单";
+                    } else {
+                        display.textContent = "名单加载成功";
+                        updateStudentCount();
+                        setTimeout(() => {
+                            display.textContent = "准备就绪";
+                        }, 1500);
+                    }
+                } catch (error) {
+                    console.error("解析文件时出错:", error);
+                    display.textContent = "文件解析失败";
+                } finally {
+                    // 隐藏加载动画
+                    loader.style.display = 'none';
+                }
+            };
+            
+            // 根据文件类型选择读取方式
+            if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+                reader.readAsArrayBuffer(file);
+            } else {
+                reader.readAsText(file);
+            }
+        });
+        
+        // 随机点名功能
+        function toggleRandom() {
+            if (!isRunning) {
+                // 开始随机
+                if (students.length === 0) {
+                    display.textContent = "名单为空";
+                    display.style.color = "#ff6b6b";
+                    setTimeout(() => {
+                        display.style.color = "#e6c38a";
+                        display.textContent = "准备就绪";
+                    }, 2000);
+                    return;
+                }
+                
+                isRunning = true;
+                randomButton.textContent = '停止随机';
+                randomButton.classList.add('active');
+                display.classList.add('flicker');
+                
+                intervalId = setInterval(() => {
+                    const randomIndex = Math.floor(Math.random() * students.length);
+                    display.textContent = students[randomIndex];
+                }, 80);
+            } else {
+                // 停止随机
+                isRunning = false;
+                randomButton.textContent = '开始随机';
+                randomButton.classList.remove('active');
+                display.classList.remove('flicker');
+                clearInterval(intervalId);
+                
+                // 显示印章动画
+                stamp.classList.remove('animate');
+                void stamp.offsetWidth; // 触发重绘
+                stamp.classList.add('animate');
+                
+                // 添加结果高亮效果
+                display.style.color = '#ffcc00';
+                display.style.textShadow = '0 0 30px #ffcc00, 0 0 60px #ff9900';
+                setTimeout(() => {
+                    display.style.color = '#e6c38a';
+                    display.style.textShadow = '0 0 20px rgba(230, 195, 138, 0.7)';
+                }, 3000);
+            }
+        }
+        
+        // 绑定按钮事件
+        randomButton.addEventListener('click', toggleRandom);
+    </script>
+
+
+<!-- ================= 开物AI科学 · 版权模块（单击显示 / 双击打开官网） ================= -->
+<style id="kaiming-copyright-style">
+  #kaiming-copyright {
+    position: fixed;
+    bottom: 26px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    pointer-events: none;
+    z-index: 999999;
+    transition: opacity 0.45s ease;
+    opacity: 0;
+    display: none;
+  }
+  #kaiming-copyright .inner {
+    display: inline-block;
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #eafaf2;
+    padding: 9px 26px;
+    border-radius: 60px;
+    /* 原稿为 14px；此处改为 16px 以符合本机 verify_html.py 的「字号不得小于 16px」硬规则 */
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.6px;
+    border: 1px solid rgba(255, 245, 210, 0.3);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+    font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+    white-space: nowrap;
+  }
+</style>
+
+<div id="kaiming-copyright">
+  <div class="inner">© 2026 开物AI科学 ｜ AI 赋能 · 教育公平</div>
+</div>
+
+<script id="kaiming-copyright-script">
+(function () {
+  "use strict";
+
+  /* 目标：单击标题 → 显示版权 3.5 秒；双击标题 → 打开 www.kaiwuaiscience.com */
+
+  const HOMEPAGE = "https://www.kaiwuaiscience.com";
+  const SHOW_MS = 3500;      // 版权显示时长
+  const DBL_WINDOW = 280;    // 双击判定的时间窗（毫秒）
+  const FADE_MS = 450;       // 淡出时长，与 CSS transition 一致
+
+  function bindCopyright() {
+    // 首选 #mainTitle（注入脚本会保证它存在）；后三个选择器是手写粘贴时的兜底
+    const title = document.getElementById("mainTitle") ||
+                  document.querySelector("h1, .title, .page-title, .main-title");
+    const box = document.getElementById("kaiming-copyright");
+    if (!title || !box) return;
+
+    title.style.cursor = "pointer";
+    title.style.userSelect = "none";
+    title.style.webkitUserSelect = "none";
+
+    let clickTimer = null;
+    let hideTimer = null;
+    let seq = 0;   // 每次显示/隐藏都 +1，用来作废在飞的定时器
+
+    function showCopyright() {
+      const my = ++seq;
+      if (hideTimer) clearTimeout(hideTimer);
+      box.style.display = "block";
+      /* 强制重绘，让 0 → 1 的淡入真的发生。
+         这里刻意不用 requestAnimationFrame：rAF 在页面不产生新帧时（后台标签页、
+         无头渲染、大屏久置）不保证触发——一旦它晚于下方的隐藏定时器回调，
+         就会把 opacity 又设成 1，导致版权条永久停在屏幕上。 */
+      void box.offsetHeight;
+      box.style.opacity = "1";
+      hideTimer = setTimeout(function () {
+        if (my !== seq) return;      // 期间又被点过，交给新的那一次收尾
+        box.style.opacity = "0";
+        setTimeout(function () {
+          if (my === seq) box.style.display = "none";
+        }, FADE_MS);
+      }, SHOW_MS);
+    }
+
+    function hideCopyright() {
+      const my = ++seq;              // 作废所有在飞的定时器，避免"淡出到一半又被点亮"卡住
+      if (hideTimer) clearTimeout(hideTimer);
+      if (box.style.display !== "block") return;
+      box.style.opacity = "0";
+      setTimeout(function () {
+        if (my === seq) box.style.display = "none";
+      }, FADE_MS);
+    }
+
+    function openHomepage() {
+      // 双击时隐藏版权，并跳转官网
+      hideCopyright();
+      window.open(HOMEPAGE, "_blank", "noopener,noreferrer");
+    }
+
+    title.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (clickTimer) return;   // 已在等待双击窗口，忽略这次单击
+      clickTimer = setTimeout(function () {
+        clickTimer = null;
+        showCopyright();        // 确认是单击
+      }, DBL_WINDOW);
+    });
+
+    title.addEventListener("dblclick", function (e) {
+      e.stopPropagation();
+      if (clickTimer) {         // 取消挂起的单击
+        clearTimeout(clickTimer);
+        clickTimer = null;
+      }
+      openHomepage();
+    });
+
+    // 点击页面其它地方，立即隐藏版权
+    document.addEventListener("click", function (e) {
+      if (e.target === title) return;
+      hideCopyright();
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bindCopyright);
+  } else {
+    bindCopyright();
+  }
+})();
+</script>
+<!-- ================= 开物AI科学 · 版权模块 结束 ================= -->
+
+<!-- 姓名已匿名化 by student-name-anonymizer -->
+</body>
+</html>

@@ -1,0 +1,849 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D 呼吸系统实验室 - 开物AI科学</title>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: 'Comic Sans MS', '微软雅黑', sans-serif; background-color: #f0f4f8; user-select: none; }
+        
+        #ui-container { 
+            position: absolute; top: 15px; left: 15px; 
+            pointer-events: none; z-index: 10; 
+            background: rgba(255,255,255,0.9);
+            padding: 15px 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            max-width: 380px; /* 为了适应更大的字体稍微加宽 */
+        }
+        /* 增加可点击提示指针 */
+        #ui-title { pointer-events: auto; cursor: pointer; }
+        h1 { color: #2c3e50; text-shadow: 1px 1px 0px white; margin: 0; font-size: 36px; font-weight: 900; letter-spacing: 1px; }
+        p { color: #34495e; font-size: 18px; margin: 8px 0 0 0; font-weight: bold; }
+        
+        #status-message { position: absolute; bottom: 60px; width: 100%; text-align: center; font-size: 28px; font-weight: bold; color: #e67e22; text-shadow: 2px 2px 0px white; pointer-events: none; transition: all 0.2s; z-index: 5; }
+        
+        /* 彩蛋版权信息：优化为纯白字体 + 高级感阴影与半透明底 */
+        #copyright {
+            position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%);
+            font-size: 16px; color: #ffffff; font-weight: bold;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.6);
+            background: rgba(0, 0, 0, 0.25);
+            padding: 6px 18px; border-radius: 20px; letter-spacing: 1px;
+            opacity: 0; transition: opacity 0.5s ease; pointer-events: none; z-index: 5;
+        }
+        #copyright.show { opacity: 1; }
+
+        #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 24px; color: #333; font-weight: bold; }
+        
+        /* 开始界面 */
+        #start-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(240, 244, 248, 0.95);
+            backdrop-filter: blur(5px);
+            display: flex; justify-content: center; align-items: center; flex-direction: column;
+            z-index: 100;
+            transition: opacity 0.5s;
+        }
+        #start-overlay.hidden { opacity: 0; pointer-events: none; }
+
+        /* 成功界面 */
+        .success-overlay { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(255, 255, 255, 0.9); 
+            display: flex; justify-content: center; align-items: center; flex-direction: column; 
+            z-index: 20; opacity: 0; pointer-events: none; transition: opacity 0.5s; 
+            cursor: pointer;
+        }
+        .success-overlay.active { opacity: 1; pointer-events: all; }
+        
+        .btn { padding: 12px 24px; font-size: 18px; color: white; border: none; border-radius: 50px; cursor: pointer; box-shadow: 0 4px 0 rgba(0,0,0,0.2); transition: transform 0.1s; font-family: inherit; font-weight: bold; pointer-events: auto; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 0 rgba(0,0,0,0.2); }
+        .btn:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0,0,0,0.2); }
+        .btn-green { background: #27ae60; }
+        .btn-blue { background: #2980b9; }
+        .btn-orange { background: #f39c12; }
+        .btn-purple { background: #8e44ad; }
+        .btn-large { font-size: 28px; padding: 18px 45px; box-shadow: 0 6px 0 rgba(0,0,0,0.2); background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%); }
+
+        #info-card {
+            position: absolute; bottom: 20px; right: 20px; width: 320px;
+            background: rgba(255, 255, 255, 0.95); padding: 25px;
+            border-radius: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            border-left: 8px solid #2980b9;
+            transform: translateX(120%); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 15; pointer-events: auto;
+        }
+        #info-card.show { transform: translateX(0); }
+        #info-card h2 { margin: 0 0 12px 0; color: #2980b9; font-size: 24px; }
+        #info-card p { margin:0; color: #555; line-height: 1.6; font-size: 16px; }
+
+        #controls { 
+            position: absolute; top: 15px; right: 15px; 
+            display: flex; flex-direction: column; gap: 12px; z-index: 10; 
+            align-items: flex-end;
+        }
+        
+        .click-hint { font-size: 16px; color: #999; margin-top: 20px; animation: blink 2s infinite; }
+        @keyframes blink { 0%,100% {opacity: 1;} 50% {opacity: 0.5;} }
+    </style>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body>
+
+    <div id="loading">正在准备高清模型...</div>
+
+    <div id="start-overlay">
+        <h1 style="font-size: 54px; margin-bottom: 20px; color: #2c3e50;">🫁 呼吸系统实验室</h1>
+        <p style="font-size: 24px; color: #7f8c8d; margin-bottom: 40px; font-weight: normal;">3D 互动拼装 · 气体交换演示</p>
+        <button class="btn btn-large" id="startButton">开始实验</button>
+    </div>
+
+    <div id="ui-container">
+        <!-- 增加 id="ui-title" 用于双击触发彩蛋 -->
+        <h1 id="ui-title" title="双击可能有惊喜哦！">呼吸系统实验室</h1>
+        <p>任务：将左侧器官拖入身体！</p>
+    </div>
+
+    <div id="controls">
+        <button id="toggle-difficulty" class="btn btn-green">🟢 简单模式</button>
+        <button id="toggle-breath" class="btn btn-blue">💨 气体交换演示 (关)</button>
+        <button id="reset-camera" class="btn btn-purple">🎥 重置视角</button>
+        <button id="reset-game" class="btn btn-orange">🔄 重新开始</button>
+    </div>
+
+    <div id="status-message"></div>
+    <div id="copyright">© 2026 开物AI科学 ｜ AI 赋能 · 教育公平</div>
+
+    <div id="info-card">
+        <h2 id="info-title">器官名称</h2>
+        <p id="info-desc">介绍</p>
+        <div style="text-align: right; margin-top:10px; font-size:14px; color:#999;">(点击空白处关闭)</div>
+    </div>
+
+    <div class="success-overlay" id="successOverlay">
+        <h1 style="font-size: 60px; color: #27ae60; margin-bottom: 10px;">🎉 挑战成功！</h1>
+        <p style="font-size: 28px; color: #555;">您已完美还原了人体呼吸系统！</p>
+        <p class="click-hint">(点击任意处关闭此界面，查看模型细节)</p>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // --- SVG 数据 ---
+        const svgs = {
+            nose: `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512"><defs><linearGradient id="skin" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#ffe0bd;stop-opacity:1" /><stop offset="100%" style="stop-color:#ffcd94;stop-opacity:1" /></linearGradient></defs><path d="M256 100 C150 150 120 250 120 350 C120 450 180 500 256 500 C332 500 392 450 392 350 C392 250 362 150 256 100 Z" fill="url(#skin)" stroke="#eac086" stroke-width="10"/><path d="M210 420 Q230 400 256 420 Q282 400 302 420" fill="none" stroke="#c08a50" stroke-width="15" stroke-linecap="round"/></svg>`,
+            pharynx: `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512"><defs><linearGradient id="throat" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#ffcccc;stop-opacity:1" /><stop offset="100%" style="stop-color:#ff9999;stop-opacity:1" /></linearGradient></defs><path d="M180 50 L180 200 L332 200 L332 50" fill="#ffb6c1" stroke="#ff9999" stroke-width="15"/><path d="M180 200 Q160 350 200 480 L312 480 Q352 350 332 200" fill="url(#throat)" stroke="#ff8888" stroke-width="10"/><path d="M220 250 L292 250 M230 320 L282 320 M240 390 L272 390" stroke="#e57373" stroke-width="15" stroke-linecap="round"/></svg>`,
+            trachea: `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512"><defs><linearGradient id="pipe" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" style="stop-color:#e0f7fa;stop-opacity:1" /><stop offset="100%" style="stop-color:#b2ebf2;stop-opacity:1" /></linearGradient></defs><path d="M200 20 L200 490 M312 20 L312 490" stroke="#80deea" stroke-width="20" stroke-linecap="round"/><rect x="200" y="20" width="112" height="470" fill="url(#pipe)"/><path d="M200 60 H312 M200 120 H312 M200 180 H312 M200 240 H312 M200 300 H312 M200 360 H312 M200 420 H312" stroke="#4dd0e1" stroke-width="15" stroke-linecap="round"/></svg>`,
+            bronchi: `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512"><path d="M256 20 L256 150" stroke="#b2ebf2" stroke-width="30" stroke-linecap="round"/><path d="M256 150 Q256 250 100 400" fill="none" stroke="#80deea" stroke-width="25" stroke-linecap="round"/><path d="M256 150 Q256 250 412 400" fill="none" stroke="#80deea" stroke-width="25" stroke-linecap="round"/><path d="M180 280 L120 320 M332 280 L392 320 M140 350 L80 380" stroke="#4dd0e1" stroke-width="15" stroke-linecap="round"/></svg>`,
+            lungs: `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512"><defs><radialGradient id="lungGrad" cx="50%" cy="50%" r="50%" fx="50%" fy="50%"><stop offset="0%" style="stop-color:#ffcccb;stop-opacity:1" /><stop offset="100%" style="stop-color:#ef9a9a;stop-opacity:1" /></radialGradient></defs><path d="M240 80 Q100 80 80 250 Q60 400 120 450 Q240 480 240 250 Z" fill="url(#lungGrad)" stroke="#e57373" stroke-width="5"/><path d="M272 80 Q412 80 432 250 Q452 400 392 450 Q272 480 272 300 Q272 250 272 250 Z" fill="url(#lungGrad)" stroke="#e57373" stroke-width="5"/></svg>`
+        };
+
+        const organData = [
+            { id: 'nose', name: '鼻', svg: svgs.nose, targetPos: new THREE.Vector3(0, 4.0, 2.4), scale: 1.2, desc: "【气体入口】鼻腔不仅是气体进出的门户，内部的鼻毛和黏膜还能温暖、湿润和清洁空气。" },
+            { id: 'pharynx', name: '咽喉', svg: svgs.pharynx, targetPos: new THREE.Vector3(0, 2.8, 2.4), scale: 1.3, desc: "【十字路口】咽是食物和气体的共同通道。吞咽时，会厌软骨会像盖子一样盖住喉口，防止食物误入气管。" },
+            { id: 'trachea', name: '气管', svg: svgs.trachea, targetPos: new THREE.Vector3(0, 1.5, 2.4), scale: 1.4, desc: "【气体通道】由C形软骨环支撑，保持气道畅通。内壁纤毛摆动，将灰尘细菌以“痰”的形式排出。" },
+            { id: 'bronchi', name: '支气管', svg: svgs.bronchi, targetPos: new THREE.Vector3(0, 0.0, 2.4), scale: 2.0, desc: "【分支网络】气管下端分成左右两支，像树根一样深入肺部，将空气输送到最深处。" },
+            { id: 'lungs', name: '肺', svg: svgs.lungs, targetPos: new THREE.Vector3(0, -0.5, 2.4), scale: 2.5, desc: "【交换场所】呼吸系统的核心！在这里，吸入的氧气进入血液，血液中的二氧化碳被排出。" }
+        ];
+
+        let scene, camera, renderer, controls;
+        let raycaster, pointer;
+        let draggableObjects = []; 
+        let allOrgans = []; 
+        let targetZones = [];
+        let selectedObject = null;
+        let isDragging = false;
+        let dragPlane; 
+        let completedCount = 0;
+        let guideLine;
+        let pointerDownTime = 0;
+        
+        let isBreathAnimating = false;
+        let oxygenParticles = [], co2Particles = [];
+        let breathCurveMain, breathCurveLeft, breathCurveRight;
+
+        // 难度设置变量
+        const diffLevels = ['easy', 'medium', 'hard'];
+        const diffColors = ['#27ae60', '#f39c12', '#c0392b'];
+        const diffLabels = ['🟢 简单模式', '🟡 中等模式', '🔴 困难模式'];
+        let currentDiffIndex = 0;
+        let currentDifficulty = 'easy';
+
+        function createTextureFromSVG(svgString) {
+            const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const texture = new THREE.TextureLoader().load(url);
+            texture.minFilter = THREE.LinearFilter; 
+            texture.magFilter = THREE.LinearFilter;
+            texture.colorSpace = THREE.SRGBColorSpace;
+            return texture;
+        }
+
+        // --- 核心交互 ---
+
+        function startGame() {
+            document.getElementById('start-overlay').classList.add('hidden');
+            setStatus("请开始拼装：按住左键拖动器官", "#2980b9");
+        }
+        
+        function closeSuccessOverlay() {
+            const overlay = document.getElementById('successOverlay');
+            overlay.classList.remove('active');
+            overlay.style.pointerEvents = 'none';
+        }
+
+        function toggleDifficulty() {
+            currentDiffIndex = (currentDiffIndex + 1) % 3;
+            currentDifficulty = diffLevels[currentDiffIndex];
+            
+            const btn = document.getElementById('toggle-difficulty');
+            btn.innerText = diffLabels[currentDiffIndex];
+            btn.style.background = diffColors[currentDiffIndex];
+            
+            updateTargetVisibility();
+            setStatus(`已切换至: ${diffLabels[currentDiffIndex].substring(2)}`, diffColors[currentDiffIndex]);
+        }
+
+        function updateTargetVisibility() {
+            targetZones.forEach(zone => {
+                const organObj = allOrgans.find(o => o.userData.id === zone.userData.id);
+                // 如果已拼装成功，永久隐藏对应线框
+                if (organObj && organObj.userData.isLocked) {
+                    zone.visible = false;
+                    return;
+                }
+
+                if (currentDifficulty === 'easy') {
+                    zone.visible = true; // 简单：常显
+                } else if (currentDifficulty === 'medium') {
+                    zone.visible = isDragging; // 中等：拖拽时显现
+                } else if (currentDifficulty === 'hard') {
+                    zone.visible = false; // 困难：全程隐藏
+                }
+            });
+        }
+
+        function resetCamera() {
+            const startPos = camera.position.clone();
+            const endPos = new THREE.Vector3(0, 1, 16);
+            const startTarget = controls.target.clone();
+            const endTarget = new THREE.Vector3(0, 0, 0);
+            
+            let progress = 0;
+            function animateCamera() {
+                progress += 0.05;
+                if (progress >= 1) {
+                    camera.position.copy(endPos);
+                    controls.target.copy(endTarget);
+                    controls.update();
+                    return;
+                }
+                camera.position.lerpVectors(startPos, endPos, progress);
+                controls.target.lerpVectors(startTarget, endTarget, progress);
+                controls.update();
+                requestAnimationFrame(animateCamera);
+            }
+            animateCamera();
+            setStatus("视角已重置", "#8e44ad");
+        }
+
+        function resetGameLogic() {
+            if(isBreathAnimating) toggleBreathAnimation(); 
+            
+            closeSuccessOverlay();
+            document.getElementById('info-card').classList.remove('show');
+            
+            allOrgans.forEach(obj => {
+                obj.userData.isLocked = false;
+                obj.userData.isDraggable = true;
+                resetPosition(obj);
+            });
+            
+            draggableObjects = [...allOrgans];
+            completedCount = 0;
+            updateTargetVisibility(); // 根据难度重置线框显示
+            
+            resetCamera(); // 同步重置视角
+            setStatus("游戏已重置，请重新开始", "#e67e22");
+        }
+
+        function toggleBreathAnimation() {
+            isBreathAnimating = !isBreathAnimating;
+            const btn = document.getElementById('toggle-breath');
+            if(isBreathAnimating) {
+                btn.innerText = "💨 演示 (开)";
+                btn.style.background = "#e74c3c"; 
+                setStatus("观察：慢速演示气体进入双肺", "#2980b9");
+            } else {
+                btn.innerText = "💨 演示 (关)";
+                btn.style.background = "#2980b9";
+                oxygenParticles.forEach(p => p.visible = false);
+                co2Particles.forEach(p => p.visible = false);
+                setStatus("演示已停止", "#555");
+            }
+        }
+        
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf0f4f8);
+            scene.fog = new THREE.Fog(0xf0f4f8, 15, 60);
+
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+            camera.position.set(0, 1, 16);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.shadowMap.enabled = true;
+            renderer.capabilities.logarithmicDepthBuffer = true; 
+            document.body.appendChild(renderer.domElement);
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
+            scene.add(ambientLight);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+            dirLight.position.set(5, 10, 7);
+            scene.add(dirLight);
+
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.maxPolarAngle = Math.PI / 1.5;
+
+            raycaster = new THREE.Raycaster();
+            pointer = new THREE.Vector2();
+            dragPlane = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), new THREE.MeshBasicMaterial({ visible: false }));
+            scene.add(dragPlane);
+
+            const lineMat = new THREE.LineBasicMaterial({ color: 0x27ae60, linewidth: 5 });
+            const lineGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0), new THREE.Vector3(0,0,0)]);
+            guideLine = new THREE.Line(lineGeo, lineMat);
+            guideLine.visible = false;
+            guideLine.renderOrder = 999; 
+            scene.add(guideLine);
+
+            createEnvironment();
+            createHumanFrame();
+            createOrgans();
+            createBreathSystem();
+
+            window.addEventListener('resize', onWindowResize);
+            window.addEventListener('pointermove', onPointerMove);
+            window.addEventListener('pointerdown', newOnPointerDown);
+            window.addEventListener('pointerup', onPointerUp);
+            
+            document.getElementById('startButton').addEventListener('click', startGame);
+            document.getElementById('toggle-difficulty').addEventListener('click', toggleDifficulty);
+            document.getElementById('toggle-breath').addEventListener('click', toggleBreathAnimation);
+            document.getElementById('reset-camera').addEventListener('click', resetCamera);
+            document.getElementById('reset-game').addEventListener('click', resetGameLogic);
+            document.getElementById('successOverlay').addEventListener('click', closeSuccessOverlay);
+            
+            // 彩蛋事件绑定：双击标题展示开物AI科学标识
+            document.getElementById('ui-title').addEventListener('dblclick', () => {
+                document.getElementById('copyright').classList.toggle('show');
+            });
+
+            document.getElementById('loading').style.display = 'none';
+            animate();
+        }
+
+        function createEnvironment() {
+            const floorGeo = new THREE.CircleGeometry(20, 64);
+            const floorMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0 });
+            const floor = new THREE.Mesh(floorGeo, floorMat);
+            floor.rotation.x = -Math.PI / 2;
+            floor.position.y = -8;
+            floor.receiveShadow = true;
+            scene.add(floor);
+        }
+
+        function createHumanFrame() {
+            const group = new THREE.Group();
+            group.position.set(0, 0, 0);
+
+            const bodyGeo = new THREE.CapsuleGeometry(2.2, 6, 4, 8);
+            const bodyMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5, side: THREE.DoubleSide, depthWrite: false });
+            const bodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
+            bodyMesh.position.y = -1;
+            group.add(bodyMesh);
+
+            const headGeo = new THREE.SphereGeometry(1.3, 32, 32);
+            const headMesh = new THREE.Mesh(headGeo, bodyMat);
+            headMesh.position.y = 4;
+            group.add(headMesh);
+
+            scene.add(group);
+
+            organData.forEach(data => {
+                const texture = createTextureFromSVG(data.svg);
+                const mat = new THREE.MeshBasicMaterial({ 
+                    map: texture, transparent: true, opacity: 0.15, side: THREE.DoubleSide, color: 0x000000 
+                });
+                const geo = new THREE.PlaneGeometry(data.scale, data.scale);
+                const mesh = new THREE.Mesh(geo, mat);
+                mesh.position.copy(data.targetPos);
+                mesh.position.z -= 0.05; 
+                mesh.userData = { isTarget: true, id: data.id };
+                scene.add(mesh);
+                targetZones.push(mesh);
+            });
+        }
+
+        function createOrgans() {
+            organData.forEach((data, index) => {
+                const texture = createTextureFromSVG(data.svg);
+                // 优化：取消alphaTest或设积极低，扩大透明区域点击判定范围，让模型更容易被选中抓取
+                const material = new THREE.MeshBasicMaterial({ 
+                    map: texture, transparent: true, side: THREE.DoubleSide, alphaTest: 0.01 
+                });
+                const geometry = new THREE.PlaneGeometry(data.scale, data.scale);
+                const mesh = new THREE.Mesh(geometry, material);
+
+                mesh.position.set(-5.5, 5 - (index * 2.5), 0);
+                mesh.renderOrder = 10; 
+
+                mesh.userData = { 
+                    isDraggable: true, isLocked: false,
+                    id: data.id, originalPos: mesh.position.clone(), name: data.name, desc: data.desc 
+                };
+                
+                scene.add(mesh);
+                draggableObjects.push(mesh);
+                allOrgans.push(mesh); 
+            });
+        }
+
+        function createBreathSystem() {
+            const Z_OFFSET = 2.6;
+            
+            const pointsMain = [
+                new THREE.Vector3(0, 4.2, Z_OFFSET),
+                new THREE.Vector3(0, 4.0, Z_OFFSET),
+                new THREE.Vector3(0, 2.8, Z_OFFSET),
+                new THREE.Vector3(0, 1.5, Z_OFFSET),
+                new THREE.Vector3(0, 0.2, Z_OFFSET)
+            ];
+            breathCurveMain = new THREE.CatmullRomCurve3(pointsMain);
+
+            const pointsLeft = [
+                new THREE.Vector3(0, 0.2, Z_OFFSET),
+                new THREE.Vector3(0.5, -0.2, Z_OFFSET),
+                new THREE.Vector3(1.0, -0.8, Z_OFFSET),
+                new THREE.Vector3(0.5, -1.2, Z_OFFSET) 
+            ];
+            breathCurveLeft = new THREE.CatmullRomCurve3(pointsLeft);
+
+            const pointsRight = [
+                new THREE.Vector3(0, 0.2, Z_OFFSET),
+                new THREE.Vector3(-0.5, -0.2, Z_OFFSET),
+                new THREE.Vector3(-1.0, -0.8, Z_OFFSET),
+                new THREE.Vector3(-0.5, -1.2, Z_OFFSET) 
+            ];
+            breathCurveRight = new THREE.CatmullRomCurve3(pointsRight);
+
+            const createParticle = (color, type, side) => {
+                const geo = new THREE.SphereGeometry(0.15, 8, 8);
+                const mat = new THREE.MeshBasicMaterial({ color: color });
+                const p = new THREE.Mesh(geo, mat);
+                p.visible = false;
+                p.renderOrder = 20;
+                p.userData = { 
+                    progress: type === 'o2' ? 0 : 1, 
+                    speed: 0.002 + Math.random()*0.001, 
+                    type: type,
+                    side: side 
+                };
+                scene.add(p);
+                return p;
+            };
+
+            for(let i=0; i<10; i++) oxygenParticles.push(createParticle(0x2196f3, 'o2', 'left'));
+            for(let i=0; i<10; i++) oxygenParticles.push(createParticle(0x2196f3, 'o2', 'right'));
+            
+            for(let i=0; i<10; i++) co2Particles.push(createParticle(0x7f8c8d, 'co2', 'left'));
+            for(let i=0; i<10; i++) co2Particles.push(createParticle(0x7f8c8d, 'co2', 'right'));
+        }
+        
+        function updateBreathAnimation() {
+            if(!isBreathAnimating) return;
+
+            const updateParticle = (p, isInhale) => {
+                p.visible = true;
+                if (isInhale) {
+                    p.userData.progress += p.userData.speed;
+                    if(p.userData.progress > 1) p.userData.progress = 0;
+                } else {
+                    p.userData.progress -= p.userData.speed;
+                    if(p.userData.progress < 0) p.userData.progress = 1;
+                }
+
+                let t = p.userData.progress;
+                let pos;
+                const splitPoint = 0.6; 
+
+                if (t <= splitPoint) {
+                    let mappedT = t / splitPoint;
+                    pos = breathCurveMain.getPoint(mappedT);
+                } else {
+                    let mappedT = (t - splitPoint) / (1 - splitPoint);
+                    if (p.userData.side === 'left') {
+                        pos = breathCurveLeft.getPoint(mappedT);
+                    } else {
+                        pos = breathCurveRight.getPoint(mappedT);
+                    }
+                }
+                p.position.copy(pos);
+            };
+
+            oxygenParticles.forEach(p => updateParticle(p, true));
+            co2Particles.forEach(p => updateParticle(p, false));
+        }
+
+        // --- 交互逻辑 ---
+
+        function onPointerMove(event) {
+            pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
+            pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(pointer, camera);
+
+            if (isDragging && selectedObject) {
+                const intersects = raycaster.intersectObject(dragPlane);
+                if (intersects.length > 0) {
+                    let newPos = intersects[0].point;
+                    newPos.z = Math.max(-1, Math.min(3.5, newPos.z)); 
+                    selectedObject.position.copy(newPos);
+                    selectedObject.lookAt(camera.position); 
+                    checkAndDrawGuide();
+                }
+            } else {
+                const intersects = raycaster.intersectObjects(draggableObjects, true);
+                document.body.style.cursor = intersects.length > 0 ? 'pointer' : 'default';
+            }
+        }
+
+        function newOnPointerDown(event) {
+            if(event.button !== 0) return;
+            pointerDownTime = Date.now();
+            raycaster.setFromCamera(pointer, camera);
+            const intersects = raycaster.intersectObjects(draggableObjects, true);
+
+            if (intersects.length > 0) {
+                const obj = intersects[0].object;
+                if (obj.userData.isLocked) {
+                    showInfoCard(obj);
+                    return; 
+                }
+                
+                // 优化：彻底锁死轨道控制器，避免在拖拽时画面跟着旋转
+                controls.enabled = false; 
+                
+                isDragging = true;
+                selectedObject = obj;
+                dragPlane.position.copy(selectedObject.position);
+                dragPlane.lookAt(camera.position);
+                document.body.style.cursor = 'grabbing';
+                
+                updateTargetVisibility(); // 更新线框显示（针对中等难度）
+            } else {
+                document.getElementById('info-card').classList.remove('show');
+            }
+        }
+
+        function onPointerUp(event) {
+            const clickDuration = Date.now() - pointerDownTime;
+
+            if (isDragging && selectedObject) {
+                if (clickDuration < 200) {
+                    showInfoCard(selectedObject);
+                } else {
+                    handleDragEnd();
+                }
+            }
+            isDragging = false;
+            controls.enabled = true; // 恢复视角旋转控制
+            document.body.style.cursor = 'default';
+            
+            updateTargetVisibility(); // 拖拽结束恢复线框显示逻辑
+        }
+
+        function handleDragEnd() {
+            const targetId = selectedObject.userData.id;
+            const targetData = organData.find(d => d.id === targetId);
+            
+            const dist3D = selectedObject.position.distanceTo(targetData.targetPos);
+            const dist2D = new THREE.Vector2(selectedObject.position.x, selectedObject.position.y)
+                                .distanceTo(new THREE.Vector2(targetData.targetPos.x, targetData.targetPos.y));
+
+            // 优化：大幅度增加吸附判定范围，让模型更容易吸入体内 (3.5 -> 6.0, 1.5 -> 4.0)
+            if (dist3D < 6.0 || (dist2D < 4.0 && Math.abs(selectedObject.position.z - targetData.targetPos.z) < 5)) {
+                snapToTarget(selectedObject, targetData.targetPos);
+            } else {
+                resetPosition(selectedObject);
+            }
+            guideLine.visible = false;
+            selectedObject = null;
+        }
+
+        function showInfoCard(object) {
+            const card = document.getElementById('info-card');
+            document.getElementById('info-title').innerText = object.userData.name;
+            document.getElementById('info-desc').innerText = object.userData.desc;
+            card.classList.add('show');
+            setStatus(`查看介绍：${object.userData.name}`, '#2980b9');
+        }
+
+        function checkAndDrawGuide() {
+            const targetId = selectedObject.userData.id;
+            const targetData = organData.find(d => d.id === targetId);
+            const dist = selectedObject.position.distanceTo(targetData.targetPos);
+
+            // 优化：离目标很远就开始产生绿色引导线，提示玩家可以松手吸附了
+            if (dist < 6.0) {
+                const points = [selectedObject.position, targetData.targetPos];
+                guideLine.geometry.setFromPoints(points);
+                guideLine.visible = true;
+                setStatus(`松手！吸附 ${selectedObject.userData.name}`, '#27ae60');
+            } else {
+                guideLine.visible = false;
+                setStatus(`移动 ${selectedObject.userData.name} 到右侧`, '#2980b9');
+            }
+        }
+
+        function snapToTarget(object, targetPos) {
+            let startPos = object.position.clone();
+            let finalPos = targetPos.clone();
+            finalPos.z = 2.45; 
+
+            let alpha = 0;
+            function slideIn() {
+                alpha += 0.1;
+                if(alpha >= 1) {
+                    object.position.copy(finalPos);
+                    object.rotation.set(0, 0, 0); 
+                    return;
+                }
+                object.position.lerpVectors(startPos, finalPos, alpha);
+                requestAnimationFrame(slideIn);
+            }
+            slideIn();
+            
+            object.userData.isLocked = true;
+            draggableObjects = draggableObjects.filter(obj => obj !== object);
+            
+            updateTargetVisibility(); // 隐藏已经拼好的器官线框
+
+            setStatus(`${object.userData.name} 安装成功！`, '#27ae60');
+            completedCount++;
+            checkWin();
+        }
+
+        function resetPosition(object) {
+            const start = object.position.clone();
+            const end = object.userData.originalPos;
+            let progress = 0;
+            function animateReset() {
+                progress += 0.1;
+                if (progress >= 1) {
+                    object.position.copy(end);
+                    return;
+                }
+                object.position.lerpVectors(start, end, progress);
+                requestAnimationFrame(animateReset);
+            }
+            animateReset();
+            setStatus('位置不对，已归位', '#e74c3c');
+        }
+
+        function setStatus(text, color) {
+            const el = document.getElementById('status-message');
+            el.innerText = text;
+            el.style.color = color;
+            el.style.transform = "scale(1.1)";
+            setTimeout(() => el.style.transform = "scale(1)", 100);
+        }
+
+        function checkWin() {
+            if (completedCount === organData.length) {
+                setTimeout(() => {
+                    document.getElementById('successOverlay').classList.add('active');
+                    document.getElementById('successOverlay').style.pointerEvents = 'all';
+                    setStatus('全部完成！', '#27ae60');
+                }, 500);
+            }
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            updateBreathAnimation();
+            
+            const time = Date.now() * 0.001;
+            draggableObjects.forEach((obj, i) => {
+                if ((!isDragging || obj !== selectedObject) && !obj.userData.isLocked) {
+                    obj.position.y += Math.sin(time + i) * 0.003;
+                    obj.lookAt(camera.position); 
+                }
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        init();
+    </script>
+
+
+<!-- ================= 开物AI科学 · 版权模块（单击显示 / 双击打开官网） ================= -->
+<style id="kaiming-copyright-style">
+  #kaiming-copyright {
+    position: fixed;
+    bottom: 26px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    pointer-events: none;
+    z-index: 999999;
+    transition: opacity 0.45s ease;
+    opacity: 0;
+    display: none;
+  }
+  #kaiming-copyright .inner {
+    display: inline-block;
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #eafaf2;
+    padding: 9px 26px;
+    border-radius: 60px;
+    /* 原稿为 14px；此处改为 16px 以符合本机 verify_html.py 的「字号不得小于 16px」硬规则 */
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.6px;
+    border: 1px solid rgba(255, 245, 210, 0.3);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+    font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+    white-space: nowrap;
+  }
+</style>
+
+<div id="kaiming-copyright">
+  <div class="inner">© 2026 开物AI科学 ｜ AI 赋能 · 教育公平</div>
+</div>
+
+<script id="kaiming-copyright-script">
+(function () {
+  "use strict";
+
+  /* 目标：单击标题 → 显示版权 3.5 秒；双击标题 → 打开 www.kaiwuaiscience.com */
+
+  const HOMEPAGE = "https://www.kaiwuaiscience.com";
+  const SHOW_MS = 3500;      // 版权显示时长
+  const DBL_WINDOW = 280;    // 双击判定的时间窗（毫秒）
+  const FADE_MS = 450;       // 淡出时长，与 CSS transition 一致
+
+  function bindCopyright() {
+    // 首选 #mainTitle（注入脚本会保证它存在）；后三个选择器是手写粘贴时的兜底
+    const title = document.getElementById("ui-title") ||
+                  document.querySelector("h1, .title, .page-title, .main-title");
+    const box = document.getElementById("kaiming-copyright");
+    if (!title || !box) return;
+
+    title.style.cursor = "pointer";
+    title.style.userSelect = "none";
+    title.style.webkitUserSelect = "none";
+    /* 有些 3D 页面把 HUD 浮层（标题就在里面）设成 pointer-events:none，
+       好让鼠标事件穿透给下层画布；结果标题被"穿透"了——用户点它时事件落到画布上，
+       单击毫无反应，页面看起来就像没加版权。在标题自身把指针事件打开即可
+       （CSS 里后代可以覆盖祖先的 none，无需改动页面原有样式）。 */
+    title.style.pointerEvents = "auto";
+
+    let clickTimer = null;
+    let hideTimer = null;
+    let seq = 0;   // 每次显示/隐藏都 +1，用来作废在飞的定时器
+
+    function showCopyright() {
+      const my = ++seq;
+      if (hideTimer) clearTimeout(hideTimer);
+      box.style.display = "block";
+      /* 强制重绘，让 0 → 1 的淡入真的发生。
+         这里刻意不用 requestAnimationFrame：rAF 在页面不产生新帧时（后台标签页、
+         无头渲染、大屏久置）不保证触发——一旦它晚于下方的隐藏定时器回调，
+         就会把 opacity 又设成 1，导致版权条永久停在屏幕上。 */
+      void box.offsetHeight;
+      box.style.opacity = "1";
+      hideTimer = setTimeout(function () {
+        if (my !== seq) return;      // 期间又被点过，交给新的那一次收尾
+        box.style.opacity = "0";
+        setTimeout(function () {
+          if (my === seq) box.style.display = "none";
+        }, FADE_MS);
+      }, SHOW_MS);
+    }
+
+    function hideCopyright() {
+      const my = ++seq;              // 作废所有在飞的定时器，避免"淡出到一半又被点亮"卡住
+      if (hideTimer) clearTimeout(hideTimer);
+      if (box.style.display !== "block") return;
+      box.style.opacity = "0";
+      setTimeout(function () {
+        if (my === seq) box.style.display = "none";
+      }, FADE_MS);
+    }
+
+    function openHomepage() {
+      // 双击时隐藏版权，并跳转官网
+      hideCopyright();
+      window.open(HOMEPAGE, "_blank", "noopener,noreferrer");
+    }
+
+    title.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (clickTimer) return;   // 已在等待双击窗口，忽略这次单击
+      clickTimer = setTimeout(function () {
+        clickTimer = null;
+        showCopyright();        // 确认是单击
+      }, DBL_WINDOW);
+    });
+
+    title.addEventListener("dblclick", function (e) {
+      e.stopPropagation();
+      if (clickTimer) {         // 取消挂起的单击
+        clearTimeout(clickTimer);
+        clickTimer = null;
+      }
+      openHomepage();
+    });
+
+    // 点击页面其它地方，立即隐藏版权
+    document.addEventListener("click", function (e) {
+      if (e.target === title) return;
+      hideCopyright();
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bindCopyright);
+  } else {
+    bindCopyright();
+  }
+})();
+</script>
+<!-- ================= 开物AI科学 · 版权模块 结束 ================= -->
+
+</body>
+</html>

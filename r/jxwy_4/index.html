@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>地球磁场演示 - 磁针总是指南北吗 (全息高亮专业版)</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #0d1b2a; 
+            font-family: '楷体', 'KaiTi', 'Microsoft YaHei', sans-serif;
+            touch-action: none;
+            transition: background-color 0.5s;
+        }
+
+        /* AR背景视频 - 镜像翻转 */
+        #webcam-video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+            z-index: -2;
+            transform: scaleX(-1);
+            display: none;
+        }
+
+        /* 手势追踪画布层 */
+        #hand-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 5;
+            pointer-events: none; 
+            transform: scaleX(-1); 
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+            position: absolute;
+            z-index: 1;
+        }
+
+        /* 课本内容浮动框 */
+        #info-box {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 340px;
+            background-color: rgba(253, 245, 207, 0.95);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            z-index: 10;
+            user-select: none;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 2px solid #eadd95;
+        }
+
+        #info-box-header {
+            background-color: #eadd95;
+            padding: 10px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: grab;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #info-box-content {
+            padding: 15px;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        /* 控制面板 */
+        #controls-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.3);
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            color: #333;
+        }
+
+        input[type=range] {
+            cursor: pointer;
+            width: 110px;
+        }
+
+        button {
+            padding: 8px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+        button:hover { background-color: #45a049; }
+        button:disabled { background-color: #cccccc; cursor: not-allowed; }
+
+        /* 屏幕提示 */
+        #hint {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 12px 18px;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            pointer-events: none;
+            z-index: 10;
+            letter-spacing: 1px;
+            text-align: right;
+            line-height: 1.8;
+            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+
+        .highlight { color: #00ffff; font-weight: bold; }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+</head>
+<body>
+
+    <video id="webcam-video" autoplay playsinline></video>
+    <canvas id="hand-canvas"></canvas>
+
+    <div id="info-box">
+        <div id="info-box-header">
+            <span>✋ 磁针总是指南北吗 (捏合拖动)</span>
+        </div>
+        <div id="info-box-content">
+            地球是有磁场的，地球就像是一个具有南极和北极的大磁铁。<br><br>
+            大磁铁的<b>南极(S)</b>位于地球<b>北极</b>附近，<b>北极(N)</b>位于地球<b>南极</b>附近。<br><br>
+            指南针里的小磁针就是受到了地球大磁铁同极相斥、异极相吸的作用才会指南北的。
+        </div>
+    </div>
+
+    <div id="controls-panel">
+        <div class="control-group" style="justify-content: center; border-bottom: 1px solid #ccc; padding-bottom: 8px;">
+            <button id="btn-ar">开启 AR 全息模式</button>
+            <span id="ar-status" style="font-size: 0.8rem; color: #666; display: none;">就绪</span>
+        </div>
+        <div class="control-group">
+            <label>AR 背景亮度:</label>
+            <input type="range" id="brightnessSlider" min="0.2" max="1.5" value="0.5" step="0.1">
+        </div>
+        <div class="control-group">
+            <label>AR 背景虚化:</label>
+            <input type="range" id="blurSlider" min="0" max="20" value="4" step="1">
+        </div>
+        <div class="control-group">
+            <label>手势缩放灵敏度:</label>
+            <input type="range" id="leftSensSlider" min="0.2" max="3" value="0.8" step="0.1">
+        </div>
+        <div class="control-group">
+            <label>磁针引力灵敏度:</label>
+            <input type="range" id="rightSensSlider" min="0.2" max="3" value="0.8" step="0.1">
+        </div>
+    </div>
+
+    <div id="hint">
+        <span class="highlight">物理左手:</span> 旋转地球 | 捏合缩放地球<br>
+        <span class="highlight">物理右手:</span> 食指精准移动指南针<br>
+        <span style="color:#aaa; font-size: 0.8rem;">(磁针已受球形结界保护，绝不会飞出屏幕)</span>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <script>
+        // ==========================================
+        // 1. 初始化 Three.js 场景
+        // ==========================================
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        // [修正] 原先是26，现在拉近到20以实现初始化画面放大，
+        // 彻底杜绝使用 scale 引起的磁场计算畸变失效问题。
+        camera.position.set(0, 0, 20); 
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setClearColor(0x000000, 0); 
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.minDistance = 5;
+        controls.maxDistance = 60;
+
+        scene.add(new THREE.AmbientLight(0xffffff, 1.2));
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+        dirLight.position.set(10, 15, 10);
+        scene.add(dirLight);
+
+        // ==========================================
+        // 2. 创建高亮模型物体
+        // ==========================================
+        const masterEarthGroup = new THREE.Group();
+        scene.add(masterEarthGroup);
+
+        const earthRadius = 5;
+        const earthGroup = new THREE.Group();
+        masterEarthGroup.add(earthGroup);
+
+        function createTextLabel(text, textColor, strokeColor = null, fontSize = 48) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.font = `bold ${fontSize}px "Microsoft YaHei", sans-serif`;
+            const textWidth = ctx.measureText(text).width;
+            canvas.width = Math.max(textWidth + 30, 64);
+            canvas.height = fontSize + 30;
+            ctx.font = `bold ${fontSize}px "Microsoft YaHei", sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            if (strokeColor) {
+                ctx.strokeStyle = strokeColor;
+                ctx.lineWidth = 6;
+                ctx.strokeText(text, canvas.width / 2, canvas.height / 2);
+            }
+            ctx.fillStyle = textColor;
+            ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+            const texture = new THREE.CanvasTexture(canvas);
+            const material = new THREE.SpriteMaterial({ map: texture, depthTest: false });
+            const sprite = new THREE.Sprite(material);
+            sprite.scale.set(1.5 * (canvas.width / canvas.height), 1.5, 1);
+            return sprite;
+        }
+
+        const earthMaterial = new THREE.MeshPhongMaterial({
+            color: 0x3399ff, emissive: 0x113355, 
+            transparent: true, opacity: 0.35, depthWrite: false, shininess: 80
+        });
+        earthGroup.add(new THREE.Mesh(new THREE.SphereGeometry(earthRadius, 32, 32), earthMaterial));
+
+        const wireframeMat = new THREE.LineBasicMaterial({ color: 0x66ccff, transparent: true, opacity: 0.6 });
+        earthGroup.add(new THREE.LineSegments(new THREE.WireframeGeometry(new THREE.SphereGeometry(earthRadius + 0.05, 16, 16)), wireframeMat));
+
+        const axisGeo = new THREE.CylinderGeometry(0.08, 0.08, 11, 16);
+        earthGroup.add(new THREE.Mesh(axisGeo, new THREE.MeshPhongMaterial({ color: 0xdddddd, emissive: 0x333333 })));
+
+        const geoNorthLabel = createTextLabel('地理北极', '#111111', '#ffffff', 40); geoNorthLabel.position.y = 5.8; earthGroup.add(geoNorthLabel);
+        const geoSouthLabel = createTextLabel('地理南极', '#111111', '#ffffff', 40); geoSouthLabel.position.y = -5.8; earthGroup.add(geoSouthLabel);
+
+        const magnetRadius = 1, magnetHeight = 8;
+        const southMesh = new THREE.Mesh(new THREE.CylinderGeometry(magnetRadius, magnetRadius, magnetHeight / 2, 32), new THREE.MeshPhongMaterial({ color: 0x3366ff, emissive: 0x112255 }));
+        southMesh.position.y = magnetHeight / 4; earthGroup.add(southMesh);
+        const northMesh = new THREE.Mesh(new THREE.CylinderGeometry(magnetRadius, magnetRadius, magnetHeight / 2, 32), new THREE.MeshPhongMaterial({ color: 0xff3333, emissive: 0x551111 }));
+        northMesh.position.y = -magnetHeight / 4; earthGroup.add(northMesh);
+
+        const labelS = createTextLabel('S', '#ffffff', null, 56); labelS.position.y = 3.3; earthGroup.add(labelS);
+        const labelN = createTextLabel('N', '#ffffff', null, 56); labelN.position.y = -3.3; earthGroup.add(labelN);
+
+        let fieldLinesGroup = new THREE.Group();
+        masterEarthGroup.add(fieldLinesGroup);
+
+        function drawMagneticFieldLines() {
+            masterEarthGroup.remove(fieldLinesGroup);
+            fieldLinesGroup = new THREE.Group();
+            
+            const lineMat = new THREE.LineBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.8 });
+            const arrowMat = new THREE.MeshBasicMaterial({ color: 0x00ffff });
+
+            for (let rLevel = 1; rLevel <= 3; rLevel++) {
+                const R_max = earthRadius + rLevel * 2.5; 
+                for (let angle = 0; angle < Math.PI * 2; angle += (Math.PI * 2) / 6) {
+                    const points =[];
+                    for (let t = 0; t <= Math.PI; t += 0.05) {
+                        const y = -earthRadius * Math.cos(t); 
+                        const r_xz = R_max * Math.sin(t); 
+                        points.push(new THREE.Vector3(r_xz * Math.cos(angle), y, r_xz * Math.sin(angle)));
+                    }
+                    const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), lineMat);
+                    fieldLinesGroup.add(line);
+
+                    const midIndex = Math.floor(points.length / 2);
+                    if (points[midIndex] && points[midIndex + 1]) {
+                        const dir = new THREE.Vector3().subVectors(points[midIndex + 1], points[midIndex - 1]).normalize();
+                        const arrow = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.7, 12), arrowMat);
+                        arrow.position.copy(points[midIndex]);
+                        arrow.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+                        fieldLinesGroup.add(arrow);
+                    }
+                }
+            }
+            masterEarthGroup.add(fieldLinesGroup);
+        }
+        drawMagneticFieldLines(); 
+
+        // 指南针
+        const compassGroup = new THREE.Group();
+        scene.add(compassGroup);
+        const compBase = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 0.1, 32), new THREE.MeshPhongMaterial({ color: 0xe0e0e0, transparent: true, opacity: 0.9 }));
+        compBase.rotation.x = Math.PI / 2; compassGroup.add(compBase);
+        const needleGroup = new THREE.Group(); compassGroup.add(needleGroup);
+        
+        // 红色北针(N)，纯蓝色南针(S)
+        const needleN = new THREE.Mesh(new THREE.ConeGeometry(0.3, 1, 16), new THREE.MeshPhongMaterial({ color: 0xff0000 })); needleN.position.y = 0.5; needleGroup.add(needleN);
+        const needleS = new THREE.Mesh(new THREE.ConeGeometry(0.3, 1, 16), new THREE.MeshPhongMaterial({ color: 0x0000ff })); needleS.position.y = -0.5; needleS.rotation.x = Math.PI; needleGroup.add(needleS);
+
+        compassGroup.position.set(9, 0, 0);
+
+        function getMagneticFieldDirectionLocal(position) {
+            const X = position.x, Y = position.y, Z = position.z, b = earthRadius;
+            if (Math.abs(Y) >= b) return new THREE.Vector3(0, 1, 0);
+            const r_xz = Math.sqrt(X*X + Z*Z);
+            if (r_xz < 0.001) return new THREE.Vector3(0, 1, 0);
+            const a = r_xz / Math.sqrt(1 - (Y/b)*(Y/b));
+            const dr_xz = -a * (Y/b);
+            const dY = b * (r_xz/a);
+            return new THREE.Vector3(dr_xz * (X / r_xz), dY, dr_xz * (Z / r_xz)).normalize();
+        }
+
+        // ==========================================
+        // 3. 核心算法：纯净结界约束
+        // ==========================================
+        function clampCompassPosition(targetPos) {
+            const localPos = targetPos.clone();
+            masterEarthGroup.worldToLocal(localPos); 
+
+            const dist3D = localPos.length();
+            
+            // 设定球形结界的内外半径
+            const minRadius = earthRadius + 0.8; // 防穿模
+            const maxSphereRadius = 15; // 防飞走，最大球形活动范围
+
+            if (dist3D < minRadius) {
+                localPos.normalize().multiplyScalar(minRadius);
+            } else if (dist3D > maxSphereRadius) {
+                localPos.normalize().multiplyScalar(maxSphereRadius);
+            }
+
+            masterEarthGroup.localToWorld(localPos);
+            targetPos.copy(localPos);
+        }
+
+        // 鼠标交互事件
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        let isDraggingCompass = false;
+        
+        // [修正] 永远锁定 Z=0 深度切面，避免透视畸变让您误以为“指南针偏离南北”
+        const dragPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0); 
+        const planeIntersect = new THREE.Vector3();
+
+        container.addEventListener('pointerdown', (e) => {
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1; mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            if (raycaster.intersectObject(compBase).length > 0) {
+                isDraggingCompass = true; controls.enabled = false;
+                container.style.cursor = 'grabbing';
+            }
+        });
+
+        container.addEventListener('pointermove', (e) => {
+            if (!isDraggingCompass) return;
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1; mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera); raycaster.ray.intersectPlane(dragPlane, planeIntersect);
+            if (planeIntersect) {
+                clampCompassPosition(planeIntersect); // 鼠标拖拽受到球形结界限制
+                compassGroup.position.copy(planeIntersect);
+            }
+        });
+
+        window.addEventListener('pointerup', () => { if (isDraggingCompass) { isDraggingCompass = false; controls.enabled = true; container.style.cursor = 'default'; }});
+
+        // UI 拖拽
+        const infoBox = document.getElementById('info-box');
+        const infoHeader = document.getElementById('info-box-header');
+        let isDraggingUI = false, uiOffsetX = 0, uiOffsetY = 0;
+        infoHeader.addEventListener('pointerdown', (e) => {
+            isDraggingUI = true; const rect = infoBox.getBoundingClientRect();
+            uiOffsetX = e.clientX - rect.left; uiOffsetY = e.clientY - rect.top;
+            infoHeader.setPointerCapture(e.pointerId);
+        });
+        infoHeader.addEventListener('pointermove', (e) => {
+            if (isDraggingUI) {
+                let left = e.clientX - uiOffsetX, top = e.clientY - uiOffsetY;
+                infoBox.style.left = Math.max(0, Math.min(left, window.innerWidth - infoBox.offsetWidth)) + 'px';
+                infoBox.style.top = Math.max(0, Math.min(top, window.innerHeight - infoBox.offsetHeight)) + 'px';
+            }
+        });
+        infoHeader.addEventListener('pointerup', (e) => { isDraggingUI = false; infoHeader.releasePointerCapture(e.pointerId); });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.getElementById('hand-canvas').width = window.innerWidth; document.getElementById('hand-canvas').height = window.innerHeight;
+        });
+
+        // ==========================================
+        // 4. 手势追踪与增强 AR 控制
+        // ==========================================
+        const videoElement = document.getElementById('webcam-video');
+        const handCanvas = document.getElementById('hand-canvas');
+        const canvasCtx = handCanvas.getContext('2d');
+        handCanvas.width = window.innerWidth; handCanvas.height = window.innerHeight;
+
+        let hands, cameraMP, isARActive = false;
+        let prevLeftX = null, prevLeftY = null, prevLeftPinchDist = null, isGesturingUI = false;
+
+        const blurSlider = document.getElementById('blurSlider');
+        const brightnessSlider = document.getElementById('brightnessSlider');
+        function updateARFilter() {
+            if (isARActive) {
+                videoElement.style.filter = `blur(${blurSlider.value}px) brightness(${brightnessSlider.value})`;
+            }
+        }
+        blurSlider.addEventListener('input', updateARFilter);
+        brightnessSlider.addEventListener('input', updateARFilter);
+
+        function onResults(results) {
+            canvasCtx.save();
+            canvasCtx.clearRect(0, 0, handCanvas.width, handCanvas.height);
+
+            const leftSens = parseFloat(document.getElementById('leftSensSlider').value);
+            const rightSens = parseFloat(document.getElementById('rightSensSlider').value);
+
+            let handsOnScreen = { leftSide: null, rightSide: null };
+
+            if (results.multiHandLandmarks && results.multiHandedness) {
+                for (const landmarks of results.multiHandLandmarks) {
+                    drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {color: '#00ffff', lineWidth: 3});
+                    drawLandmarks(canvasCtx, landmarks, {color: '#ffffff', lineWidth: 1, radius: 4});
+                }
+
+                for (let i = 0; i < results.multiHandLandmarks.length; i++) {
+                    const landmarks = results.multiHandLandmarks[i];
+                    const handedness = results.multiHandedness[i].label; 
+                    
+                    const indexTip = landmarks[8];
+                    const thumbTip = landmarks[4];
+                    
+                    const normVisX = 1.0 - indexTip.x; 
+                    const normVisY = indexTip.y; 
+                    const screenX = normVisX * window.innerWidth;
+                    const screenY = normVisY * window.innerHeight;
+                    const pinchDist = Math.hypot(thumbTip.x - indexTip.x, thumbTip.y - indexTip.y);
+                    const isPinching = pinchDist < 0.08; 
+
+                    const rect = infoBox.getBoundingClientRect();
+                    const inUIBounds = screenX >= rect.left && screenX <= rect.right && screenY >= rect.top && screenY <= rect.bottom;
+                    if (isPinching && (inUIBounds || isGesturingUI)) {
+                        isGesturingUI = true;
+                        infoBox.style.left = (screenX - rect.width / 2) + 'px';
+                        infoBox.style.top = (screenY - 20) + 'px';
+                        continue; 
+                    }
+
+                    if (handedness === 'Right') { 
+                        // 物理左手
+                        handsOnScreen.leftSide = { normX: normVisX, normY: normVisY, isPinching, pinchDist };
+                    } else if (handedness === 'Left') {
+                        // 物理右手
+                        handsOnScreen.rightSide = { ndcX: (normVisX * 2) - 1, ndcY: -(normVisY * 2) + 1 };
+                    }
+                }
+            }
+
+            if (!results.multiHandLandmarks || results.multiHandLandmarks.every(lm => Math.hypot(lm[4].x - lm[8].x, lm[4].y - lm[8].y) >= 0.08)) {
+                isGesturingUI = false;
+            }
+
+            // 物理左手控制地球
+            const leftH = handsOnScreen.leftSide;
+            if (leftH) {
+                if (leftH.isPinching) {
+                    if (prevLeftPinchDist !== null) {
+                        const deltaScale = (leftH.pinchDist - prevLeftPinchDist) * 8.0 * leftSens;
+                        masterEarthGroup.scale.addScalar(deltaScale);
+                        masterEarthGroup.scale.clampScalar(0.8, 1.8); 
+                    }
+                    prevLeftPinchDist = leftH.pinchDist; prevLeftX = null; 
+                } else {
+                    if (prevLeftX !== null) {
+                        masterEarthGroup.rotation.y += (leftH.normX - prevLeftX) * 8.0 * leftSens;
+                        
+                        // [修正] 反转逻辑，改为 +=，实现左手向上地球北极往后倒(赤道上翻)
+                        masterEarthGroup.rotation.x += (leftH.normY - prevLeftY) * 8.0 * leftSens; 
+
+                        // [修正] 将上下旋转的最大幅度严格限制在15度 (Math.PI / 12)
+                        // 这样地球只做轻微俯仰，彻底解决地球翻个导致的南北错乱迷向感！
+                        const maxRotX = Math.PI / 12;
+                        masterEarthGroup.rotation.x = Math.max(-maxRotX, Math.min(maxRotX, masterEarthGroup.rotation.x));
+                    }
+                    prevLeftX = leftH.normX; prevLeftY = leftH.normY; prevLeftPinchDist = null;
+                }
+            } else { prevLeftX = null; prevLeftY = null; prevLeftPinchDist = null; }
+
+            // 物理右手控制指南针
+            const rightH = handsOnScreen.rightSide;
+            if (rightH && !isDraggingCompass) {
+                raycaster.setFromCamera(new THREE.Vector2(rightH.ndcX, rightH.ndcY), camera);
+                // 同样严格锁定在正面的 Z=0 平面
+                const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+                const target = new THREE.Vector3();
+                raycaster.ray.intersectPlane(plane, target);
+                
+                if (target) {
+                    clampCompassPosition(target); 
+                    compassGroup.position.lerp(target, 0.15 * rightSens);
+                }
+            }
+            canvasCtx.restore();
+        }
+
+        const btnAR = document.getElementById('btn-ar');
+        const statusAR = document.getElementById('ar-status');
+        
+        btnAR.addEventListener('click', () => {
+            if (!isARActive) {
+                btnAR.disabled = true; btnAR.innerText = "正在加载 AI 模型...";
+                hands = new Hands({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
+                hands.setOptions({ maxNumHands: 2, modelComplexity: 1, minDetectionConfidence: 0.7, minTrackingConfidence: 0.7 });
+                hands.onResults(onResults);
+
+                cameraMP = new Camera(videoElement, { onFrame: async () => { await hands.send({image: videoElement}); }, width: 640, height: 480 });
+                cameraMP.start().then(() => {
+                    isARActive = true; btnAR.disabled = false; btnAR.innerText = "关闭 AR 全息模式";
+                    videoElement.style.display = 'block'; updateARFilter();
+                    document.body.style.backgroundColor = 'transparent'; 
+                    statusAR.style.display = 'inline'; statusAR.innerText = "🟢 追踪中";
+                }).catch(err => {
+                    alert("请允许浏览器获取摄像头权限。"); btnAR.disabled = false; btnAR.innerText = "重试开启";
+                });
+            } else {
+                cameraMP.stop(); videoElement.style.display = 'none';
+                document.body.style.backgroundColor = '#0d1b2a'; 
+                canvasCtx.clearRect(0, 0, handCanvas.width, handCanvas.height);
+                isARActive = false; btnAR.innerText = "开启 AR 全息模式"; statusAR.style.display = 'none';
+            }
+        });
+
+        // ==========================================
+        // 5. 动画循环
+        // ==========================================
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+
+            const localPos = compassGroup.position.clone();
+            masterEarthGroup.worldToLocal(localPos); 
+            
+            const localDir = getMagneticFieldDirectionLocal(localPos);
+            const worldDir = localDir.clone().applyQuaternion(masterEarthGroup.quaternion).normalize();
+            
+            const targetQuaternion = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), worldDir);
+            needleGroup.quaternion.slerp(targetQuaternion, 0.2); 
+            
+            compBase.lookAt(camera.position); compBase.rotateX(Math.PI / 2);
+            renderer.render(scene, camera);
+        }
+
+        animate();
+    </script>
+<!-- ================= 开物AI科学 · 版权模块（单击显示 / 双击打开官网） ================= -->
+<style id="kaiming-copyright-style">
+  #kaiming-copyright {
+    position: fixed;
+    bottom: 26px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    pointer-events: none;
+    z-index: 999999;
+    transition: opacity 0.45s ease;
+    opacity: 0;
+    display: none;
+  }
+  #kaiming-copyright .inner {
+    display: inline-block;
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #eafaf2;
+    padding: 9px 26px;
+    border-radius: 60px;
+    /* 原稿为 14px；此处改为 16px 以符合本机 verify_html.py 的「字号不得小于 16px」硬规则 */
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.6px;
+    border: 1px solid rgba(255, 245, 210, 0.3);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+    font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+    white-space: nowrap;
+  }
+</style>
+
+<div id="kaiming-copyright">
+  <div class="inner">© 2026 开物AI科学 ｜ AI 赋能 · 教育公平</div>
+</div>
+
+<script id="kaiming-copyright-script">
+(function () {
+  "use strict";
+
+  /* 目标：单击标题 → 显示版权 3.5 秒；双击标题 → 打开 www.kaiwuaiscience.com */
+
+  const HOMEPAGE = "https://www.kaiwuaiscience.com";
+  const SHOW_MS = 3500;      // 版权显示时长
+  const DBL_WINDOW = 280;    // 双击判定的时间窗（毫秒）
+  const FADE_MS = 450;       // 淡出时长，与 CSS transition 一致
+
+  function bindCopyright() {
+    // 首选 #mainTitle（注入脚本会保证它存在）；后三个选择器是手写粘贴时的兜底
+    const title = document.getElementById("info-box-header") ||
+                  document.querySelector("h1, .title, .page-title, .main-title");
+    const box = document.getElementById("kaiming-copyright");
+    if (!title || !box) return;
+
+    title.style.cursor = "pointer";
+    title.style.userSelect = "none";
+    title.style.webkitUserSelect = "none";
+
+    let clickTimer = null;
+    let hideTimer = null;
+    let seq = 0;   // 每次显示/隐藏都 +1，用来作废在飞的定时器
+
+    function showCopyright() {
+      const my = ++seq;
+      if (hideTimer) clearTimeout(hideTimer);
+      box.style.display = "block";
+      /* 强制重绘，让 0 → 1 的淡入真的发生。
+         这里刻意不用 requestAnimationFrame：rAF 在页面不产生新帧时（后台标签页、
+         无头渲染、大屏久置）不保证触发——一旦它晚于下方的隐藏定时器回调，
+         就会把 opacity 又设成 1，导致版权条永久停在屏幕上。 */
+      void box.offsetHeight;
+      box.style.opacity = "1";
+      hideTimer = setTimeout(function () {
+        if (my !== seq) return;      // 期间又被点过，交给新的那一次收尾
+        box.style.opacity = "0";
+        setTimeout(function () {
+          if (my === seq) box.style.display = "none";
+        }, FADE_MS);
+      }, SHOW_MS);
+    }
+
+    function hideCopyright() {
+      const my = ++seq;              // 作废所有在飞的定时器，避免"淡出到一半又被点亮"卡住
+      if (hideTimer) clearTimeout(hideTimer);
+      if (box.style.display !== "block") return;
+      box.style.opacity = "0";
+      setTimeout(function () {
+        if (my === seq) box.style.display = "none";
+      }, FADE_MS);
+    }
+
+    function openHomepage() {
+      // 双击时隐藏版权，并跳转官网
+      hideCopyright();
+      window.open(HOMEPAGE, "_blank", "noopener,noreferrer");
+    }
+
+    title.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (clickTimer) return;   // 已在等待双击窗口，忽略这次单击
+      clickTimer = setTimeout(function () {
+        clickTimer = null;
+        showCopyright();        // 确认是单击
+      }, DBL_WINDOW);
+    });
+
+    title.addEventListener("dblclick", function (e) {
+      e.stopPropagation();
+      if (clickTimer) {         // 取消挂起的单击
+        clearTimeout(clickTimer);
+        clickTimer = null;
+      }
+      openHomepage();
+    });
+
+    // 点击页面其它地方，立即隐藏版权
+    document.addEventListener("click", function (e) {
+      if (e.target === title) return;
+      hideCopyright();
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bindCopyright);
+  } else {
+    bindCopyright();
+  }
+})();
+</script>
+<!-- ================= 开物AI科学 · 版权模块 结束 ================= -->
+
+</body>
+</html>

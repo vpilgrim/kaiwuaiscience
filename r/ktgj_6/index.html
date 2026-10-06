@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>动物积分系统</title>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            overflow: hidden;
+            font-family: 'Arial Rounded MT Bold', 'Arial', sans-serif;
+            background: linear-gradient(to bottom, #87CEEB 0%, #5cb85c 100%);
+            color: #333;
+            height: 100vh;
+        }
+        #container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+        #header {
+            position: absolute;
+            top: 20px;
+            width: 100%;
+            text-align: center;
+            z-index: 100;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        #header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            color: #FFD700;
+        }
+        #leaderboard {
+            position: absolute;
+            top: 120px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 10px;
+            z-index: 100;
+            max-width: 250px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            backdrop-filter: blur(5px);
+        }
+        #leaderboard h3 {
+            color: #2E8B57;
+            margin-bottom: 10px;
+            text-align: center;
+            border-bottom: 2px solid #2E8B57;
+            padding-bottom: 5px;
+        }
+        .leader-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            padding: 5px;
+            border-radius: 5px;
+            background: rgba(46, 139, 87, 0.1);
+        }
+        .leader-rank {
+            font-weight: bold;
+            color: #2E8B57;
+            width: 25px;
+        }
+        .leader-name {
+            flex-grow: 1;
+        }
+        .leader-score {
+            font-weight: bold;
+            color: #DAA520;
+        }
+        #group-detail {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            z-index: 200;
+            display: none;
+            max-width: 300px;
+            text-align: center;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            border: 3px solid #FFD700;
+        }
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            cursor: pointer;
+            font-size: 20px;
+            color: #2E8B57;
+            font-weight: bold;
+        }
+        .animal-icon {
+            font-size: 50px;
+            margin: 10px 0;
+        }
+        #detail-title {
+            color: #2E8B57;
+            margin: 10px 0;
+        }
+        #detail-score {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #DAA520;
+            margin: 10px 0;
+        }
+        #detail-animal {
+            color: #1E90FF;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        #detail-info {
+            margin: 10px 0;
+            line-height: 1.4;
+        }
+        #reset-btn {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: #FF6B6B;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 50px;
+            font-size: 16px;
+            cursor: pointer;
+            z-index: 100;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+        }
+        #reset-btn:hover {
+            background: #FF5252;
+            transform: scale(1.05);
+        }
+        /* 太阳移到左侧 */
+        .sun {
+            position: absolute;
+            top: 80px;
+            left: 100px;
+            width: 80px;
+            height: 80px;
+            background: radial-gradient(circle, #FFD700, #FFA500);
+            border-radius: 50%;
+            box-shadow: 0 0 40px #FFA500;
+            z-index: 1;
+        }
+        /* 云朵动画 */
+        .cloud {
+            position: absolute;
+            font-size: 60px;
+            z-index: 1;
+            animation: float 60s infinite linear;
+            filter: drop-shadow(0 0 5px rgba(255,255,255,0.7));
+        }
+        .cloud1 {
+            top: 60px;
+            left: 10%;
+            animation-duration: 70s;
+        }
+        .cloud2 {
+            top: 100px;
+            left: 30%;
+            animation-duration: 50s;
+        }
+        .cloud3 {
+            top: 40px;
+            right: 20%;
+            animation-duration: 80s;
+        }
+        @keyframes float {
+            0% { transform: translateX(-100px); }
+            100% { transform: translateX(calc(100vw + 100px)); }
+        }
+        /* 3D场景容器 */
+        #three-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+        }
+        /* 草emoji样式 - 调整大小和位置 */
+        .grass-emoji {
+            position: absolute;
+            bottom: 0;
+            z-index: 2;
+            font-size: 20px;
+            animation: sway 3s infinite ease-in-out;
+            animation-delay: calc(var(--delay) * 1s);
+            filter: drop-shadow(0 0 3px rgba(0,0,0,0.2));
+        }
+        @keyframes sway {
+            0%, 100% { transform: rotate(-5deg); }
+            50% { transform: rotate(5deg); }
+        }
+        /* 树木emoji样式 - 增大尺寸 */
+        .tree-emoji {
+            position: absolute;
+            bottom: 0;
+            z-index: 3; /* 确保树木在花朵之上 */
+            font-size: 80px;
+            filter: drop-shadow(0 0 5px rgba(0,0,0,0.3));
+            animation: treeSway 8s infinite ease-in-out;
+            animation-delay: calc(var(--delay) * 1s);
+        }
+        @keyframes treeSway {
+            0%, 100% { transform: rotate(-2deg); }
+            50% { transform: rotate(2deg); }
+        }
+        /* 花朵emoji样式 - 调整大小和位置 */
+        .flower-emoji {
+            position: absolute;
+            bottom: 0;
+            z-index: 2; /* 确保花朵在树木之下 */
+            font-size: 18px;
+            animation: bounce 4s infinite ease-in-out;
+            animation-delay: calc(var(--delay) * 1s);
+            filter: drop-shadow(0 0 3px rgba(0,0,0,0.2));
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        /* 添加小山丘，使背景更自然 */
+        .hill {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 40%;
+            background: linear-gradient(to top, #4CAF50, #3e8e41);
+            border-radius: 50% 50% 0 0;
+            z-index: 0;
+        }
+        .hill1 {
+            left: -10%;
+            width: 120%;
+            height: 35%;
+        }
+        .hill2 {
+            right: -10%;
+            width: 120%;
+            height: 30%;
+            background: linear-gradient(to top, #4CAF50, #3e8e41);
+        }
+    </style>
+</head>
+<body>
+    <!-- 小山丘背景 -->
+    <div class="hill hill1"></div>
+    <div class="hill hill2"></div>
+    
+    <!-- 动态生成的草emoji -->
+    <div id="grass-container"></div>
+    
+    <!-- 动态生成的树木emoji -->
+    <div id="tree-container"></div>
+    
+    <!-- 动态生成的花朵emoji -->
+    <div id="flower-container"></div>
+    
+    <!-- 云朵emoji -->
+    <div class="cloud cloud1">☁️</div>
+    <div class="cloud cloud2">☁️</div>
+    <div class="cloud cloud3">☁️</div>
+    
+    <!-- 太阳移到左侧 -->
+    <div class="sun"></div>
+    
+    <div id="container">
+        <div id="header">
+            <h1 id="mainTitle">动物积分系统</h1>
+        </div>
+        
+        <div id="leaderboard">
+            <h3>🏆 小组排行榜</h3>
+            <div id="leaderboard-content">
+                <!-- 排行榜内容将通过JavaScript动态生成 -->
+            </div>
+        </div>
+        
+        <button id="reset-btn">重置积分</button>
+        
+        <div id="group-detail">
+            <span class="close-btn">&times;</span>
+            <div class="animal-icon" id="detail-icon">🐯</div>
+            <h3 id="detail-title">第1小组</h3>
+            <p id="detail-score">积分：0</p>
+            <p id="detail-animal">代表动物：老虎</p>
+            <p id="detail-info">哺乳动物特征：胎生、哺乳、有毛发</p>
+        </div>
+        
+        <div id="three-container"></div>
+    </div>
+
+    <script>
+        // 存储树木位置，用于避免花朵重叠
+        const treePositions = [];
+
+        // 生成草emoji - 调整大小和位置
+        function generateGrass() {
+            const container = document.getElementById('grass-container');
+            const positions = new Set();
+            
+            for (let i = 0; i < 15; i++) {
+                const grass = document.createElement('div');
+                grass.className = 'grass-emoji';
+                grass.textContent = '🌿';
+                
+                // 随机位置，但避免重叠
+                let left;
+                let attempts = 0;
+                do {
+                    left = 5 + Math.random() * 90;
+                    attempts++;
+                } while (positions.has(Math.floor(left)) && attempts < 50);
+                
+                positions.add(Math.floor(left));
+                
+                const delay = Math.random() * 5;
+                const size = 18 + Math.random() * 10;
+                const bottomOffset = Math.random() * 5;
+                
+                grass.style.left = `${left}%`;
+                grass.style.bottom = `${bottomOffset}%`;
+                grass.style.fontSize = `${size}px`;
+                grass.style.setProperty('--delay', delay);
+                container.appendChild(grass);
+            }
+        }
+        
+        // 生成树木emoji - 增大尺寸，调整位置
+        function generateTrees() {
+            const container = document.getElementById('tree-container');
+            
+            // 预定义几个位置，使布局更自然
+            const predefinedPositions = [15, 30, 50, 70, 85];
+            
+            for (let i = 0; i < 5; i++) {
+                const tree = document.createElement('div');
+                tree.className = 'tree-emoji';
+                tree.textContent = '🌳';
+                
+                // 使用预定义位置
+                const left = predefinedPositions[i];
+                treePositions.push(left); // 记录树木位置
+                
+                const delay = Math.random() * 5;
+                const size = 70 + Math.random() * 20;
+                
+                tree.style.left = `${left}%`;
+                tree.style.fontSize = `${size}px`;
+                tree.style.setProperty('--delay', delay);
+                container.appendChild(tree);
+            }
+        }
+        
+        // 生成花朵emoji - 调整大小和位置，避免与树木重叠
+        function generateFlowers() {
+            const container = document.getElementById('flower-container');
+            const flowers = ['🌼', '🌸', '🌺', '🌻', '🌷'];
+            const positions = new Set();
+            
+            for (let i = 0; i < 10; i++) {
+                const flower = document.createElement('div');
+                flower.className = 'flower-emoji';
+                const flowerType = flowers[Math.floor(Math.random() * flowers.length)];
+                flower.textContent = flowerType;
+                
+                // 随机位置，但避免与树木重叠
+                let left;
+                let attempts = 0;
+                let tooCloseToTree = false;
+                
+                do {
+                    left = 5 + Math.random() * 90;
+                    tooCloseToTree = false;
+                    
+                    // 检查是否与任何树木位置太近
+                    for (const treePos of treePositions) {
+                        if (Math.abs(left - treePos) < 8) { // 8%的最小间距
+                            tooCloseToTree = true;
+                            break;
+                        }
+                    }
+                    
+                    attempts++;
+                } while ((positions.has(Math.floor(left)) || tooCloseToTree) && attempts < 50);
+                
+                positions.add(Math.floor(left));
+                
+                const delay = Math.random() * 5;
+                const size = 15 + Math.random() * 10;
+                const bottomOffset = Math.random() * 8;
+                
+                flower.style.left = `${left}%`;
+                flower.style.bottom = `${bottomOffset}%`;
+                flower.style.fontSize = `${size}px`;
+                flower.style.setProperty('--delay', delay);
+                container.appendChild(flower);
+            }
+        }
+
+        // 初始化场景、相机和渲染器
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        
+        // 提高渲染质量
+        const renderer = new THREE.WebGLRenderer({ 
+            antialias: true, 
+            alpha: true,
+            powerPreference: "high-performance"
+        });
+        renderer.setPixelRatio(Math.min(2, window.devicePixelRatio));
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.getElementById('three-container').appendChild(renderer.domElement);
+
+        // 添加轨道控制
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        // 设置相机位置
+        camera.position.z = 15;
+        camera.position.y = 5;
+
+        // 添加环境光
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+
+        // 添加定向光
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.9);
+        directionalLight.position.set(10, 20, 15);
+        scene.add(directionalLight);
+
+        // 小组数据
+        const groups = [
+            { id: 1, name: "第1小组", animal: "老虎", score: 0, color: 0xFF6B6B, icon: "🐯" },
+            { id: 2, name: "第2小组", animal: "狮子", score: 0, color: 0xFFA726, icon: "🦁" },
+            { id: 3, name: "第3小组", animal: "大象", score: 0, color: 0x66BB6A, icon: "🐘" },
+            { id: 4, name: "第4小组", animal: "熊猫", score: 0, color: 0x42A5F5, icon: "🐼" },
+            { id: 5, name: "第5小组", animal: "长颈鹿", score: 0, color: 0xAB47BC, icon: "🦒" },
+            { id: 6, name: "第6小组", animal: "猴子", score: 0, color: 0x5C6BC0, icon: "🐒" },
+            { id: 7, name: "第7小组", animal: "海豚", score: 0, color: 0x26C6DA, icon: "🐬" },
+            { id: 8, name: "第8小组", animal: "蝙蝠", score: 0, color: 0x7E57C2, icon: "🦇" },
+            { id: 9, name: "第9小组", animal: "袋鼠", score: 0, color: 0xEC407A, icon: "🦘" },
+            { id: 10, name: "第10小组", animal: "鲸鱼", score: 0, color: 0x78909C, icon: "🐳" }
+        ];
+
+        // 存储3D对象的数组
+        const groupObjects = [];
+
+        // 创建小组的3D表示
+        function createGroupObjects() {
+            const radius = 8;
+            
+            groups.forEach((group, index) => {
+                const angle = (index / groups.length) * Math.PI * 2;
+                const x = Math.cos(angle) * radius;
+                const z = Math.sin(angle) * radius;
+                
+                // 创建底座
+                const baseGeometry = new THREE.CylinderGeometry(0.8, 1, 0.5, 32);
+                const baseMaterial = new THREE.MeshPhongMaterial({ 
+                    color: group.color,
+                    shininess: 30
+                });
+                const base = new THREE.Mesh(baseGeometry, baseMaterial);
+                base.position.set(x, 0, z);
+                base.userData = { groupId: group.id, type: 'base' };
+                scene.add(base);
+                
+                // 创建积分柱
+                updateScoreDisplay(group.id);
+                
+                // 创建动物图标（使用文字精灵）- 提高分辨率
+                const canvas = document.createElement('canvas');
+                canvas.width = 128;
+                canvas.height = 128;
+                const context = canvas.getContext('2d');
+                context.fillStyle = 'white';
+                context.font = 'bold 96px Arial';
+                context.textAlign = 'center';
+                context.textBaseline = 'middle';
+                context.fillText(group.icon, 64, 64);
+                
+                const texture = new THREE.CanvasTexture(canvas);
+                texture.minFilter = THREE.LinearFilter;
+                texture.magFilter = THREE.LinearFilter;
+                
+                const iconMaterial = new THREE.SpriteMaterial({ 
+                    map: texture,
+                    transparent: true
+                });
+                const iconSprite = new THREE.Sprite(iconMaterial);
+                iconSprite.position.set(x, 1.5, z);
+                iconSprite.scale.set(2.5, 2.5, 1);
+                iconSprite.userData = { groupId: group.id, type: 'icon' };
+                scene.add(iconSprite);
+                
+                // 创建小组名称标签 - 无背景
+                const nameCanvas = document.createElement('canvas');
+                nameCanvas.width = 256;
+                nameCanvas.height = 64;
+                const nameContext = nameCanvas.getContext('2d');
+                
+                // 透明背景
+                nameContext.clearRect(0, 0, 256, 64);
+                
+                nameContext.fillStyle = 'white';
+                nameContext.font = 'bold 28px Arial';
+                nameContext.textAlign = 'center';
+                nameContext.textBaseline = 'middle';
+                nameContext.strokeStyle = 'rgba(0, 0, 0, 0.5)';
+                nameContext.lineWidth = 3;
+                nameContext.strokeText(group.name, 128, 32);
+                nameContext.fillText(group.name, 128, 32);
+                
+                const nameTexture = new THREE.CanvasTexture(nameCanvas);
+                nameTexture.minFilter = THREE.LinearFilter;
+                nameTexture.magFilter = THREE.LinearFilter;
+                
+                const nameMaterial = new THREE.SpriteMaterial({ 
+                    map: nameTexture,
+                    transparent: true
+                });
+                const nameSprite = new THREE.Sprite(nameMaterial);
+                nameSprite.position.set(x, 2.8, z);
+                nameSprite.scale.set(3.5, 0.9, 1);
+                nameSprite.userData = { groupId: group.id, type: 'name' };
+                scene.add(nameSprite);
+                
+                groupObjects.push({
+                    base: base,
+                    icon: iconSprite,
+                    name: nameSprite,
+                    groupId: group.id
+                });
+            });
+        }
+
+        // 更新积分显示
+        function updateScoreDisplay(groupId) {
+            const group = groups.find(g => g.id === groupId);
+            if (!group) return;
+            
+            // 清除该小组现有的积分块
+            scene.children.forEach(child => {
+                if (child.userData && child.userData.groupId === groupId && child.userData.type === 'score') {
+                    scene.remove(child);
+                }
+            });
+            
+            const groupObj = groupObjects.find(obj => obj.groupId === groupId);
+            if (groupObj) {
+                const x = groupObj.base.position.x;
+                const z = groupObj.base.position.z;
+                
+                // 创建积分柱
+                const scoreGeometry = new THREE.BoxGeometry(0.7, 0.1, 0.7);
+                const scoreMaterial = new THREE.MeshPhongMaterial({ 
+                    color: group.color,
+                    shininess: 30
+                });
+                
+                // 根据积分创建多个小方块堆叠
+                for (let i = 0; i < group.score; i++) {
+                    const scoreBlock = new THREE.Mesh(scoreGeometry, scoreMaterial);
+                    scoreBlock.position.set(x, 0.3 + i * 0.12, z);
+                    scoreBlock.userData = { groupId: group.id, type: 'score' };
+                    scene.add(scoreBlock);
+                }
+            }
+            
+            updateLeaderboard();
+        }
+
+        // 更新排行榜
+        function updateLeaderboard() {
+            const sortedGroups = [...groups].sort((a, b) => b.score - a.score);
+            const leaderboardContent = document.getElementById('leaderboard-content');
+            leaderboardContent.innerHTML = '';
+            
+            for (let i = 0; i < Math.min(3, sortedGroups.length); i++) {
+                const group = sortedGroups[i];
+                const leaderItem = document.createElement('div');
+                leaderItem.className = 'leader-item';
+                
+                const rankSpan = document.createElement('span');
+                rankSpan.className = 'leader-rank';
+                rankSpan.textContent = `${i+1}`;
+                
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'leader-name';
+                nameSpan.textContent = `${group.icon} ${group.name}`;
+                
+                const scoreSpan = document.createElement('span');
+                scoreSpan.className = 'leader-score';
+                scoreSpan.textContent = `${group.score}分`;
+                
+                leaderItem.appendChild(rankSpan);
+                leaderItem.appendChild(nameSpan);
+                leaderItem.appendChild(scoreSpan);
+                leaderboardContent.appendChild(leaderItem);
+            }
+        }
+
+        // 显示小组详情
+        function showGroupDetail(groupId) {
+            const group = groups.find(g => g.id === groupId);
+            if (group) {
+                document.getElementById('detail-icon').textContent = group.icon;
+                document.getElementById('detail-title').textContent = group.name;
+                document.getElementById('detail-score').textContent = `积分：${group.score}`;
+                document.getElementById('detail-animal').textContent = `代表动物：${group.animal}`;
+                document.getElementById('detail-info').textContent = getAnimalInfo(group.animal);
+                document.getElementById('group-detail').style.display = 'block';
+            }
+        }
+
+        // 获取动物信息
+        function getAnimalInfo(animal) {
+            const infoMap = {
+                "老虎": "哺乳动物特征：大型猫科动物，胎生，有毛发，肉食性",
+                "狮子": "哺乳动物特征：大型猫科动物，胎生，群居生活，有毛发",
+                "大象": "哺乳动物特征：陆地上最大的哺乳动物，胎生，有长鼻和象牙",
+                "熊猫": "哺乳动物特征：以竹子为主食，胎生，有黑白相间的毛发",
+                "长颈鹿": "哺乳动物特征：陆地上最高的动物，胎生，有长颈和斑纹",
+                "猴子": "哺乳动物特征：灵长类动物，胎生，善于攀爬，智能较高",
+                "海豚": "哺乳动物特征：海洋哺乳动物，胎生，用肺呼吸，非常聪明",
+                "蝙蝠": "哺乳动物特征：唯一能飞行的哺乳动物，胎生，夜间活动",
+                "袋鼠": "哺乳动物特征：有袋类哺乳动物，育儿袋中哺育幼崽",
+                "鲸鱼": "哺乳动物特征：海洋中最大的哺乳动物，胎生，用肺呼吸"
+            };
+            return infoMap[animal] || "哺乳动物特征：胎生、哺乳、有毛发";
+        }
+
+        // 初始化
+        function init() {
+            // 生成背景元素
+            generateGrass();
+            generateTrees();
+            generateFlowers();
+            
+            createGroupObjects();
+            updateLeaderboard();
+            
+            // 添加事件监听器
+            document.getElementById('reset-btn').addEventListener('click', () => {
+                if (confirm('确定要重置所有小组的积分吗？')) {
+                    groups.forEach(group => {
+                        group.score = 0;
+                        updateScoreDisplay(group.id);
+                    });
+                }
+            });
+            
+            document.querySelector('.close-btn').addEventListener('click', () => {
+                document.getElementById('group-detail').style.display = 'none';
+            });
+            
+            // 添加点击事件到3D对象
+            renderer.domElement.addEventListener('click', (event) => {
+                const mouse = new THREE.Vector2();
+                mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+                
+                const raycaster = new THREE.Raycaster();
+                raycaster.setFromCamera(mouse, camera);
+                
+                const intersects = raycaster.intersectObjects(scene.children);
+                
+                if (intersects.length > 0) {
+                    const object = intersects[0].object;
+                    if (object.userData && object.userData.groupId) {
+                        const groupId = object.userData.groupId;
+                        
+                        if (object.userData.type === 'name') {
+                            // 点击名称显示详情
+                            showGroupDetail(groupId);
+                        } else {
+                            // 点击其他部分增加积分
+                            const group = groups.find(g => g.id === groupId);
+                            if (group) {
+                                group.score += 1;
+                                updateScoreDisplay(groupId);
+                                
+                                // 添加一个简单的动画效果
+                                object.scale.x *= 1.2;
+                                object.scale.y *= 1.2;
+                                object.scale.z *= 1.2;
+                                setTimeout(() => {
+                                    object.scale.x /= 1.2;
+                                    object.scale.y /= 1.2;
+                                    object.scale.z /= 1.2;
+                                }, 200);
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // 窗口大小调整
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        }
+
+        // 动画循环
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // 轻微自动旋转
+            scene.rotation.y += 0.002;
+            
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // 启动
+        init();
+        animate();
+    </script>
+
+
+<!-- ================= 开物AI科学 · 版权模块（单击显示 / 双击打开官网） ================= -->
+<style id="kaiming-copyright-style">
+  #kaiming-copyright {
+    position: fixed;
+    bottom: 26px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    pointer-events: none;
+    z-index: 999999;
+    transition: opacity 0.45s ease;
+    opacity: 0;
+    display: none;
+  }
+  #kaiming-copyright .inner {
+    display: inline-block;
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #eafaf2;
+    padding: 9px 26px;
+    border-radius: 60px;
+    /* 原稿为 14px；此处改为 16px 以符合本机 verify_html.py 的「字号不得小于 16px」硬规则 */
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.6px;
+    border: 1px solid rgba(255, 245, 210, 0.3);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+    font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+    white-space: nowrap;
+  }
+</style>
+
+<div id="kaiming-copyright">
+  <div class="inner">© 2026 开物AI科学 ｜ AI 赋能 · 教育公平</div>
+</div>
+
+<script id="kaiming-copyright-script">
+(function () {
+  "use strict";
+
+  /* 目标：单击标题 → 显示版权 3.5 秒；双击标题 → 打开 www.kaiwuaiscience.com */
+
+  const HOMEPAGE = "https://www.kaiwuaiscience.com";
+  const SHOW_MS = 3500;      // 版权显示时长
+  const DBL_WINDOW = 280;    // 双击判定的时间窗（毫秒）
+  const FADE_MS = 450;       // 淡出时长，与 CSS transition 一致
+
+  function bindCopyright() {
+    // 首选 #mainTitle（注入脚本会保证它存在）；后三个选择器是手写粘贴时的兜底
+    const title = document.getElementById("mainTitle") ||
+                  document.querySelector("h1, .title, .page-title, .main-title");
+    const box = document.getElementById("kaiming-copyright");
+    if (!title || !box) return;
+
+    title.style.cursor = "pointer";
+    title.style.userSelect = "none";
+    title.style.webkitUserSelect = "none";
+
+    let clickTimer = null;
+    let hideTimer = null;
+    let seq = 0;   // 每次显示/隐藏都 +1，用来作废在飞的定时器
+
+    function showCopyright() {
+      const my = ++seq;
+      if (hideTimer) clearTimeout(hideTimer);
+      box.style.display = "block";
+      /* 强制重绘，让 0 → 1 的淡入真的发生。
+         这里刻意不用 requestAnimationFrame：rAF 在页面不产生新帧时（后台标签页、
+         无头渲染、大屏久置）不保证触发——一旦它晚于下方的隐藏定时器回调，
+         就会把 opacity 又设成 1，导致版权条永久停在屏幕上。 */
+      void box.offsetHeight;
+      box.style.opacity = "1";
+      hideTimer = setTimeout(function () {
+        if (my !== seq) return;      // 期间又被点过，交给新的那一次收尾
+        box.style.opacity = "0";
+        setTimeout(function () {
+          if (my === seq) box.style.display = "none";
+        }, FADE_MS);
+      }, SHOW_MS);
+    }
+
+    function hideCopyright() {
+      const my = ++seq;              // 作废所有在飞的定时器，避免"淡出到一半又被点亮"卡住
+      if (hideTimer) clearTimeout(hideTimer);
+      if (box.style.display !== "block") return;
+      box.style.opacity = "0";
+      setTimeout(function () {
+        if (my === seq) box.style.display = "none";
+      }, FADE_MS);
+    }
+
+    function openHomepage() {
+      // 双击时隐藏版权，并跳转官网
+      hideCopyright();
+      window.open(HOMEPAGE, "_blank", "noopener,noreferrer");
+    }
+
+    title.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (clickTimer) return;   // 已在等待双击窗口，忽略这次单击
+      clickTimer = setTimeout(function () {
+        clickTimer = null;
+        showCopyright();        // 确认是单击
+      }, DBL_WINDOW);
+    });
+
+    title.addEventListener("dblclick", function (e) {
+      e.stopPropagation();
+      if (clickTimer) {         // 取消挂起的单击
+        clearTimeout(clickTimer);
+        clickTimer = null;
+      }
+      openHomepage();
+    });
+
+    // 点击页面其它地方，立即隐藏版权
+    document.addEventListener("click", function (e) {
+      if (e.target === title) return;
+      hideCopyright();
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bindCopyright);
+  } else {
+    bindCopyright();
+  }
+})();
+</script>
+<!-- ================= 开物AI科学 · 版权模块 结束 ================= -->
+
+</body>
+</html>

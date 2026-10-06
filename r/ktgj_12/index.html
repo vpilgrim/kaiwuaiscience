@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>《两极相遇了》课堂点名系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap');
+
+        :root {
+            --stage-height: 420px;
+            --magnet-half-width: 70px;
+            --magnet-height: 80px;
+        }
+
+        body {
+            font-family: 'ZCOOL KuaiLe', 'Microsoft YaHei', 'PingFang SC', sans-serif;
+            background-image: radial-gradient(circle at center, #1e1b4b 0%, #0f172a 100%);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .magnet {
+            position: absolute;
+            top: 50%;
+            z-index: 20;
+            display: flex;
+            align-items: stretch;
+            will-change: left, right;
+        }
+        .magnet-left { left: 0; transform: translate(-25%, -50%); }
+        .magnet-right { right: 0; transform: translate(25%, -50%); }
+
+        .magnet-inner {
+            display: flex;
+            align-items: stretch;
+            height: 100%;
+            width: 100%;
+        }
+
+        .magnet-half {
+            width: var(--magnet-half-width);
+            height: var(--magnet-height);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+        }
+        .magnet-half .shine {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 35%;
+            background: rgba(255,255,255,0.2);
+            pointer-events: none;
+        }
+        .magnet-half .letter {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: white;
+            text-shadow: 0 2px 6px rgba(0,0,0,0.5);
+            font-family: 'Arial Black', sans-serif;
+            z-index: 1;
+        }
+        .half-n {
+            background: linear-gradient(to bottom, #ef4444, #b91c1c);
+            border-top: 3px solid #7f1d1d;
+            border-bottom: 3px solid #7f1d1d;
+        }
+        .half-s {
+            background: linear-gradient(to bottom, #3b82f6, #1d4ed8);
+            border-top: 3px solid #1e3a8a;
+            border-bottom: 3px solid #1e3a8a;
+        }
+
+        .magnet-left .half-s {
+            border-radius: 16px 0 0 16px;
+            border-left: 3px solid #1e3a8a;
+        }
+        .magnet-left .half-n {
+            border-radius: 0 8px 8px 0;
+            border-right: 3px solid #7f1d1d;
+        }
+
+        .magnet-right .half-s {
+            border-radius: 8px 0 0 8px;
+            border-left: 3px solid #1e3a8a;
+        }
+        .magnet-right .half-n {
+            border-radius: 0 16px 16px 0;
+            border-right: 3px solid #7f1d1d;
+        }
+
+        @keyframes vibrate {
+            0%,100% { transform: translate(0, 0); }
+            25% { transform: translate(2px, -2px); }
+            75% { transform: translate(-2px, 2px); }
+        }
+        .vibrating .magnet-inner { animation: vibrate 0.08s linear infinite; }
+
+        @keyframes stageShake {
+            0%,100% { transform: translateX(0); }
+            20% { transform: translateX(-8px); }
+            40% { transform: translateX(8px); }
+            60% { transform: translateX(-4px); }
+            80% { transform: translateX(4px); }
+        }
+        .stage-shaking { animation: stageShake 0.5s ease-out; }
+
+        @keyframes shockwave {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 1; border-width: 60px; }
+            100% { transform: translate(-50%, -50%) scale(5); opacity: 0; border-width: 0; }
+        }
+        .shockwave-go {
+            animation: shockwave 0.7s ease-out forwards;
+            display: block !important;
+        }
+
+        @keyframes popIn {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+            50% { transform: translate(-50%, -50%) scale(1.3); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+        .name-pop { animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+
+        @keyframes sparkBurst {
+            0% { transform: translate(0, 0) scale(1); opacity: 1; }
+            100% { transform: translate(var(--dx), var(--dy)) scale(0); opacity: 0; }
+        }
+        .spark-particle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            animation: sparkBurst 0.7s ease-out forwards;
+            pointer-events: none;
+        }
+
+        #rolling-name, #result-name {
+            font-family: 'KaiTi', '楷体', 'STKaiti', '华文楷体', serif;
+            font-weight: bold;
+        }
+        .rolling-blur { filter: blur(1px); opacity: 0.7; }
+
+        @media (max-width: 768px) {
+            :root {
+                --magnet-half-width: 45px;
+                --magnet-height: 55px;
+                --stage-height: 320px;
+            }
+            .magnet-half .letter { font-size: 1.6rem; }
+        }
+        @media (max-width: 480px) {
+            :root {
+                --magnet-half-width: 32px;
+                --magnet-height: 42px;
+                --stage-height: 260px;
+            }
+            .magnet-half .letter { font-size: 1.1rem; }
+            .magnet-left .half-s { border-radius: 10px 0 0 10px; }
+            .magnet-left .half-n { border-radius: 0 6px 6px 0; }
+            .magnet-right .half-s { border-radius: 6px 0 0 6px; }
+            .magnet-right .half-n { border-radius: 0 10px 10px 0; }
+        }
+    </style>
+</head>
+<body class="min-h-screen text-white flex flex-col items-center">
+
+    <div class="mt-4 md:mt-8 mb-6 md:mb-10 text-center z-10 px-4">
+        <h1 class="text-3xl md:text-5xl lg:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-yellow-300 to-blue-400 drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] tracking-widest" id="mainTitle">
+            《两极相遇了》
+        </h1>
+        <p class="text-lg md:text-2xl mt-2 text-indigo-200 tracking-wider">
+            🧲 随机抽选 🧲
+        </p>
+    </div>
+
+    <div id="stage" class="relative w-11/12 max-w-5xl mx-auto overflow-hidden bg-slate-900 rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.7)] border-4 border-slate-700" style="height: var(--stage-height);">
+        <div class="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:25px_25px]"></div>
+        <div id="shockwave" class="absolute top-1/2 left-1/2 rounded-full border-white/80 hidden z-30 pointer-events-none"></div>
+
+        <div id="rolling-name" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-5xl md:text-7xl font-bold text-gray-400 z-10 text-center rolling-blur whitespace-nowrap">准备点名</div>
+        <div id="result-name" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 to-yellow-500 z-40 text-center whitespace-nowrap hidden drop-shadow-[0_8px_16px_rgba(0,0,0,0.8)]"></div>
+
+        <div id="magnet-left" class="magnet magnet-left">
+            <div class="magnet-inner">
+                <div class="magnet-half half-s"><div class="shine"></div><span class="letter">S</span></div>
+                <div class="magnet-half half-n"><div class="shine"></div><span class="letter">N</span></div>
+            </div>
+        </div>
+
+        <div id="magnet-right" class="magnet magnet-right">
+            <div class="magnet-inner">
+                <div class="magnet-half half-s"><div class="shine"></div><span class="letter">S</span></div>
+                <div class="magnet-half half-n"><div class="shine"></div><span class="letter">N</span></div>
+            </div>
+        </div>
+
+        <div id="spark-container" class="absolute inset-0 pointer-events-none z-50"></div>
+    </div>
+
+    <div class="flex flex-wrap justify-center items-center gap-4 md:gap-6 mt-6 md:mt-10 z-10 px-4">
+        <button id="btn-settings" class="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-full font-bold text-sm md:text-lg transition-all border-2 border-slate-600 shadow-lg flex items-center gap-2">⚙️ 名单</button>
+        <button id="btn-main" class="px-8 py-4 bg-gradient-to-r from-red-600 to-blue-600 hover:from-red-500 hover:to-blue-500 text-white rounded-full font-black text-xl md:text-2xl transition-all shadow-[0_0_30px_rgba(255,255,255,0.15)] hover:shadow-[0_0_45px_rgba(255,255,255,0.5)] active:scale-95 border-2 border-white/30 tracking-widest">⚡ 开启磁场</button>
+        <button id="btn-reset" class="px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-full font-bold text-sm md:text-lg transition-all border-2 border-gray-500 shadow-lg hidden flex items-center gap-2">🔄 复位磁铁</button>
+    </div>
+
+    <div id="modal-settings" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex justify-center items-center p-4">
+        <div class="bg-slate-800 w-full max-w-lg rounded-2xl border-2 border-slate-600 p-6 shadow-2xl">
+            <h2 class="text-2xl md:text-3xl font-bold mb-4 text-center text-yellow-400">📝 录入学生名单</h2>
+            <p class="text-gray-400 mb-2 text-sm">用<strong>换行</strong>或<strong>逗号</strong>分隔学生姓名：</p>
+            <textarea id="names-input" class="w-full h-48 md:h-64 bg-slate-900 text-white p-4 rounded-xl border border-slate-500 focus:outline-none focus:border-cyan-400 resize-none text-base leading-relaxed"></textarea>
+            <div class="flex justify-end mt-6 gap-3">
+                <button id="btn-close-modal" class="px-5 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg font-bold transition-colors text-sm">取消</button>
+                <button id="btn-save-names" class="px-5 py-2 bg-cyan-600 hover:bg-cyan-500 rounded-lg font-bold transition-colors shadow-[0_0_12px_rgba(6,182,212,0.4)] text-sm">保存 ✓</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            const DEFAULT_NAMES = ['第一组', '第二组', '第三组', '第四组', '小明', '小红', '小刚', '李华'];
+            let students = [...DEFAULT_NAMES];
+            let isAnimating = false;
+            let rollTimer = null;
+            let hasResult = false;
+
+            const $ = (id) => document.getElementById(id);
+            const stage = $('stage');
+            const magnetLeft = $('magnet-left');
+            const magnetRight = $('magnet-right');
+            const rollingName = $('rolling-name');
+            const resultName = $('result-name');
+            const shockwave = $('shockwave');
+            const sparkContainer = $('spark-container');
+            const btnMain = $('btn-main');
+            const btnReset = $('btn-reset');
+            const btnSettings = $('btn-settings');
+            const modalSettings = $('modal-settings');
+            const namesInput = $('names-input');
+            const btnCloseModal = $('btn-close-modal');
+            const btnSaveNames = $('btn-save-names');
+
+            function loadNames() {
+                const saved = localStorage.getItem('magnetStudents_v7');
+                if (saved) {
+                    try { students = JSON.parse(saved); } catch(e) { students = [...DEFAULT_NAMES]; }
+                }
+                namesInput.value = students.join('\n');
+            }
+
+            function getRandomName() {
+                if (students.length === 0) return '？？？';
+                return students[Math.floor(Math.random() * students.length)];
+            }
+
+            function resetMagnetsInstant() {
+                magnetLeft.style.transition = 'none';
+                magnetRight.style.transition = 'none';
+                magnetLeft.style.left = '0';
+                magnetLeft.style.transform = 'translate(-25%, -50%)';
+                magnetRight.style.right = '0';
+                magnetRight.style.transform = 'translate(25%, -50%)';
+                magnetLeft.classList.remove('vibrating');
+                magnetRight.classList.remove('vibrating');
+            }
+
+            function resetMagnetsSmooth(callback) {
+                magnetLeft.style.transition = 'all 0.4s ease';
+                magnetRight.style.transition = 'all 0.4s ease';
+                magnetLeft.style.left = '0';
+                magnetLeft.style.transform = 'translate(-25%, -50%)';
+                magnetRight.style.right = '0';
+                magnetRight.style.transform = 'translate(25%, -50%)';
+                magnetLeft.classList.remove('vibrating');
+                magnetRight.classList.remove('vibrating');
+                setTimeout(() => {
+                    magnetLeft.style.transition = 'none';
+                    magnetRight.style.transition = 'none';
+                    if (callback) callback();
+                }, 400);
+            }
+
+            function resetStageUI() {
+                resultName.classList.add('hidden');
+                resultName.classList.remove('name-pop');
+                rollingName.classList.remove('hidden', 'rolling-blur');
+                rollingName.textContent = '准备点名';
+                shockwave.classList.remove('shockwave-go');
+                sparkContainer.innerHTML = '';
+                stage.classList.remove('stage-shaking');
+                hasResult = false;
+                btnMain.textContent = '⚡ 开启磁场';
+                btnMain.classList.remove('opacity-60', 'pointer-events-none');
+                btnReset.classList.add('hidden');
+                if (rollTimer) clearInterval(rollTimer);
+                rollTimer = null;
+                isAnimating = false;
+            }
+
+            function createSparks() {
+                sparkContainer.innerHTML = '';
+                const colors = ['#fbbf24', '#f87171', '#60a5fa', '#ffffff', '#f472b6'];
+                for (let i = 0; i < 35; i++) {
+                    const spark = document.createElement('div');
+                    spark.className = 'spark-particle';
+                    spark.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    spark.style.left = '50%';
+                    spark.style.top = '50%';
+                    spark.style.width = (3 + Math.random() * 7) + 'px';
+                    spark.style.height = spark.style.width;
+                    const angle = Math.random() * Math.PI * 2;
+                    const dist = 80 + Math.random() * 180;
+                    spark.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+                    spark.style.setProperty('--dy', Math.sin(angle) * dist + 'px');
+                    spark.style.animationDuration = (0.4 + Math.random() * 0.6) + 's';
+                    sparkContainer.appendChild(spark);
+                }
+                setTimeout(() => { sparkContainer.innerHTML = ''; }, 1000);
+            }
+
+            function startDraw(vibrateDuration = 1800) {
+                if (isAnimating) return;
+                if (students.length === 0) {
+                    alert('请先点击「⚙️ 名单」添加学生姓名！');
+                    return;
+                }
+
+                isAnimating = true;
+                resultName.classList.add('hidden');
+                resultName.classList.remove('name-pop');
+                rollingName.classList.remove('hidden', 'rolling-blur');
+                rollingName.textContent = '···';
+                shockwave.classList.remove('shockwave-go');
+                sparkContainer.innerHTML = '';
+                stage.classList.remove('stage-shaking');
+
+                const needReset = (magnetLeft.style.left !== '0px' && magnetLeft.style.left !== '0')
+                               || (magnetRight.style.right !== '0px' && magnetRight.style.right !== '0');
+                const doStart = () => {
+                    magnetLeft.classList.add('vibrating');
+                    magnetRight.classList.add('vibrating');
+
+                    btnMain.textContent = '⏳ 磁力积聚中...';
+                    btnMain.classList.add('opacity-60', 'pointer-events-none');
+                    btnReset.classList.add('hidden');
+
+                    rollTimer = setInterval(() => {
+                        rollingName.textContent = getRandomName();
+                    }, 60);
+
+                    setTimeout(() => {
+                        clearInterval(rollTimer);
+                        const winner = getRandomName();
+
+                        magnetLeft.classList.remove('vibrating');
+                        magnetRight.classList.remove('vibrating');
+                        magnetLeft.style.transition = 'all 0.25s cubic-bezier(0.55, 0.085, 0.68, 0.53)';
+                        magnetRight.style.transition = 'all 0.25s cubic-bezier(0.55, 0.085, 0.68, 0.53)';
+                        magnetLeft.style.left = '50%';
+                        magnetLeft.style.transform = 'translate(-105%, -50%)';
+                        magnetRight.style.right = '50%';
+                        magnetRight.style.transform = 'translate(105%, -50%)';
+
+                        setTimeout(() => {
+                            stage.classList.add('stage-shaking');
+                            shockwave.classList.add('shockwave-go');
+                            createSparks();
+                            rollingName.classList.add('hidden');
+                            resultName.textContent = winner;
+                            resultName.classList.remove('hidden');
+                            resultName.classList.add('name-pop');
+                            setTimeout(() => stage.classList.remove('stage-shaking'), 500);
+                        }, 250);
+
+                        setTimeout(() => {
+                            btnMain.textContent = '🔄 再抽一次';
+                            btnMain.classList.remove('opacity-60', 'pointer-events-none');
+                            btnReset.classList.remove('hidden');
+                            hasResult = true;
+                            isAnimating = false;
+                        }, 1000);
+                    }, vibrateDuration);
+                };
+
+                if (needReset) {
+                    resetMagnetsSmooth(doStart);
+                } else {
+                    doStart();
+                }
+            }
+
+            function resetAll() {
+                if (isAnimating) return;
+                clearInterval(rollTimer);
+                resetMagnetsSmooth(resetStageUI);
+            }
+
+            btnMain.addEventListener('click', () => {
+                if (hasResult) {
+                    startDraw(800);
+                } else {
+                    startDraw(1800);
+                }
+            });
+
+            btnReset.addEventListener('click', resetAll);
+
+            btnSettings.addEventListener('click', () => {
+                namesInput.value = students.join('\n');
+                modalSettings.classList.remove('hidden');
+            });
+            btnCloseModal.addEventListener('click', () => modalSettings.classList.add('hidden'));
+            modalSettings.addEventListener('click', (e) => {
+                if (e.target === modalSettings) modalSettings.classList.add('hidden');
+            });
+            btnSaveNames.addEventListener('click', () => {
+                const text = namesInput.value.trim();
+                const parsed = text.split(/[\n,，]+/).map(s => s.trim()).filter(s => s.length > 0);
+                if (parsed.length === 0) { alert('名单不能为空哦~'); return; }
+                students = parsed;
+                localStorage.setItem('magnetStudents_v7', JSON.stringify(students));
+                modalSettings.classList.add('hidden');
+                resetAll();
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') modalSettings.classList.add('hidden');
+            });
+
+            window.addEventListener('resize', () => {
+                if (!isAnimating) resetMagnetsInstant();
+            });
+
+            loadNames();
+            console.log('🧲《两极相遇了》v7 | 副标题精简 | 磁铁对称');
+        })();
+    </script>
+
+
+<!-- ================= 开物AI科学 · 版权模块（单击显示 / 双击打开官网） ================= -->
+<style id="kaiming-copyright-style">
+  #kaiming-copyright {
+    position: fixed;
+    bottom: 26px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    pointer-events: none;
+    z-index: 999999;
+    transition: opacity 0.45s ease;
+    opacity: 0;
+    display: none;
+  }
+  #kaiming-copyright .inner {
+    display: inline-block;
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #eafaf2;
+    padding: 9px 26px;
+    border-radius: 60px;
+    /* 原稿为 14px；此处改为 16px 以符合本机 verify_html.py 的「字号不得小于 16px」硬规则 */
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.6px;
+    border: 1px solid rgba(255, 245, 210, 0.3);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+    font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+    white-space: nowrap;
+  }
+</style>
+
+<div id="kaiming-copyright">
+  <div class="inner">© 2026 开物AI科学 ｜ AI 赋能 · 教育公平</div>
+</div>
+
+<script id="kaiming-copyright-script">
+(function () {
+  "use strict";
+
+  /* 目标：单击标题 → 显示版权 3.5 秒；双击标题 → 打开 www.kaiwuaiscience.com */
+
+  const HOMEPAGE = "https://www.kaiwuaiscience.com";
+  const SHOW_MS = 3500;      // 版权显示时长
+  const DBL_WINDOW = 280;    // 双击判定的时间窗（毫秒）
+  const FADE_MS = 450;       // 淡出时长，与 CSS transition 一致
+
+  function bindCopyright() {
+    // 首选 #mainTitle（注入脚本会保证它存在）；后三个选择器是手写粘贴时的兜底
+    const title = document.getElementById("mainTitle") ||
+                  document.querySelector("h1, .title, .page-title, .main-title");
+    const box = document.getElementById("kaiming-copyright");
+    if (!title || !box) return;
+
+    title.style.cursor = "pointer";
+    title.style.userSelect = "none";
+    title.style.webkitUserSelect = "none";
+
+    let clickTimer = null;
+    let hideTimer = null;
+    let seq = 0;   // 每次显示/隐藏都 +1，用来作废在飞的定时器
+
+    function showCopyright() {
+      const my = ++seq;
+      if (hideTimer) clearTimeout(hideTimer);
+      box.style.display = "block";
+      /* 强制重绘，让 0 → 1 的淡入真的发生。
+         这里刻意不用 requestAnimationFrame：rAF 在页面不产生新帧时（后台标签页、
+         无头渲染、大屏久置）不保证触发——一旦它晚于下方的隐藏定时器回调，
+         就会把 opacity 又设成 1，导致版权条永久停在屏幕上。 */
+      void box.offsetHeight;
+      box.style.opacity = "1";
+      hideTimer = setTimeout(function () {
+        if (my !== seq) return;      // 期间又被点过，交给新的那一次收尾
+        box.style.opacity = "0";
+        setTimeout(function () {
+          if (my === seq) box.style.display = "none";
+        }, FADE_MS);
+      }, SHOW_MS);
+    }
+
+    function hideCopyright() {
+      const my = ++seq;              // 作废所有在飞的定时器，避免"淡出到一半又被点亮"卡住
+      if (hideTimer) clearTimeout(hideTimer);
+      if (box.style.display !== "block") return;
+      box.style.opacity = "0";
+      setTimeout(function () {
+        if (my === seq) box.style.display = "none";
+      }, FADE_MS);
+    }
+
+    function openHomepage() {
+      // 双击时隐藏版权，并跳转官网
+      hideCopyright();
+      window.open(HOMEPAGE, "_blank", "noopener,noreferrer");
+    }
+
+    title.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (clickTimer) return;   // 已在等待双击窗口，忽略这次单击
+      clickTimer = setTimeout(function () {
+        clickTimer = null;
+        showCopyright();        // 确认是单击
+      }, DBL_WINDOW);
+    });
+
+    title.addEventListener("dblclick", function (e) {
+      e.stopPropagation();
+      if (clickTimer) {         // 取消挂起的单击
+        clearTimeout(clickTimer);
+        clickTimer = null;
+      }
+      openHomepage();
+    });
+
+    // 点击页面其它地方，立即隐藏版权
+    document.addEventListener("click", function (e) {
+      if (e.target === title) return;
+      hideCopyright();
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bindCopyright);
+  } else {
+    bindCopyright();
+  }
+})();
+</script>
+<!-- ================= 开物AI科学 · 版权模块 结束 ================= -->
+
+</body>
+</html>

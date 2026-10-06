@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>🧫 消化系统大作战 | 营养吸收活力榜</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Nunito', 'Segoe UI', system-ui, sans-serif;
+            background-color: #fff6e5;  /* 温润米色，模拟消化系统温暖基调 */
+            min-height: 100vh;
+            overflow: hidden; /* 保证一屏完整显示，无滚动条 (桌面及笔记本适配良好) */
+            position: relative;
+        }
+
+        /* 动态光晕背景 (暖色系·消化能量) */
+        .ambient-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -2;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        .blob {
+            position: absolute;
+            filter: blur(90px);
+            opacity: 0.55;
+            animation: drift 22s infinite alternate ease-in-out;
+            border-radius: 50%;
+        }
+        .blob-1 { top: -10%; left: -15%; width: 55vw; height: 55vw; background: #fed7aa; animation-duration: 26s; }
+        .blob-2 { bottom: -20%; right: -10%; width: 60vw; height: 60vw; background: #fecaca; animation-delay: -6s; }
+        .blob-3 { top: 25%; left: 30%; width: 45vw; height: 45vw; background: #bef264; animation-duration: 28s; opacity: 0.4; }
+
+        @keyframes drift {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(6%, 8%) scale(1.12); }
+            100% { transform: translate(-6%, -4%) scale(0.92); }
+        }
+
+        /* 肠道蠕动微动画 (贴合消化系统蠕动感) */
+        @keyframes peristalsis {
+            0%, 100% { transform: scale(1); letter-spacing: normal; }
+            50% { transform: scale(1.01); letter-spacing: 0.5px; }
+        }
+        .gut-wave { animation: peristalsis 3.5s infinite ease-in-out; }
+
+        /* 分数跳动动画 (加分) */
+        @keyframes digestPop {
+            0% { transform: scale(1); color: #ea580c; }
+            50% { transform: scale(1.32); color: #16a34a; }
+            100% { transform: scale(1); }
+        }
+        .pop-anim { animation: digestPop 0.4s cubic-bezier(0.2, 0.9, 0.4, 1.2); }
+
+        /* 减分动画 */
+        @keyframes digestShrink {
+            0% { transform: scale(1); color: #ea580c; }
+            50% { transform: scale(0.78); color: #dc2626; }
+            100% { transform: scale(1); }
+        }
+        .shrink-anim { animation: digestShrink 0.4s ease-in-out; }
+
+        /* ======= 100% 完美吸收特效 (满级健康光环) ======= */
+        .full-health-card {
+            border-color: #4ade80 !important;
+            box-shadow: 0 0 28px rgba(74, 222, 128, 0.6), 0 8px 20px rgba(0,0,0,0.08) !important;
+            transform: translateY(-3px);
+            transition: all 0.2s;
+        }
+        .full-health-circle {
+            background: linear-gradient(135deg, #dcfce7, #86efac) !important;
+            border-color: #22c55e !important;
+            animation: gutBeat 1.3s infinite;
+            box-shadow: 0 0 12px #4ade80;
+        }
+        .full-health-text { 
+            color: #14532d !important;
+            text-shadow: 0 1px 2px rgba(255,255,200,0.5);
+        }
+
+        /* 消化系统完美吸收的心跳律动 */
+        @keyframes gutBeat {
+            0%, 100% { transform: scale(1); }
+            20% { transform: scale(1.12); background: #bbf7d0; }
+            40% { transform: scale(1); }
+            65% { transform: scale(1.06); }
+        }
+
+        /* 营养粒子特效 (维生素与食物狂欢) */
+        .particle {
+            position: absolute;
+            pointer-events: none;
+            opacity: 1;
+            z-index: 200;
+            font-size: 1.3rem;
+            animation: flyNutrient 1.4s cubic-bezier(0.2, 0.9, 0.4, 1.2) forwards;
+        }
+        @keyframes flyNutrient {
+            0% { transform: translate(0, 0) scale(0.5) rotate(0deg); opacity: 1; }
+            100% { transform: translate(var(--tx), var(--ty)) scale(1.6) rotate(var(--rot)); opacity: 0; }
+        }
+
+        /* 动态营养液气泡 (模拟消化液涌动) */
+        .bubbles-container {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+        }
+        .bubble {
+            position: absolute;
+            bottom: -120px;
+            background: radial-gradient(circle at 30% 30%, rgba(255, 241, 190, 0.8), rgba(167, 139, 74, 0.2));
+            border-radius: 50%;
+            box-shadow: 0 0 18px rgba(249, 185, 83, 0.4);
+            animation: bubbleUp 14s infinite ease-in;
+        }
+        .bubble:nth-child(1) { left: 10%; width: 55px; height: 55px; animation-duration: 17s; }
+        .bubble:nth-child(2) { left: 25%; width: 35px; height: 35px; animation-duration: 13s; animation-delay: 2.5s; background: rgba(250, 204, 136, 0.7);}
+        .bubble:nth-child(3) { left: 40%; width: 70px; height: 70px; animation-duration: 19s; animation-delay: 1.2s; }
+        .bubble:nth-child(4) { left: 58%; width: 45px; height: 45px; animation-duration: 15s; animation-delay: 3s; }
+        .bubble:nth-child(5) { left: 72%; width: 65px; height: 65px; animation-duration: 20s; animation-delay: 0.7s; }
+        .bubble:nth-child(6) { left: 88%; width: 40px; height: 40px; animation-duration: 16s; animation-delay: 4s; }
+        .bubble:nth-child(7) { left: 50%; width: 28px; height: 28px; animation-duration: 12s; animation-delay: 1.8s; }
+
+        @keyframes bubbleUp {
+            0% { transform: translateY(0) scale(0.7); opacity: 0; }
+            25% { opacity: 0.65; }
+            100% { transform: translateY(-130vh) scale(1.25); opacity: 0; }
+        }
+
+        /* 隐藏滚动条 (保持完全一屏，无滚动条感) */
+        ::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="p-2 md:p-4 flex flex-col items-center relative box-border">
+
+    <!-- 氛围光晕层 -->
+    <div class="ambient-bg">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+    <!-- 营养气泡层 -->
+    <div class="bubbles-container">
+        <div class="bubble"></div><div class="bubble"></div><div class="bubble"></div>
+        <div class="bubble"></div><div class="bubble"></div><div class="bubble"></div>
+        <div class="bubble"></div>
+    </div>
+
+    <!-- 头部标题栏 - 纵向占比已收窄，更加精致 -->
+    <header class="w-full max-w-7xl flex flex-col justify-center items-center bg-white/75 backdrop-blur-xl py-2 md:py-3 px-3 md:px-5 rounded-3xl shadow-[0_8px_25px_rgba(0,0,0,0.06)] border border-amber-100 mb-3 z-10 relative gut-wave">
+        <div class="flex items-center space-x-2 md:space-x-3">
+            <span class="text-4xl md:text-5xl drop-shadow-md">🧫</span>
+            <h1 class="text-xl md:text-3xl font-black text-amber-800 tracking-wide drop-shadow-sm" id="mainTitle">消化系统大探索</h1>
+            <span class="text-3xl md:text-5xl drop-shadow-md">🍽️</span>
+        </div>
+        <p class="text-xs md:text-sm font-bold text-lime-700 tracking-wider drop-shadow-sm bg-white/50 px-3 py-0.5 rounded-full mt-1">
+            ✨ 提升消化吸收率 · 营养全面爆表 ✨
+        </p>
+    </header>
+
+    <!-- 小组卡片网格 (10个消化核心器官/团队) -->
+    <div id="board" class="w-full max-w-7xl grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-3 pb-1 z-10">
+        <!-- 卡片由js动态生成 -->
+    </div>
+
+    <script>
+        // ======================= 消化系统专属小组配置 =======================
+        // 依据需求调整: 结肠组→肛门组, 删除唾液腺组, 新增咽组并置于食道组之前。
+        // 最终小组(共10组): 口腔组, 咽组, 食道组, 胃组, 小肠组, 大肠组, 肝脏组, 胰腺组, 胆囊组, 肛门组
+        const initialGroupsData = [
+            { name: "👄 口腔组", icon: "👄", theme: "pink" },
+            { name: "🗣️ 咽组", icon: "🗣️", theme: "emerald" },      // 新增咽组，位于食道组前
+            { name: "🍢 食道组", icon: "🍢", theme: "amber" },
+            { name: "🍲 胃组", icon: "🍲", theme: "red" },
+            { name: "🥣 小肠组", icon: "🥣", theme: "cyan" },
+            { name: "🥬 大肠组", icon: "🥬", theme: "green" },
+            { name: "🧡 肝脏组", icon: "🧡", theme: "yellow" },
+            { name: "🧪 胰腺组", icon: "🧪", theme: "purple" },
+            { name: "💧 胆囊组", icon: "💧", theme: "teal" },
+            { name: "🍑 肛门组", icon: "🍑", theme: "indigo" }       // 原结肠组更名肛门组，图标亲切有趣
+        ];
+
+        // 丰富配色方案 (保持美观，贴合消化暖系)
+        const colorStyles = {
+            cyan: { bg: 'bg-cyan-50', border: 'border-cyan-200', text: 'text-cyan-700', btnFrom: 'from-cyan-400', btnTo: 'to-sky-500' },
+            pink: { bg: 'bg-pink-50', border: 'border-pink-200', text: 'text-pink-700', btnFrom: 'from-pink-400', btnTo: 'to-rose-500' },
+            red: { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-700', btnFrom: 'from-red-400', btnTo: 'to-orange-500' },
+            amber: { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-700', btnFrom: 'from-amber-400', btnTo: 'to-yellow-600' },
+            teal: { bg: 'bg-teal-50', border: 'border-teal-200', text: 'text-teal-700', btnFrom: 'from-teal-400', btnTo: 'to-emerald-500' },
+            green: { bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-700', btnFrom: 'from-green-400', btnTo: 'to-lime-500' },
+            purple: { bg: 'bg-purple-50', border: 'border-purple-200', text: 'text-purple-700', btnFrom: 'from-purple-400', btnTo: 'to-fuchsia-500' },
+            emerald: { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700', btnFrom: 'from-emerald-400', btnTo: 'to-green-500' },
+            indigo: { bg: 'bg-indigo-50', border: 'border-indigo-200', text: 'text-indigo-700', btnFrom: 'from-indigo-400', btnTo: 'to-blue-600' },
+            yellow: { bg: 'bg-yellow-50', border: 'border-yellow-200', text: 'text-yellow-700', btnFrom: 'from-yellow-400', btnTo: 'to-amber-500' }
+        };
+
+        // 小组数据结构 (score: 0~5 → 对应 0% ~ 100% 消化吸收率)
+        let groups = initialGroupsData.map((g, i) => ({
+            id: i,
+            name: g.name,
+            icon: g.icon,
+            theme: g.theme,
+            score: 0
+        }));
+
+        const boardElement = document.getElementById('board');
+
+        // 触发100%完美吸收特效 (营养粒子大爆发)
+        function triggerCelebration(index) {
+            const card = document.getElementById(`card-${index}`);
+            if (!card) return;
+            // 消化系统专属的欢乐元素
+            const nutrients = ['🥦', '🍅', '🥕', '🌽', '🍎', '🥗', '✨', '💪', '🧃', '🌟', '🍚', '🥝', '🍊'];
+            
+            for (let i = 0; i < 12; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.innerText = nutrients[Math.floor(Math.random() * nutrients.length)];
+                
+                const angle = Math.random() * Math.PI * 2;
+                const distance = 50 + Math.random() * 85;
+                const tx = Math.cos(angle) * distance + 'px';
+                const ty = Math.sin(angle) * distance + 'px';
+                const rot = (Math.random() - 0.5) * 400 + 'deg';
+                
+                particle.style.setProperty('--tx', tx);
+                particle.style.setProperty('--ty', ty);
+                particle.style.setProperty('--rot', rot);
+                particle.style.left = '48%';
+                particle.style.top = '42%';
+                particle.style.fontSize = '1.4rem';
+                card.style.overflow = 'visible';
+                card.appendChild(particle);
+                
+                setTimeout(() => {
+                    if (card.contains(particle)) card.removeChild(particle);
+                }, 1500);
+            }
+            // 微震动反馈，增强手感
+            card.style.transform = 'scale(0.99)';
+            setTimeout(() => { if(card) card.style.transform = ''; }, 120);
+        }
+
+        // 全局更新小组名称
+        window.updateName = function(index, newName) {
+            if (newName.trim() === "") return;
+            groups[index].name = newName;
+        };
+
+        // 调整消化吸收率 (delta: -1减少20%， +1增加20%， +5直接拉满)
+        window.changeScore = function(index, delta) {
+            let oldScore = groups[index].score;
+            let newScore = oldScore + delta;
+            if (newScore < 0) newScore = 0;
+            if (newScore > 5) newScore = 5;
+            
+            groups[index].score = newScore;
+            
+            const scoreSpan = document.getElementById(`score-${index}`);
+            const cardDiv = document.getElementById(`card-${index}`);
+            const circleDiv = document.getElementById(`circle-${index}`);
+            
+            const percentValue = newScore * 20;
+            scoreSpan.innerText = percentValue + "%";
+            
+            // 动效反馈
+            scoreSpan.classList.remove('pop-anim', 'shrink-anim');
+            void scoreSpan.offsetWidth;
+            if (delta > 0) scoreSpan.classList.add('pop-anim');
+            else if (delta < 0) scoreSpan.classList.add('shrink-anim');
+            
+            // 满级光环判断 (100%完美吸收)
+            if (newScore === 5) {
+                cardDiv.classList.add('full-health-card');
+                circleDiv.classList.add('full-health-circle');
+                scoreSpan.classList.add('full-health-text');
+                // 如果是刚刚达到100%（之前未满）才触发粒子狂欢
+                if (oldScore < 5) {
+                    triggerCelebration(index);
+                }
+            } else {
+                // 未满或跌出满级状态，移除所有特效
+                cardDiv.classList.remove('full-health-card');
+                circleDiv.classList.remove('full-health-circle');
+                scoreSpan.classList.remove('full-health-text');
+            }
+        };
+
+        // 初始化所有卡片UI
+        function initBoard() {
+            boardElement.innerHTML = '';
+            
+            groups.forEach((group, idx) => {
+                const colors = colorStyles[group.theme];
+                const currentPercent = group.score * 20;
+                const card = document.createElement('div');
+                card.id = `card-${idx}`;
+                card.className = `bg-white/90 backdrop-blur-sm rounded-3xl p-3 flex flex-col items-center shadow-xl border-[3px] border-white hover:border-amber-300 transition-all duration-300 relative overflow-hidden group-card`;
+                
+                card.innerHTML = `
+                    <div class="absolute -right-3 -top-3 text-7xl opacity-10 pointer-events-none transform group-hover:scale-110 transition-transform duration-500">
+                        ${group.icon}
+                    </div>
+                    
+                    <!-- 可编辑小组名称 -->
+                    <input type="text" 
+                        class="w-full text-center text-base md:text-lg font-extrabold text-stone-700 bg-transparent border-b-2 border-transparent hover:border-amber-200 focus:border-amber-400 outline-none transition-colors mb-1 px-1 z-10" 
+                        value="${group.name}"
+                        onchange="updateName(${idx}, this.value)"
+                        onfocus="this.select()">
+                    
+                    <!-- 消化吸收率专属标识 -->
+                    <div class="text-[11px] md:text-xs font-black text-amber-600/90 mb-1 z-10 flex items-center gap-1">
+                        <span>🍽️</span> 消化吸收率 · 营养活力
+                    </div>
+                    
+                    <!-- 圆环吸收指示器（类似血氧环 但改为吸收率） -->
+                    <div id="circle-${idx}" class="relative w-16 h-16 md:w-20 md:h-20 flex items-center justify-center rounded-full ${colors.bg} border-[4px] ${colors.border} mb-3 shadow-inner transition-all duration-500 z-10">
+                        <span id="score-${idx}" class="text-2xl md:text-3xl font-black ${colors.text} tracking-tighter drop-shadow-sm transition-colors duration-300">
+                            ${currentPercent}%
+                        </span>
+                    </div>
+
+                    <!-- 按钮组：-20% / +20% / 满级MAX -->
+                    <div class="flex items-center justify-center gap-1 md:gap-2 w-full z-10">
+                        <button onclick="changeScore(${idx}, -1)" class="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center rounded-full bg-slate-100/80 text-slate-600 text-xs md:text-sm font-black hover:bg-orange-100 hover:text-orange-700 transition-all shadow-sm active:scale-90">
+                            -20%
+                        </button>
+                        <button onclick="changeScore(${idx}, 1)" class="h-10 md:h-12 px-3 md:px-4 flex items-center justify-center rounded-full bg-gradient-to-r ${colors.btnFrom} ${colors.btnTo} text-white text-sm md:text-base font-bold shadow-md transition-all transform hover:scale-105 active:scale-95">
+                            +20%
+                        </button>
+                        <button onclick="changeScore(${idx}, 5)" class="h-8 md:h-10 px-2 md:px-3 flex items-center justify-center rounded-full bg-lime-100 border border-lime-300 text-lime-700 text-[10px] md:text-xs font-black hover:bg-lime-200 transition-colors shadow-sm active:scale-90">
+                            MAX ⚡
+                        </button>
+                    </div>
+                `;
+                boardElement.appendChild(card);
+            });
+        }
+
+        // 页面启动
+        window.onload = () => {
+            initBoard();
+        };
+    </script>
+<!-- ================= 开物AI科学 · 版权模块（单击显示 / 双击打开官网） ================= -->
+<style id="kaiming-copyright-style">
+  #kaiming-copyright {
+    position: fixed;
+    bottom: 26px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    pointer-events: none;
+    z-index: 999999;
+    transition: opacity 0.45s ease;
+    opacity: 0;
+    display: none;
+  }
+  #kaiming-copyright .inner {
+    display: inline-block;
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #eafaf2;
+    padding: 9px 26px;
+    border-radius: 60px;
+    /* 原稿为 14px；此处改为 16px 以符合本机 verify_html.py 的「字号不得小于 16px」硬规则 */
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.6px;
+    border: 1px solid rgba(255, 245, 210, 0.3);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+    font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+    white-space: nowrap;
+  }
+</style>
+
+<div id="kaiming-copyright">
+  <div class="inner">© 2026 开物AI科学 ｜ AI 赋能 · 教育公平</div>
+</div>
+
+<script id="kaiming-copyright-script">
+(function () {
+  "use strict";
+
+  /* 目标：单击标题 → 显示版权 3.5 秒；双击标题 → 打开 www.kaiwuaiscience.com */
+
+  const HOMEPAGE = "https://www.kaiwuaiscience.com";
+  const SHOW_MS = 3500;      // 版权显示时长
+  const DBL_WINDOW = 280;    // 双击判定的时间窗（毫秒）
+  const FADE_MS = 450;       // 淡出时长，与 CSS transition 一致
+
+  function bindCopyright() {
+    // 首选 #mainTitle（注入脚本会保证它存在）；后三个选择器是手写粘贴时的兜底
+    const title = document.getElementById("mainTitle") ||
+                  document.querySelector("h1, .title, .page-title, .main-title");
+    const box = document.getElementById("kaiming-copyright");
+    if (!title || !box) return;
+
+    title.style.cursor = "pointer";
+    title.style.userSelect = "none";
+    title.style.webkitUserSelect = "none";
+    /* 有些 3D 页面把 HUD 浮层（标题就在里面）设成 pointer-events:none，
+       好让鼠标事件穿透给下层画布；结果标题被"穿透"了——用户点它时事件落到画布上，
+       单击毫无反应，页面看起来就像没加版权。在标题自身把指针事件打开即可
+       （CSS 里后代可以覆盖祖先的 none，无需改动页面原有样式）。 */
+    title.style.pointerEvents = "auto";
+
+    let clickTimer = null;
+    let hideTimer = null;
+    let seq = 0;   // 每次显示/隐藏都 +1，用来作废在飞的定时器
+
+    function showCopyright() {
+      const my = ++seq;
+      if (hideTimer) clearTimeout(hideTimer);
+      box.style.display = "block";
+      /* 强制重绘，让 0 → 1 的淡入真的发生。
+         这里刻意不用 requestAnimationFrame：rAF 在页面不产生新帧时（后台标签页、
+         无头渲染、大屏久置）不保证触发——一旦它晚于下方的隐藏定时器回调，
+         就会把 opacity 又设成 1，导致版权条永久停在屏幕上。 */
+      void box.offsetHeight;
+      box.style.opacity = "1";
+      hideTimer = setTimeout(function () {
+        if (my !== seq) return;      // 期间又被点过，交给新的那一次收尾
+        box.style.opacity = "0";
+        setTimeout(function () {
+          if (my === seq) box.style.display = "none";
+        }, FADE_MS);
+      }, SHOW_MS);
+    }
+
+    function hideCopyright() {
+      const my = ++seq;              // 作废所有在飞的定时器，避免"淡出到一半又被点亮"卡住
+      if (hideTimer) clearTimeout(hideTimer);
+      if (box.style.display !== "block") return;
+      box.style.opacity = "0";
+      setTimeout(function () {
+        if (my === seq) box.style.display = "none";
+      }, FADE_MS);
+    }
+
+    function openHomepage() {
+      // 双击时隐藏版权，并跳转官网
+      hideCopyright();
+      window.open(HOMEPAGE, "_blank", "noopener,noreferrer");
+    }
+
+    title.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (clickTimer) return;   // 已在等待双击窗口，忽略这次单击
+      clickTimer = setTimeout(function () {
+        clickTimer = null;
+        showCopyright();        // 确认是单击
+      }, DBL_WINDOW);
+    });
+
+    title.addEventListener("dblclick", function (e) {
+      e.stopPropagation();
+      if (clickTimer) {         // 取消挂起的单击
+        clearTimeout(clickTimer);
+        clickTimer = null;
+      }
+      openHomepage();
+    });
+
+    // 点击页面其它地方，立即隐藏版权
+    document.addEventListener("click", function (e) {
+      if (e.target === title) return;
+      hideCopyright();
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bindCopyright);
+  } else {
+    bindCopyright();
+  }
+})();
+</script>
+<!-- ================= 开物AI科学 · 版权模块 结束 ================= -->
+
+</body>
+</html>

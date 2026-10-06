@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>地球的形状 | 3D帆船环球实验</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Segoe UI', 'Roboto', 'Microsoft YaHei', sans-serif;
+            background-color: #071a3b;
+        }
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 10px 18px;
+            border-radius: 30px;
+            backdrop-filter: blur(8px);
+            font-size: 18px;
+            font-weight: bold;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            border-left: 5px solid #ffaa44;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        #reopenBtn {
+            background: #ffaa44;
+            color: #000;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            transition: 0.3s;
+        }
+        #reopenBtn:hover { background: #ffcc88; transform: scale(1.1); }
+        
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: rgba(30,30,40,0.9);
+            backdrop-filter: blur(12px);
+            border-radius: 50px;
+            padding: 12px 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            z-index: 100;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,200,0.3);
+            font-weight: bold;
+            font-size: 14px;
+        }
+        button {
+            background: #f4a261;
+            border: none;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: 0.2s;
+            font-family: inherit;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        button:hover { background: #e76f51; transform: scale(0.96); }
+        .toggle-group, .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(44, 62, 47, 0.6);
+            padding: 6px 16px;
+            border-radius: 40px;
+            color: white;
+        }
+        .toggle-group label, .slider-container label { cursor: pointer; font-size: 13px; }
+        input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; margin: 0; }
+        input[type="range"] { width: 110px; cursor: pointer; }
+        .value-display {
+            background: #1f3a3f;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 12px;
+            min-width: 40px;
+            text-align: center;
+            font-family: monospace;
+        }
+        .status {
+            background: #1f3a3f;
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-size: 13px;
+            color: #ffdd99;
+            border: 1px solid rgba(255,221,153,0.3);
+            min-width: 180px;
+            text-align: center;
+        }
+        .principle-card {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(10,15,25,0.85);
+            backdrop-filter: blur(10px);
+            color: #f0f0e0;
+            font-size: 15px;
+            padding: 16px 20px;
+            border-radius: 16px;
+            z-index: 100;
+            max-width: 280px;
+            border-left: 4px solid #ffaa66;
+            line-height: 1.5;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            transition: opacity 0.3s, transform 0.3s;
+        }
+        .principle-card h4 { margin: 0 0 10px 0; font-size: 18px; color: #ffdd99; display: flex; align-items: center; gap: 8px;}
+        .principle-card p { margin: 0; }
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+        .close-btn:hover { background: #e76f51; }
+        .hidden-card { opacity: 0; transform: translateY(-20px); pointer-events: none; }
+        
+        @media (max-width: 900px) {
+            #controls { border-radius: 20px; gap: 8px; padding: 10px; bottom: 10px;}
+            button { padding: 6px 12px; font-size: 12px; }
+            .slider-container input { width: 80px; }
+            .status { width: 100%; margin-top: 4px;}
+            .principle-card { top: 70px; right: 50%; transform: translateX(50%); width: 85%; }
+            .hidden-card { transform: translate(50%, -20px); }
+        }
+    </style>
+</head>
+<body>
+    <div id="info">
+        🌍 地球的形状实验 
+        <button id="reopenBtn" title="打开科学原理">i</button>
+    </div>
+    
+    <div id="controls">
+        <button id="playPauseBtn">⏸ 暂停</button>
+        <button id="reverseBtn">🔄 反向行驶</button>
+        <button id="resetBtn">⟳ 重置</button>
+        <div class="slider-container">
+            <label>🚤 速度</label>
+            <input type="range" id="speedSlider" min="0.01" max="0.3" step="0.01" value="0.08">
+            <span id="speedValue" class="value-display">0.08</span>
+        </div>
+        <div class="slider-container">
+            <label>⛵ 尺寸</label>
+            <input type="range" id="sizeSlider" min="0.4" max="1.2" step="0.01" value="0.65">
+            <span id="sizeValue" class="value-display">0.65</span>
+        </div>
+        <div class="toggle-group">
+            <input type="checkbox" id="toggleLabelsBtn">
+            <label for="toggleLabelsBtn">🏷️ 显示文字</label>
+        </div>
+        <div class="toggle-group">
+            <input type="checkbox" id="togglePlaneBtn">
+            <label for="togglePlaneBtn">🔲 平面对照组</label>
+        </div>
+        <div class="status" id="statusText">🌊 准备启航...</div>
+    </div>
+
+    <div id="principleCard" class="principle-card">
+        <button id="closePrincipleBtn" class="close-btn">✕</button>
+        <h4>📖 科学原理</h4>
+        <p>因为地球表面是弯曲的球面，帆船从远处驶来时，船身下部会被水面遮挡。因此我们会<b>先看到高处的船帆，后看到低处的船身</b>。<br><br>
+        开启下方的【平面对照组】可观察到：如果在平面上，整艘船会同时出现和变大。</p>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+        // --- 初始化基础场景 ---
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x071a3b, 0.001);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(5, 3, 8);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        
+        // 【关键修复 1】：高分屏适配，解决贴图模糊、锯齿问题
+        renderer.setPixelRatio(window.devicePixelRatio); 
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        document.body.appendChild(renderer.domElement);
+
+        const labelRenderer = new CSS2DRenderer();
+        labelRenderer.setSize(window.innerWidth, window.innerHeight);
+        labelRenderer.domElement.style.position = 'absolute';
+        labelRenderer.domElement.style.top = '0px';
+        labelRenderer.domElement.style.pointerEvents = 'none';
+        document.body.appendChild(labelRenderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxDistance = 20;
+        controls.minDistance = 2.5;
+
+        // --- 优化光照 ---
+        scene.add(new THREE.AmbientLight(0x505070, 1.5)); // 稍微提亮环境光
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+        dirLight.position.set(5, 8, 5);
+        dirLight.castShadow = true;
+        const d = 2.5;
+        dirLight.shadow.camera.left = -d;
+        dirLight.shadow.camera.right = d;
+        dirLight.shadow.camera.top = d;
+        dirLight.shadow.camera.bottom = -d;
+        dirLight.shadow.mapSize.set(2048, 2048);
+        scene.add(dirLight);
+        
+        const backLight = new THREE.DirectionalLight(0x88aaff, 0.8);
+        backLight.position.set(-5, 0, -5);
+        scene.add(backLight);
+
+        // --- 星空背景 ---
+        const starGeo = new THREE.BufferGeometry();
+        const starPos = new Float32Array(1500 * 3);
+        for (let i = 0; i < 1500 * 3; i++) starPos[i] = (Math.random() - 0.5) * 600;
+        starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+        const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.15, transparent: true, opacity: 0.6 }));
+        scene.add(stars);
+
+        // --- 球形地球与大气层 ---
+        const earthRadius = 1.8;
+        const texLoader = new THREE.TextureLoader();
+        
+        // 【关键修复 2】：开启各项异性过滤，倾斜角度贴图依然清晰
+        const maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
+        
+        const earthColorMap = texLoader.load('https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg');
+        earthColorMap.anisotropy = maxAnisotropy;
+        
+        const earthSpecMap = texLoader.load('https://threejs.org/examples/textures/planets/earth_specular_2048.jpg');
+        const earthNormalMap = texLoader.load('https://threejs.org/examples/textures/planets/earth_normal_2048.jpg');
+
+        const earthMat = new THREE.MeshPhongMaterial({
+            map: earthColorMap,
+            specularMap: earthSpecMap,
+            normalMap: earthNormalMap,
+            shininess: 15
+        });
+        const earth = new THREE.Mesh(new THREE.SphereGeometry(earthRadius, 64, 64), earthMat);
+        earth.receiveShadow = true;
+        scene.add(earth);
+
+        const clouds = new THREE.Mesh(
+            new THREE.SphereGeometry(earthRadius + 0.015, 64, 64),
+            new THREE.MeshLambertMaterial({
+                map: texLoader.load('https://threejs.org/examples/textures/planets/earth_clouds_1024.png'),
+                transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending
+            })
+        );
+        scene.add(clouds);
+
+        // --- 帆船模型构建 ---
+        function createShip() {
+            const group = new THREE.Group();
+            
+            const hull = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.32, 0.45, 16, 1), new THREE.MeshStandardMaterial({ color: 0xC97E4A }));
+            hull.rotation.z = Math.PI / 2;
+            hull.position.y = -0.05;
+            hull.castShadow = true;
+            group.add(hull);
+            
+            const deck = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.05, 0.32), new THREE.MeshStandardMaterial({ color: 0xBD8A5A }));
+            deck.position.y = 0.1;
+            deck.castShadow = true;
+            group.add(deck);
+            
+            const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.03, 0.8), new THREE.MeshStandardMaterial({ color: 0x8B5A2B }));
+            mast.position.y = 0.5;
+            mast.castShadow = true;
+            group.add(mast);
+            
+            const mainSail = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 0.6), new THREE.MeshStandardMaterial({ color: 0xFCF3DA, side: THREE.DoubleSide }));
+            mainSail.position.set(0, 0.5, 0.05);
+            mainSail.castShadow = true;
+            mainSail.name = "mainSail";
+            group.add(mainSail);
+
+            const flag = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.06, 0.01), new THREE.MeshStandardMaterial({ color: 0xE63946 }));
+            flag.position.set(0.2, 0.85, 0);
+            group.add(flag);
+
+            return group;
+        }
+
+        const ship = createShip();
+        let shipScale = 0.65;
+        ship.scale.set(shipScale, shipScale, shipScale);
+        scene.add(ship);
+
+        // --- 平面对照组 ---
+        const flatGroup = new THREE.Group();
+        const flatEarth = new THREE.Mesh(
+            new THREE.CylinderGeometry(2.2, 2.2, 0.1, 64), 
+            new THREE.MeshStandardMaterial({ map: earthMat.map, color: 0x88ccff })
+        );
+        flatEarth.receiveShadow = true;
+        flatGroup.add(flatEarth);
+
+        const flatShip = createShip();
+        flatShip.scale.set(shipScale, shipScale, shipScale);
+        flatGroup.add(flatShip);
+
+        flatGroup.position.set(-4.5, -0.5, -1.5);
+        flatGroup.visible = false;
+        scene.add(flatGroup);
+
+        // --- CSS2D 标签优化 ---
+        function createLabel(text, borderColor) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            div.style.backgroundColor = 'rgba(0,0,0,0.7)';
+            div.style.color = '#fff';
+            div.style.padding = '4px 10px';
+            div.style.borderRadius = '6px';
+            div.style.borderLeft = `4px solid ${borderColor}`;
+            div.style.fontSize = '14px';
+            div.style.whiteSpace = 'nowrap';
+            return new CSS2DObject(div);
+        }
+        const sailLabel = createLabel('⛵ 船帆 (先看见)', '#ffaa66');
+        const hullLabel = createLabel('🚢 船身 (后看见)', '#88aaff');
+        sailLabel.visible = false;
+        hullLabel.visible = false;
+        scene.add(sailLabel);
+        scene.add(hullLabel);
+
+        // --- 核心动画逻辑 ---
+        let t = 0.0; 
+        let animating = true; // 【关键修复 3】：初始状态设为真实航行状态
+        let speed = 0.08; 
+        let direction = 1;
+
+        function updatePositions(progress) {
+            const angle = progress * Math.PI * 2;
+            
+            // 1. 球面船
+            const z = earthRadius * Math.cos(angle);
+            const y = earthRadius * Math.sin(angle);
+            const x = 0; 
+            const pos = new THREE.Vector3(x, y, z);
+            ship.position.copy(pos);
+
+            const upVector = pos.clone().normalize();
+            ship.up.copy(upVector);
+            const tangent = new THREE.Vector3(0, Math.cos(angle), -Math.sin(angle)).normalize();
+            const lookTarget = pos.clone().add(tangent);
+            ship.lookAt(lookTarget);
+
+            if (sailLabel.visible) {
+                sailLabel.position.copy(pos.clone().add(upVector.clone().multiplyScalar(0.7 * shipScale)));
+                hullLabel.position.copy(pos.clone().add(upVector.clone().multiplyScalar(0.1 * shipScale)));
+            }
+
+            // 2. 平面船
+            if (flatGroup.visible) {
+                const flatZ = 1.9 * Math.cos(angle);
+                flatShip.position.set(0, 0.05, flatZ);
+                flatShip.rotation.y = Math.sin(angle) > 0 ? Math.PI : 0;
+            }
+
+            updateStatusText(progress);
+        }
+
+        function updateStatusText(p) {
+            const statusSpan = document.getElementById('statusText');
+            let msg = '';
+            if (p < 0.05 || p > 0.95) msg = '⛵ 位于赤道 (帆尖最先/最后可见)';
+            else if (p < 0.2) msg = '🏔️ 驶向北极，船身逐渐显露';
+            else if (p < 0.3) msg = '❄️ 跨越北极点，船身一览无余';
+            else if (p < 0.45) msg = '🌊 驶向地球背面，船底开始消失';
+            else if (p < 0.55) msg = '🌎 到达另一侧赤道';
+            else if (p < 0.7) msg = '🐧 驶向南极点';
+            else if (p < 0.8) msg = '❄️ 跨越南极点，准备返航';
+            else msg = '🌊 驶回正面，帆尖重新出现';
+
+            if (direction === -1) msg = "🔄 [反向] " + msg;
+            statusSpan.innerHTML = msg;
+        }
+
+        // --- UI 事件 ---
+        document.getElementById('playPauseBtn').addEventListener('click', (e) => {
+            animating = !animating;
+            e.target.textContent = animating ? '⏸ 暂停' : '▶ 继续';
+        });
+
+        document.getElementById('reverseBtn').addEventListener('click', () => {
+            direction *= -1;
+            updateStatusText(t);
+        });
+
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            t = 0.0;
+            direction = 1;
+            updatePositions(t);
+        });
+
+        document.getElementById('speedSlider').addEventListener('input', (e) => {
+            speed = parseFloat(e.target.value);
+            document.getElementById('speedValue').textContent = speed.toFixed(2);
+        });
+
+        document.getElementById('sizeSlider').addEventListener('input', (e) => {
+            shipScale = parseFloat(e.target.value);
+            ship.scale.set(shipScale, shipScale, shipScale);
+            flatShip.scale.set(shipScale, shipScale, shipScale);
+            document.getElementById('sizeValue').textContent = shipScale.toFixed(2);
+            updatePositions(t);
+        });
+
+        document.getElementById('toggleLabelsBtn').addEventListener('change', (e) => {
+            sailLabel.visible = e.target.checked;
+            hullLabel.visible = e.target.checked;
+            if(e.target.checked) updatePositions(t);
+        });
+
+        document.getElementById('togglePlaneBtn').addEventListener('change', (e) => {
+            flatGroup.visible = e.target.checked;
+        });
+
+        const card = document.getElementById('principleCard');
+        const reopenBtn = document.getElementById('reopenBtn');
+        document.getElementById('closePrincipleBtn').addEventListener('click', () => {
+            card.classList.add('hidden-card');
+            reopenBtn.style.display = 'flex';
+        });
+        reopenBtn.addEventListener('click', () => {
+            card.classList.remove('hidden-card');
+            reopenBtn.style.display = 'none';
+        });
+
+        // --- 渲染循环 ---
+        const clock = new THREE.Clock();
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+
+            clouds.rotation.y += 0.02 * delta;
+            stars.rotation.y += 0.01 * delta;
+
+            const time = clock.getElapsedTime();
+            ship.getObjectByName("mainSail").rotation.y = Math.sin(time * 3) * 0.1;
+            flatShip.getObjectByName("mainSail").rotation.y = Math.sin(time * 3) * 0.1;
+
+            if (animating) {
+                // 【关键修复 4】：增大倍率，使航行速度变得直观可视
+                t += speed * direction * delta * 0.5;
+                if (t < 0) t += 1.0;
+                if (t >= 1) t -= 1.0;
+                updatePositions(t);
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+            labelRenderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            labelRenderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        updatePositions(0);
+        animate();
+    </script>
+
+
+<!-- ================= 开物AI科学 · 版权模块（单击显示 / 双击打开官网） ================= -->
+<style id="kaiming-copyright-style">
+  #kaiming-copyright {
+    position: fixed;
+    bottom: 69px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    pointer-events: none;
+    z-index: 999999;
+    transition: opacity 0.45s ease;
+    opacity: 0;
+    display: none;
+  }
+  #kaiming-copyright .inner {
+    display: inline-block;
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #eafaf2;
+    padding: 9px 26px;
+    border-radius: 60px;
+    /* 原稿为 14px；此处改为 16px 以符合本机 verify_html.py 的「字号不得小于 16px」硬规则 */
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.6px;
+    border: 1px solid rgba(255, 245, 210, 0.3);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+    font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+    white-space: nowrap;
+  }
+</style>
+
+<div id="kaiming-copyright">
+  <div class="inner">© 2026 开物AI科学 ｜ AI 赋能 · 教育公平</div>
+</div>
+
+<script id="kaiming-copyright-script">
+(function () {
+  "use strict";
+
+  /* 目标：单击标题 → 显示版权 3.5 秒；双击标题 → 打开 www.kaiwuaiscience.com */
+
+  const HOMEPAGE = "https://www.kaiwuaiscience.com";
+  const SHOW_MS = 3500;      // 版权显示时长
+  const DBL_WINDOW = 280;    // 双击判定的时间窗（毫秒）
+  const FADE_MS = 450;       // 淡出时长，与 CSS transition 一致
+
+  function bindCopyright() {
+    // 首选 #mainTitle（注入脚本会保证它存在）；后三个选择器是手写粘贴时的兜底
+    const title = document.getElementById("info") ||
+                  document.querySelector("h1, .title, .page-title, .main-title");
+    const box = document.getElementById("kaiming-copyright");
+    if (!title || !box) return;
+
+    title.style.cursor = "pointer";
+    title.style.userSelect = "none";
+    title.style.webkitUserSelect = "none";
+
+    let clickTimer = null;
+    let hideTimer = null;
+    let seq = 0;   // 每次显示/隐藏都 +1，用来作废在飞的定时器
+
+    function showCopyright() {
+      const my = ++seq;
+      if (hideTimer) clearTimeout(hideTimer);
+      box.style.display = "block";
+      /* 强制重绘，让 0 → 1 的淡入真的发生。
+         这里刻意不用 requestAnimationFrame：rAF 在页面不产生新帧时（后台标签页、
+         无头渲染、大屏久置）不保证触发——一旦它晚于下方的隐藏定时器回调，
+         就会把 opacity 又设成 1，导致版权条永久停在屏幕上。 */
+      void box.offsetHeight;
+      box.style.opacity = "1";
+      hideTimer = setTimeout(function () {
+        if (my !== seq) return;      // 期间又被点过，交给新的那一次收尾
+        box.style.opacity = "0";
+        setTimeout(function () {
+          if (my === seq) box.style.display = "none";
+        }, FADE_MS);
+      }, SHOW_MS);
+    }
+
+    function hideCopyright() {
+      const my = ++seq;              // 作废所有在飞的定时器，避免"淡出到一半又被点亮"卡住
+      if (hideTimer) clearTimeout(hideTimer);
+      if (box.style.display !== "block") return;
+      box.style.opacity = "0";
+      setTimeout(function () {
+        if (my === seq) box.style.display = "none";
+      }, FADE_MS);
+    }
+
+    function openHomepage() {
+      // 双击时隐藏版权，并跳转官网
+      hideCopyright();
+      window.open(HOMEPAGE, "_blank", "noopener,noreferrer");
+    }
+
+    title.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (clickTimer) return;   // 已在等待双击窗口，忽略这次单击
+      clickTimer = setTimeout(function () {
+        clickTimer = null;
+        showCopyright();        // 确认是单击
+      }, DBL_WINDOW);
+    });
+
+    title.addEventListener("dblclick", function (e) {
+      e.stopPropagation();
+      if (clickTimer) {         // 取消挂起的单击
+        clearTimeout(clickTimer);
+        clickTimer = null;
+      }
+      openHomepage();
+    });
+
+    // 点击页面其它地方，立即隐藏版权
+    document.addEventListener("click", function (e) {
+      if (e.target === title) return;
+      hideCopyright();
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bindCopyright);
+  } else {
+    bindCopyright();
+  }
+})();
+</script>
+<!-- ================= 开物AI科学 · 版权模块 结束 ================= -->
+
+</body>
+</html>

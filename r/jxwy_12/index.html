@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>水结冰实验</title>
+    <style>
+        /* 全局基础设置 */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'PingFang SC', 'Microsoft YaHei', -apple-system, sans-serif;
+        }
+
+        body {
+            /* 柔和的现代渐变背景 */
+            background: linear-gradient(135deg, #e0f7fa 0%, #b2dfdb 100%);
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow: hidden;
+            color: #333;
+            user-select: none;
+        }
+
+        /* 顶部悬浮胶囊标题栏 */
+        header {
+            background: rgba(255, 255, 255, 0.9);
+            color: #00796b;
+            text-align: center;
+            padding: 12px 40px;
+            margin: 15px 0;
+            font-size: 28px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            border-radius: 50px;
+            box-shadow: 0 8px 20px rgba(0, 121, 107, 0.15);
+            z-index: 10;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+        }
+
+        /* 主体内容区 */
+        .main-content {
+            display: flex;
+            flex: 1;
+            padding: 10px 20px 20px 20px;
+            gap: 20px;
+            width: 100%;
+            max-width: 1400px;
+            height: calc(100vh - 90px);
+        }
+
+        /* ================= 左侧：实验装置区 ================= */
+        .experiment-area {
+            flex: 6;
+            background: rgba(255, 255, 255, 0.85);
+            border-radius: 25px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.08);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            padding: 15px 20px;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255,255,255,0.6);
+        }
+
+        .apparatus-container {
+            position: relative;
+            width: 580px;
+            height: 510px;
+            margin-top: 5px;
+        }
+
+        /* 1. 铁架台 */
+        .iron-stand-base {
+            position: absolute;
+            bottom: 10px;
+            left: 30px;
+            width: 380px; 
+            height: 28px;
+            background: linear-gradient(to bottom, #9e9e9e, #616161);
+            border-radius: 6px;
+            box-shadow: 0 10px 15px rgba(0,0,0,0.2), inset 0 2px 5px rgba(255,255,255,0.4);
+            z-index: 1;
+        }
+        .iron-stand-pole {
+            position: absolute;
+            bottom: 38px;
+            left: 60px;
+            width: 18px;
+            height: 460px;
+            background: linear-gradient(to right, #cfd8dc, #ffffff 30%, #90a4ae 80%, #78909c);
+            border-radius: 9px 9px 0 0;
+            z-index: 0;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
+
+        /* 铁夹子 */
+        .iron-clamp-rod {
+            position: absolute;
+            top: 130px;
+            left: 78px;
+            width: 140px;
+            height: 12px;
+            background: linear-gradient(to bottom, #b0bec5, #78909c);
+            z-index: 3;
+            border-radius: 0 6px 6px 0;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .iron-clamp-back {
+            position: absolute;
+            top: 125px;
+            left: 200px;
+            width: 90px;
+            height: 22px;
+            background: #5d4037;
+            border-radius: 11px;
+            z-index: 3;
+        }
+        .iron-clamp-front {
+            position: absolute;
+            top: 125px;
+            left: 200px;
+            width: 90px;
+            height: 22px;
+            background: linear-gradient(to bottom, #8d6e63, #5d4037);
+            border-radius: 11px;
+            z-index: 6; 
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+        .iron-clamp-knob {
+            position: absolute;
+            top: 116px;
+            left: 190px;
+            width: 14px;
+            height: 40px;
+            background: linear-gradient(to right, #b0bec5, #78909c);
+            border-radius: 7px;
+            z-index: 7;
+            box-shadow: -2px 2px 5px rgba(0,0,0,0.2);
+        }
+
+        /* 2. 烧杯 (增强玻璃质感) */
+        .beaker {
+            position: absolute;
+            bottom: 38px; 
+            left: 120px;
+            width: 250px;
+            height: 270px;
+            background: rgba(224, 247, 250, 0.1);
+            border: 3px solid rgba(144, 164, 174, 0.6); 
+            border-top: none;
+            border-radius: 0 0 25px 25px;
+            box-shadow: inset 15px 0 30px rgba(255,255,255,0.8), 
+                        inset -5px -5px 15px rgba(255,255,255,0.5),
+                        5px 15px 20px rgba(0,0,0,0.05);
+            z-index: 2;
+            backdrop-filter: blur(2px);
+        }
+        .beaker::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            right: -15px;
+            border-left: 15px solid rgba(144, 164, 174, 0.6);
+            border-bottom: 20px solid transparent;
+        }
+
+        /* 碎冰食盐混合物 (改为灰蓝色霜冻质感，区分于纯冰) */
+        .ice-mixture {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 200px;
+            background-color: rgba(144, 164, 174, 0.4); /* 灰蓝色底色 */
+            background-image:
+                linear-gradient(30deg, transparent 35%, rgba(255,255,255,0.95) 45%, transparent 55%),
+                linear-gradient(-60deg, transparent 25%, rgba(207, 216, 220, 0.8) 35%, transparent 45%);
+            background-size: 40px 40px;
+            clip-path: polygon(0 15%, 8% 5%, 15% 18%, 28% 0, 45% 20%, 55% 5%, 75% 25%, 88% 10%, 100% 15%, 100% 100%, 0 100%);
+            border-radius: 0 0 22px 22px;
+            border-top: 2px solid rgba(176, 190, 197, 0.8);
+            z-index: 1;
+        }
+        .ice-mixture::after {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: radial-gradient(rgba(255,255,255,0.95) 25%, transparent 30%);
+            background-size: 12px 12px;
+            background-position: 0 0, 6px 6px;
+            opacity: 0.9;
+        }
+        
+        /* 标签美化 */
+        .beaker-label {
+            position: absolute;
+            bottom: 100px;
+            left: 390px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 8px 18px;
+            border-radius: 12px;
+            font-size: 17px;
+            font-weight: bold;
+            color: #00796b;
+            z-index: 5;
+            box-shadow: 0 6px 15px rgba(0, 121, 107, 0.15);
+            white-space: nowrap;
+            border: 1px solid #b2dfdb;
+        }
+        .beaker-label::before {
+            content: '';
+            position: absolute;
+            right: 100%;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 70px;
+            height: 2px;
+            background: #4db6ac;
+            border-radius: 2px;
+        }
+        .beaker-label::after {
+            content: '';
+            position: absolute;
+            right: calc(100% + 70px);
+            top: 50%;
+            transform: translateY(-50%);
+            width: 8px;
+            height: 8px;
+            background: #00796b;
+            border-radius: 50%;
+        }
+
+        /* 3. 试管与水冻结状态 (加深边框，凸显轮廓) */
+        .test-tube {
+            position: absolute;
+            bottom: 60px; 
+            left: 220px; 
+            width: 50px;
+            height: 370px;
+            background: rgba(255, 255, 255, 0.3);
+            border: 3px solid #78909c; /* 从白色改为蓝灰色边框，彻底与背景分离 */
+            border-top: none;
+            border-radius: 0 0 25px 25px;
+            z-index: 4;
+            box-shadow: inset 8px 0 15px rgba(255,255,255,0.9),
+                        inset -4px 0 10px rgba(255,255,255,0.4),
+                        0 8px 16px rgba(0,0,0,0.2); /* 增加外部阴影 */
+            overflow: hidden;
+            display: flex;
+            align-items: flex-end;
+            backdrop-filter: blur(1px);
+        }
+
+        /* 加深纯液态水的蓝色 */
+        .water {
+            width: 100%;
+            height: 110px; 
+            background: linear-gradient(to right, rgba(41, 182, 246, 0.7), rgba(2, 136, 209, 0.85));
+            position: relative;
+            box-shadow: inset 0 2px 5px rgba(255,255,255,0.5);
+        }
+
+        /* 渐进式的结冰层 (改为极亮的青白色，区分于烧杯冰) */
+        .ice-layer {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 0%;
+            background: linear-gradient(to right, #e0f7fa, #4dd0e1);
+            box-shadow: inset 0 0 15px rgba(255,255,255,1), 0 -2px 5px rgba(255,255,255,0.8);
+            border-top: 3px solid #ffffff; /* 明显的冰面分界线 */
+        }
+        .ice-layer::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(255,255,255,0.7) 5px, rgba(255,255,255,0.7) 10px);
+        }
+
+        /* 标记线 */
+        .mark-line {
+            position: absolute;
+            bottom: 170px; 
+            left: 195px;
+            width: 65px;
+            height: 3px;
+            background-color: #ff5252;
+            z-index: 7;
+            border-radius: 2px;
+            box-shadow: 0 0 8px rgba(255,82,82,0.6);
+        }
+        .mark-text {
+            position: absolute;
+            bottom: 161px;
+            left: 95px; 
+            background: #ffcdd2;
+            color: #c62828;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 15px;
+            z-index: 7;
+            box-shadow: 0 4px 10px rgba(229, 57, 53, 0.15);
+            border: 1px solid #ef9a9a;
+        }
+        .mark-text::after {
+            content: '';
+            position: absolute;
+            right: -6px;
+            top: 50%;
+            transform: translateY(-50%);
+            border-left: 6px solid #ffcdd2;
+            border-top: 5px solid transparent;
+            border-bottom: 5px solid transparent;
+        }
+
+        /* 4. 温度计美化 */
+        .thermometer-wrapper {
+            position: absolute;
+            bottom: 68px;
+            left: 237px; 
+            width: 16px;
+            height: 430px;
+            z-index: 5;
+        }
+        .thermometer-glass {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to right, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.9) 30%, rgba(255,255,255,0.2) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            border-radius: 8px;
+            box-shadow: inset -2px 0 4px rgba(0,0,0,0.1), 2px 2px 5px rgba(0,0,0,0.1);
+        }
+        .thermometer-scale {
+            position: absolute;
+            bottom: 30px;
+            left: 0;
+            width: 50%;
+            height: 380px;
+            background: repeating-linear-gradient(to bottom, transparent, transparent 18px, #757575 18px, #757575 20px);
+            z-index: 2;
+        }
+        .thermo-bulb {
+            position: absolute;
+            bottom: 2px;
+            left: -4px;
+            width: 24px;
+            height: 24px;
+            background: radial-gradient(circle at 35% 35%, #ff8a80, #d32f2f, #b71c1c);
+            border-radius: 50%;
+            z-index: 3;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .thermo-liquid {
+            position: absolute;
+            bottom: 15px;
+            left: 4px;
+            width: 8px;
+            height: 270px; 
+            background: linear-gradient(to right, #e53935, #c62828);
+            z-index: 1;
+            border-radius: 4px 4px 0 0;
+            transition: height 0.1s linear;
+        }
+
+        .temp-tooltip {
+            position: absolute;
+            left: 270px; 
+            background: rgba(255, 255, 255, 0.95);
+            border: 2px solid #ff5252;
+            border-radius: 12px;
+            padding: 6px 14px;
+            font-size: 20px;
+            font-weight: 900;
+            color: #d32f2f;
+            box-shadow: 0 6px 15px rgba(211, 47, 47, 0.2);
+            z-index: 10;
+            backdrop-filter: blur(4px);
+        }
+        .temp-tooltip::before {
+            content: '';
+            position: absolute;
+            left: -10px;
+            top: 50%;
+            transform: translateY(-50%);
+            border-right: 10px solid #ff5252;
+            border-top: 8px solid transparent;
+            border-bottom: 8px solid transparent;
+        }
+
+        /* 实验区底部控制栏 */
+        .exp-control-bar {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.6);
+            padding: 12px 20px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.8);
+            z-index: 20;
+            gap: 10px;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 12px;
+        }
+
+        button {
+            padding: 10px 18px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            color: white;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+            outline: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        button:hover:not(:disabled) {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        }
+        button:active:not(:disabled) {
+            transform: translateY(1px);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        }
+        button:disabled {
+            background: #cfd8dc !important;
+            color: #90a4ae;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        #btn-start { background: linear-gradient(135deg, #66bb6a, #43a047); }
+        #btn-cool { background: linear-gradient(135deg, #ffa726, #fb8c00); }
+        #btn-reset { background: linear-gradient(135deg, #42a5f5, #1e88e5); }
+
+        .right-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* 倍速按钮组 */
+        .speed-control {
+            display: flex;
+            align-items: center;
+            background: #ffffff;
+            padding: 5px;
+            border-radius: 14px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+            border: 1px solid #e0e0e0;
+        }
+        .speed-btn {
+            background: transparent;
+            color: #78909c;
+            padding: 6px 12px;
+            font-size: 15px;
+            border-radius: 10px;
+            box-shadow: none;
+        }
+        .speed-btn:hover { background: #f5f5f5; color: #455a64; transform: none; box-shadow: none;}
+        .speed-btn.active {
+            background: #26a69a;
+            color: white;
+            box-shadow: 0 2px 6px rgba(38, 166, 154, 0.3);
+        }
+
+        /* 实验时间按钮/显示框 */
+        .time-display-btn {
+            background: #ffffff;
+            color: #00796b;
+            border: 2px solid #80cbc4;
+            padding: 8px 16px;
+            font-size: 18px;
+            font-weight: 900;
+            border-radius: 14px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+            letter-spacing: 1px;
+        }
+
+        /* ================= 右侧：数据与结论区 ================= */
+        .data-area {
+            flex: 5;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 25px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.08);
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid rgba(255,255,255,0.6);
+            backdrop-filter: blur(5px);
+        }
+
+        .section-title {
+            font-size: 22px;
+            color: #00695c;
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: 900;
+            background: #e0f2f1;
+            padding: 10px;
+            border-radius: 12px;
+            letter-spacing: 1px;
+        }
+
+        /* 表格马卡龙配色 */
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 4px;
+            margin-bottom: 25px;
+        }
+        th, td {
+            text-align: center;
+            padding: 14px 2px;
+            font-size: 20px;
+            border-radius: 10px;
+        }
+        th { background-color: #81c784; color: white; font-weight: bold; }
+        td { background-color: #f1f8e9; font-weight: bold; color: #37474f; width: 14%; border: 1px solid #dcedc8; }
+        
+        td.draggable-cell {
+            cursor: grab;
+            background-color: #c8e6c9;
+            color: #1b5e20;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 4px 6px rgba(76, 175, 80, 0.15);
+        }
+        td.draggable-cell:hover {
+            background-color: #a5d6a7;
+            transform: scale(1.1) translateY(-2px);
+            box-shadow: 0 8px 15px rgba(76, 175, 80, 0.25);
+        }
+        td.draggable-cell:active {
+            cursor: grabbing;
+            transform: scale(1.05);
+        }
+
+        .current-cell {
+            background-color: #fff59d !important;
+            box-shadow: 0 0 0 3px #fbc02d, 0 4px 10px rgba(255, 193, 7, 0.4);
+            color: #e65100 !important;
+        }
+
+        /* 结论与拖拽填空区 */
+        .conclusion-box {
+            background: #f3e5f5;
+            border: 2px dashed #ce93d8;
+            padding: 20px;
+            border-radius: 18px;
+            margin-bottom: 25px;
+        }
+
+        .conclusion {
+            font-size: 22px;
+            color: #4a148c;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-weight: bold;
+        }
+
+        .dropzone {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            min-width: 80px;
+            height: 50px;
+            border: 3px dashed #ab47bc;
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 0 10px;
+            font-size: 28px;
+            font-weight: 900;
+            color: #ab47bc;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .dropzone.hovered {
+            background: #e1bee7;
+            border-color: #8e24aa;
+            transform: scale(1.1);
+            color: #8e24aa;
+        }
+        .dropzone.correct {
+            border: 3px solid #66bb6a;
+            color: #2e7d32;
+            background: #e8f5e9;
+        }
+
+        .drag-hint-msg {
+            font-size: 16px;
+            color: #8e24aa;
+            margin-top: 12px;
+            font-weight: bold;
+        }
+
+        /* 对比与互动拖拽区 */
+        .compare-area {
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-end;
+            flex: 1;
+            background: #ffffff;
+            border: 2px dashed #b0bec5;
+            border-radius: 18px;
+            padding: 20px;
+            position: relative;
+        }
+        .compare-item {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+        .mini-tube {
+            width: 55px;
+            height: 160px;
+            border: 3px solid rgba(144, 164, 174, 0.8);
+            border-top: none;
+            border-radius: 0 0 27px 27px;
+            margin-bottom: 15px;
+            position: relative;
+            display: flex;
+            align-items: flex-end;
+            background: rgba(245,245,245,0.5);
+            overflow: hidden;
+            box-shadow: inset 4px 0 8px rgba(255,255,255,0.8);
+        }
+        .mini-water { 
+            width: 100%; 
+            height: 50px; 
+            background: linear-gradient(to right, #64b5f6, #2196f3); 
+        }
+        .mini-ice {
+            width: 100%;
+            height: 50px; 
+            background: repeating-linear-gradient(45deg, #b2ebf2, #b2ebf2 5px, #e0ffff 5px, #e0ffff 10px);
+            border-top: 3px solid #4dd0e1;
+            box-shadow: inset 0 2px 5px rgba(255,255,255,0.9);
+        }
+        .compare-mark {
+            position: absolute;
+            bottom: 48px;
+            left: -5px;
+            width: 65px;
+            height: 3px;
+            background: #f44336;
+            z-index: 10;
+        }
+        /* 红线旁边的水位标记字样 */
+        .compare-mark-label {
+            position: absolute;
+            bottom: 43px;
+            left: 65px;
+            font-size: 12px;
+            color: #d32f2f;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+        .compare-text { font-size: 16px; color: #546e7a; font-weight: bold; background: #eceff1; padding: 4px 12px; border-radius: 20px;}
+
+        /* 呼吸动画：提示框 */
+        @keyframes bounce {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(-6px); }
+        }
+        .drag-handle-hint {
+            position: absolute;
+            top: -35px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ffb74d;
+            color: white;
+            font-size: 13px;
+            font-weight: bold;
+            padding: 4px 10px;
+            border-radius: 8px;
+            white-space: nowrap;
+            pointer-events: none;
+            box-shadow: 0 4px 10px rgba(255, 152, 0, 0.3);
+            animation: bounce 1.5s infinite ease-in-out;
+        }
+        .drag-handle-hint::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-top: 5px solid #ffb74d;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+        }
+        
+        .draggable-ice-container {
+            position: relative;
+            cursor: ns-resize;
+        }
+        .draggable-ice-container:hover .mini-tube {
+            border-color: #ffb74d;
+            box-shadow: 0 0 10px rgba(255, 183, 77, 0.5);
+        }
+
+    </style>
+</head>
+<body>
+
+    <header id="mainTitle">💧 水结冰实验 ❄️</header>
+
+    <div class="main-content">
+        <!-- 左侧：实验装置区 + 底部控制栏 -->
+        <div class="experiment-area">
+            <div class="apparatus-container">
+                <!-- 铁架台与夹子 -->
+                <div class="iron-stand-base"></div>
+                <div class="iron-stand-pole"></div>
+                <div class="iron-clamp-rod"></div>
+                <div class="iron-clamp-back"></div>
+                <div class="iron-clamp-knob"></div>
+
+                <!-- 标记线与文字 -->
+                <div class="mark-line"></div>
+                <div class="mark-text">水位线</div>
+
+                <!-- 烧杯与碎冰食盐混合物 -->
+                <div class="beaker">
+                    <div class="ice-mixture"></div>
+                </div>
+                <div class="beaker-label">碎冰 + 食盐</div>
+
+                <!-- 试管与水/冰 -->
+                <div class="test-tube">
+                    <div class="water" id="tube-water">
+                        <div class="ice-layer" id="ice-layer"></div>
+                    </div>
+                </div>
+
+                <!-- 夹子前部 -->
+                <div class="iron-clamp-front"></div> 
+
+                <!-- 温度计 -->
+                <div class="thermometer-wrapper">
+                    <div class="thermometer-glass"></div>
+                    <div class="thermometer-scale"></div>
+                    <div class="thermo-liquid" id="thermo-liquid"></div>
+                    <div class="thermo-bulb"></div>
+                </div>
+
+                <!-- 动态跟随的温度提示牌 -->
+                <div class="temp-tooltip" id="temp-tooltip">8 ℃</div>
+            </div>
+
+            <!-- 底部控制栏 -->
+            <div class="exp-control-bar">
+                <div class="action-btns">
+                    <button id="btn-start" onclick="startExperiment()">▶️ 开始实验</button>
+                    <button id="btn-cool" onclick="coolOneMinute()" disabled>⏩ 冷却1分钟</button>
+                    <button id="btn-reset" onclick="resetExperiment()">🔄 重新实验</button>
+                </div>
+                
+                <div class="right-controls">
+                    <div class="speed-control">
+                        <button class="speed-btn active" id="speed-1" onclick="setSpeed(1)">1X 倍速</button>
+                        <button class="speed-btn" id="speed-2" onclick="setSpeed(2)">2X 倍速</button>
+                        <button class="speed-btn" id="speed-5" onclick="setSpeed(5)">5X 倍速</button>
+                    </div>
+                    <!-- 实验时间按钮 -->
+                    <div class="time-display-btn" id="time-display">⏱️ 00:00</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧：数据与结论区 -->
+        <div class="data-area">
+            <div class="section-title">📊 水结冰温度观测记录表</div>
+            <table>
+                <tr>
+                    <th>时间/分钟</th>
+                    <td>0</td>
+                    <td>1</td>
+                    <td>2</td>
+                    <td>3</td>
+                    <td>4</td>
+                    <td>5</td>
+                </tr>
+                <tr id="temp-row">
+                    <th>温度/℃</th>
+                    <td id="t-0"></td>
+                    <td id="t-1"></td>
+                    <td id="t-2"></td>
+                    <td id="t-3"></td>
+                    <td id="t-4"></td>
+                    <td id="t-5"></td>
+                </tr>
+            </table>
+
+            <div class="conclusion-box">
+                <div class="conclusion">
+                    我发现，水开始结冰的温度是 
+                    <div class="dropzone" id="dropzone" ondragover="allowDrop(event)" ondragleave="dragLeave(event)" ondrop="drop(event)">?</div> 
+                    ℃。
+                </div>
+                <div class="drag-hint-msg" id="drag-hint-msg">💡 提示：将上面表格中正确的温度数据，拖拽到填空框中。</div>
+            </div>
+
+            <!-- 对比与互动拖拽区 -->
+            <div class="compare-area">
+                <div class="compare-item">
+                    <div class="mini-tube">
+                        <div class="mini-water"></div>
+                        <div class="compare-mark"></div>
+                        <div class="compare-mark-label">初始水位</div>
+                    </div>
+                    <div class="compare-text">实验前水面高度</div>
+                </div>
+                
+                <div class="compare-item draggable-ice-container" id="draggable-ice-box">
+                    <div class="drag-handle-hint">👆 上下拖动，预测冰面</div>
+                    <div class="mini-tube" id="interactive-mini-tube">
+                        <div class="mini-ice" id="mini-ice-result"></div>
+                        <div class="compare-mark"></div>
+                        <div class="compare-mark-label">初始水位</div>
+                    </div>
+                    <div class="compare-text">实验后冰面高度（预测）</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局核心状态变量
+        let simTime = 0;              
+        const TOTAL_SIM_TIME = 300;   
+        const BASE_REAL_DURATION = 180; 
+        let speedFactor = 1;          
+        let isRunning = false;        
+        let lastTimestamp = null;
+
+        // DOM 引用
+        const btnStart = document.getElementById('btn-start');
+        const btnCool = document.getElementById('btn-cool');
+        const btnReset = document.getElementById('btn-reset');
+        const thermoLiquid = document.getElementById('thermo-liquid');
+        const tempTooltip = document.getElementById('temp-tooltip');
+        const tubeWater = document.getElementById('tube-water');
+        const iceLayer = document.getElementById('ice-layer');
+        const timeDisplay = document.getElementById('time-display');
+        const dropzone = document.getElementById('dropzone');
+        const dragHintMsg = document.getElementById('drag-hint-msg');
+        const miniIceResult = document.getElementById('mini-ice-result');
+
+        // 计算温度计高度
+        function getThermoHeight(temp) {
+            return 150 + (temp * 15); 
+        }
+
+        // 初始化/重置
+        function init() {
+            simTime = 0;
+            isRunning = false;
+            lastTimestamp = null;
+
+            btnStart.disabled = false;
+            btnCool.disabled = true;
+
+            // 清空表格
+            for(let i=0; i<=5; i++) {
+                let cell = document.getElementById(`t-${i}`);
+                if(cell) {
+                    cell.innerText = "";
+                    cell.className = "";
+                    cell.removeAttribute('draggable');
+                    cell.ondragstart = null;
+                }
+            }
+
+            // 清空填空框
+            dropzone.innerText = "?";
+            dropzone.className = "dropzone";
+            dragHintMsg.innerText = "💡 提示：将上面表格中正确的温度数据，拖拽到填空框中。";
+            dragHintMsg.style.color = "#8e24aa";
+
+            miniIceResult.style.height = "50px"; 
+
+            renderState();
+        }
+
+        // 核心渲染函数
+        function renderState() {
+            let temp = 8;
+            if (simTime <= 60) { 
+                temp = 8 - (4 * (simTime / 60));
+            } else if (simTime <= 120) { 
+                temp = 4 - (4 * ((simTime - 60) / 60));
+            } else if (simTime <= 240) { 
+                temp = 0;
+            } else { 
+                temp = 0 - (2 * ((simTime - 240) / 60));
+            }
+
+            let h = getThermoHeight(temp);
+            thermoLiquid.style.height = h + "px";
+            tempTooltip.style.bottom = (h + 55) + "px";
+            tempTooltip.innerText = Math.round(temp) + " ℃";
+
+            let icePercent = 0;
+            let waterHeight = 110;
+
+            if (simTime > 120 && simTime <= 180) { 
+                icePercent = ((simTime - 120) / 60) * 35;
+            } else if (simTime > 180 && simTime <= 240) { 
+                icePercent = 35 + (((simTime - 180) / 60) * 35);
+                waterHeight = 110 + (((simTime - 180) / 60) * 10);
+            } else if (simTime > 240) { 
+                icePercent = 70 + (((simTime - 240) / 60) * 30);
+                waterHeight = 120 + (((simTime - 240) / 60) * 15);
+            }
+
+            iceLayer.style.height = icePercent + "%";
+            tubeWater.style.height = waterHeight + "px";
+
+            let m = Math.floor(simTime / 60);
+            let s = Math.floor(simTime % 60);
+            let timeStr = `0${m}:${s < 10 ? '0' : ''}${s}`;
+            timeDisplay.innerText = `⏱️ ${timeStr}`;
+
+            recordPassedTableData();
+        }
+
+        // 记录通过的时间节点表格数据
+        function recordPassedTableData() {
+            const timeMilestones = [0, 60, 120, 180, 240, 300];
+            const tempMilestones = [8, 4, 0, 0, 0, -2];
+            let activeMin = Math.min(5, Math.floor(simTime / 60));
+
+            for(let i=0; i<=5; i++) {
+                let cell = document.getElementById(`t-${i}`);
+                if (simTime >= timeMilestones[i]) {
+                    if (cell.innerText === "") {
+                        cell.innerText = tempMilestones[i];
+                        cell.classList.add('draggable-cell');
+                        cell.setAttribute('draggable', 'true');
+                        cell.ondragstart = function(e) {
+                            e.dataTransfer.setData("text/plain", tempMilestones[i]);
+                        };
+                    }
+                }
+                if (cell) {
+                    if (i === activeMin && isRunning) {
+                        cell.classList.add('current-cell');
+                    } else {
+                        cell.classList.remove('current-cell');
+                    }
+                }
+            }
+        }
+
+        // 主驱动循环 
+        function mainLoop(timestamp) {
+            if (!lastTimestamp) lastTimestamp = timestamp;
+            let deltaReal = (timestamp - lastTimestamp) / 1000;
+            lastTimestamp = timestamp;
+
+            if (isRunning && simTime < TOTAL_SIM_TIME) {
+                let rate = (TOTAL_SIM_TIME / BASE_REAL_DURATION) * speedFactor;
+                simTime = Math.min(TOTAL_SIM_TIME, simTime + deltaReal * rate);
+                
+                renderState();
+
+                if (simTime >= TOTAL_SIM_TIME) {
+                    isRunning = false;
+                    btnStart.disabled = true;
+                    btnCool.disabled = true;
+                }
+            }
+
+            requestAnimationFrame(mainLoop);
+        }
+
+        // 点击操作
+        function startExperiment() {
+            if (simTime >= TOTAL_SIM_TIME) return;
+            isRunning = true;
+            btnStart.disabled = true;
+            btnCool.disabled = false;
+            lastTimestamp = null;
+        }
+
+        function coolOneMinute() {
+            if (simTime >= TOTAL_SIM_TIME) return;
+            let nextMinMark = (Math.floor(simTime / 60) + 1) * 60;
+            simTime = Math.min(TOTAL_SIM_TIME, nextMinMark);
+            renderState();
+            if (simTime >= TOTAL_SIM_TIME) {
+                isRunning = false;
+                btnStart.disabled = true;
+                btnCool.disabled = true;
+            }
+        }
+
+        function setSpeed(speed) {
+            speedFactor = speed;
+            document.querySelectorAll('.speed-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`speed-${speed}`).classList.add('active');
+        }
+
+        function resetExperiment() {
+            init();
+        }
+
+        // 拖拽判断逻辑 
+        function allowDrop(e) {
+            e.preventDefault();
+            dropzone.classList.add('hovered');
+        }
+
+        function dragLeave(e) {
+            dropzone.classList.remove('hovered');
+        }
+
+        function drop(e) {
+            e.preventDefault();
+            dropzone.classList.remove('hovered');
+            let data = e.dataTransfer.getData("text/plain");
+
+            if (data !== "") {
+                dropzone.innerText = data;
+                if (data === "0") {
+                    dropzone.className = "dropzone correct";
+                    dragHintMsg.innerText = "🎉 回答正确！水开始结冰的温度是 0 ℃。";
+                    dragHintMsg.style.color = "#2e7d32";
+                } else {
+                    dropzone.className = "dropzone";
+                    dragHintMsg.innerText = `❌ ${data} ℃ 不是水开始结冰的温度，请再观察表格思考一下！`;
+                    dragHintMsg.style.color = "#d32f2f";
+                }
+            }
+        }
+
+        // ================= 拖拽调节冰面高度互动逻辑 =================
+        const draggableContainer = document.getElementById('draggable-ice-box');
+        let isDraggingIce = false;
+        let startY = 0;
+        let startHeight = 50;
+
+        const MIN_ICE_HEIGHT = 15; 
+        const MAX_ICE_HEIGHT = 95; 
+
+        function handlePointerDown(e) {
+            isDraggingIce = true;
+            startY = e.clientY || (e.touches && e.touches[0].clientY);
+            startHeight = parseFloat(miniIceResult.style.height) || 50;
+            document.addEventListener('mousemove', handlePointerMove);
+            document.addEventListener('mouseup', handlePointerUp);
+            document.addEventListener('touchmove', handlePointerMove, { passive: false });
+            document.addEventListener('touchend', handlePointerUp);
+        }
+
+        function handlePointerMove(e) {
+            if (!isDraggingIce) return;
+            if (e.cancelable) e.preventDefault();
+            
+            let currentY = e.clientY || (e.touches && e.touches[0].clientY);
+            let deltaY = startY - currentY; 
+            let newHeight = startHeight + deltaY;
+
+            newHeight = Math.max(MIN_ICE_HEIGHT, Math.min(MAX_ICE_HEIGHT, newHeight));
+            miniIceResult.style.height = newHeight + "px";
+        }
+
+        function handlePointerUp() {
+            isDraggingIce = false;
+            document.removeEventListener('mousemove', handlePointerMove);
+            document.removeEventListener('mouseup', handlePointerUp);
+            document.removeEventListener('touchmove', handlePointerMove);
+            document.removeEventListener('touchend', handlePointerUp);
+        }
+
+        draggableContainer.addEventListener('mousedown', handlePointerDown);
+        draggableContainer.addEventListener('touchstart', handlePointerDown, { passive: false });
+
+        window.onload = function() {
+            init();
+            requestAnimationFrame(mainLoop);
+        };
+    </script>
+
+
+<!-- ================= 开物AI科学 · 版权模块（单击显示 / 双击打开官网） ================= -->
+<style id="kaiming-copyright-style">
+  #kaiming-copyright {
+    position: fixed;
+    bottom: 137px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    pointer-events: none;
+    z-index: 999999;
+    transition: opacity 0.45s ease;
+    opacity: 0;
+    display: none;
+  }
+  #kaiming-copyright .inner {
+    display: inline-block;
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #eafaf2;
+    padding: 9px 26px;
+    border-radius: 60px;
+    /* 原稿为 14px；此处改为 16px 以符合本机 verify_html.py 的「字号不得小于 16px」硬规则 */
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.6px;
+    border: 1px solid rgba(255, 245, 210, 0.3);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+    font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+    white-space: nowrap;
+  }
+</style>
+
+<div id="kaiming-copyright">
+  <div class="inner">© 2026 开物AI科学 ｜ AI 赋能 · 教育公平</div>
+</div>
+
+<script id="kaiming-copyright-script">
+(function () {
+  "use strict";
+
+  /* 目标：单击标题 → 显示版权 3.5 秒；双击标题 → 打开 www.kaiwuaiscience.com */
+
+  const HOMEPAGE = "https://www.kaiwuaiscience.com";
+  const SHOW_MS = 3500;      // 版权显示时长
+  const DBL_WINDOW = 280;    // 双击判定的时间窗（毫秒）
+  const FADE_MS = 450;       // 淡出时长，与 CSS transition 一致
+
+  function bindCopyright() {
+    // 首选 #mainTitle（注入脚本会保证它存在）；后三个选择器是手写粘贴时的兜底
+    const title = document.getElementById("mainTitle") ||
+                  document.querySelector("h1, .title, .page-title, .main-title");
+    const box = document.getElementById("kaiming-copyright");
+    if (!title || !box) return;
+
+    title.style.cursor = "pointer";
+    title.style.userSelect = "none";
+    title.style.webkitUserSelect = "none";
+
+    let clickTimer = null;
+    let hideTimer = null;
+    let seq = 0;   // 每次显示/隐藏都 +1，用来作废在飞的定时器
+
+    function showCopyright() {
+      const my = ++seq;
+      if (hideTimer) clearTimeout(hideTimer);
+      box.style.display = "block";
+      /* 强制重绘，让 0 → 1 的淡入真的发生。
+         这里刻意不用 requestAnimationFrame：rAF 在页面不产生新帧时（后台标签页、
+         无头渲染、大屏久置）不保证触发——一旦它晚于下方的隐藏定时器回调，
+         就会把 opacity 又设成 1，导致版权条永久停在屏幕上。 */
+      void box.offsetHeight;
+      box.style.opacity = "1";
+      hideTimer = setTimeout(function () {
+        if (my !== seq) return;      // 期间又被点过，交给新的那一次收尾
+        box.style.opacity = "0";
+        setTimeout(function () {
+          if (my === seq) box.style.display = "none";
+        }, FADE_MS);
+      }, SHOW_MS);
+    }
+
+    function hideCopyright() {
+      const my = ++seq;              // 作废所有在飞的定时器，避免"淡出到一半又被点亮"卡住
+      if (hideTimer) clearTimeout(hideTimer);
+      if (box.style.display !== "block") return;
+      box.style.opacity = "0";
+      setTimeout(function () {
+        if (my === seq) box.style.display = "none";
+      }, FADE_MS);
+    }
+
+    function openHomepage() {
+      // 双击时隐藏版权，并跳转官网
+      hideCopyright();
+      window.open(HOMEPAGE, "_blank", "noopener,noreferrer");
+    }
+
+    title.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (clickTimer) return;   // 已在等待双击窗口，忽略这次单击
+      clickTimer = setTimeout(function () {
+        clickTimer = null;
+        showCopyright();        // 确认是单击
+      }, DBL_WINDOW);
+    });
+
+    title.addEventListener("dblclick", function (e) {
+      e.stopPropagation();
+      if (clickTimer) {         // 取消挂起的单击
+        clearTimeout(clickTimer);
+        clickTimer = null;
+      }
+      openHomepage();
+    });
+
+    // 点击页面其它地方，立即隐藏版权
+    document.addEventListener("click", function (e) {
+      if (e.target === title) return;
+      hideCopyright();
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bindCopyright);
+  } else {
+    bindCopyright();
+  }
+})();
+</script>
+<!-- ================= 开物AI科学 · 版权模块 结束 ================= -->
+
+</body>
+</html>
