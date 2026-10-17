@@ -1418,58 +1418,6 @@ window.addEventListener('hashchange',function(){setTimeout(renderLabs,60)});
 setTimeout(function(){renderLabs()},400);setTimeout(function(){renderLabs()},900);
 });
 })();
-/* ---------- 追加补丁 v18：二维码直开大图 / 删除“直接下载” / 手机端弹窗居中 ---------- */
-(function(){
-function ready(fn){document.readyState!=='loading'?fn():document.addEventListener('DOMContentLoaded',fn)}
-ready(function(){
-
-/* A) 首页/关于页二维码：点击不再弹下载码，改为新标签打开大图 */
-document.addEventListener('click',function(e){
-  if(!e.target||!e.target.closest)return;
-  var im=e.target.closest('.ab-qrcard img');
-  if(!im){var s=e.target.getAttribute&&e.target.getAttribute('src');
-    if(!(s&&/qr/i.test(s)))return; im=e.target;}
-  var p=im; /* 弹窗内的二维码不拦（弹窗里没有这个结构，双保险） */
-  for(var i=0;i<6&&p;i++,p=p.parentElement){if(p.querySelector&&p.querySelector('input'))return}
-  e.preventDefault();e.stopPropagation();
-  window.open(im.getAttribute('src'),'_blank');
-},true);
-
-/* B) 删除“直接下载”字样（小程序无法直接下载，文案误导） */
-function killText(){
-  document.querySelectorAll('body *').forEach(function(el){
-    if(el.children.length)return;
-    var t=(el.textContent||'').replace(/\s+/g,'');
-    if(t==='直接下载'){el.remove();return}
-    if(t.indexOf('直接下载')>-1&&t.length<=12){
-      el.textContent=el.textContent.replace(/ ?[·•・] ?直接下载|直接下载/g,'');
-    }
-  });
-}
-killText();setTimeout(killText,600);setTimeout(killText,1500);
-
-/* C) 手机端弹窗出屏自动纠偏：弹窗出现后测量，超界拉回居中 */
-function centerFloat(){
-  var wv=window.innerWidth;
-  document.querySelectorAll('div,aside,section').forEach(function(el){
-    var cs;
-    try{cs=getComputedStyle(el)}catch(err){return}
-    if(cs.position!=='fixed')return;
-    if(el.offsetWidth>=wv*0.95||el.offsetWidth<60)return; /* 跳过全屏遮罩和小按钮 */
-    var r=el.getBoundingClientRect();
-    if(r.left<0||r.right>wv||r.top<0||r.bottom>window.innerHeight){
-      el.style.left='50%';el.style.right='auto';el.style.marginLeft='0';
-      el.style.top='50%';el.style.transform='translate(-50%,-50%)';
-      el.style.maxWidth='92vw';el.style.maxHeight='86vh';el.style.overflow='auto';
-    }
-  });
-}
-document.addEventListener('click',function(){
-  setTimeout(centerFloat,250);setTimeout(centerFloat,700);
-},true);
-window.addEventListener('resize',function(){setTimeout(centerFloat,150)});
-});
-})();
 /* ---------- 追加补丁 v19：二维码点开大图 / 删“直接下载” / 仅手机端纠正出屏的二维码弹窗 ---------- */
 (function(){
 if(window.__kwV19)return;window.__kwV19=1;   /* 防重复执行保险 */
