@@ -1418,63 +1418,88 @@ window.addEventListener('hashchange',function(){setTimeout(renderLabs,60)});
 setTimeout(function(){renderLabs()},400);setTimeout(function(){renderLabs()},900);
 });
 })();
-/* ---------- 追加补丁 v19：二维码点开大图 / 删“直接下载” / 仅手机端纠正出屏的二维码弹窗 ---------- */
+/* ---------- 追加补丁 v20：手机端二维码弹窗由自家居中弹层接管 / 二维码图点击统一弹层 / 文案修改 ---------- */
 (function(){
-if(window.__kwV19)return;window.__kwV19=1;   /* 防重复执行保险 */
+if(window.__kwV20)return;window.__kwV20=1;
 function ready(fn){document.readyState!=='loading'?fn():document.addEventListener('DOMContentLoaded',fn)}
-ready(function(){
+function isMobile(){return window.innerWidth<760}
+var MID='kwQrModal';
 
-/* A) 二维码点击：不弹下载码，改为新标签打开大图。
-   拦截范围：点击位置向上 3 层内含 qr 图片的容器（兼容首页/关于页不同结构） */
+/* A) 文案：好工具，不该锁在抽屉里 → 好东西，应该拿出来分享 */
+function reword(){
+  var w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT,null),n;
+  while(n=w.nextNode()){
+    if(n.nodeValue&&n.nodeValue.indexOf('锁在抽屉里')>-1){
+      n.nodeValue=n.nodeValue.replace(/好工具[^。]*锁在抽屉里/,'好东西，应该拿出来分享');
+    }
+  }
+}
+
+/* B) 自家二维码弹层（永远居中，自带遮罩和关闭） */
+function qrSrc(){
+  var im=document.querySelector('img[src*="qr"],img[src*="QR"]');
+  return im?im.getAttribute('src'):'assets/qr.png.jpg';
+}
+function openQr(){
+  if(document.getElementById(MID))return;
+  var ov=document.createElement('div');ov.id=MID;
+  ov.style.cssText='position:fixed;left:0;top:0;right:0;bottom:0;z-index:2147483000;background:rgba(15,15,15,.6);display:flex;align-items:center;justify-content:center;padding:20px';
+  var card=document.createElement('div');
+  card.style.cssText='background:#faf7f2;max-width:86vw;width:300px;padding:22px 18px 16px;text-align:center;position:relative;box-shadow:10px 10px 0 rgba(0,0,0,.18)';
+  card.innerHTML='<div style="font-weight:700;font-size:15px;margin-bottom:12px;color:#1a1a1a">微信扫码 · 开物AI科学</div>'
+    +'<img src="'+qrSrc()+'" alt="二维码" style="width:100%;max-width:240px;height:auto;display:block;margin:0 auto;cursor:zoom-in">'
+    +'<div style="font-size:11px;color:#777;margin-top:10px;line-height:1.6">长按或截图，在微信中识别<br>点二维码可放大查看</div>'
+    +'<div id="kwQrX" style="position:absolute;top:4px;right:10px;font-size:20px;color:#999;cursor:pointer;line-height:1">×</div>';
+  ov.appendChild(card);document.body.appendChild(ov);
+  card.querySelector('img').addEventListener('click',function(){window.open(qrSrc(),'_blank')});
+  ov.addEventListener('click',function(e){if(e.target===ov||e.target.id==='kwQrX')ov.remove()});
+}
+
+/* C) 点到二维码图（或含二维码图的小按钮）→ 统一弹自家弹层，原生逻辑不执行 */
 document.addEventListener('click',function(e){
   if(!e.target||!e.target.closest)return;
-  var p=e.target;
-  for(var i=0;i<4&&p;i++,p=p.parentElement){
-    if(!p||!p.querySelector)continue;
-    var im=p.querySelector('img[src*="qr"],img[src*="QR"]');
-    if(!im)continue;
-    /* 排除：下载码弹窗等含输入框的容器内部的图不拦 */
-    var q=p;for(var j=0;j<6&&q;j++,q=q.parentElement){if(q.querySelector&&q.querySelector('input'))return}
-    e.preventDefault();e.stopPropagation();
-    window.open(im.getAttribute('src'),'_blank');
-    return;
+  if(e.target.closest('#'+MID))return;
+  var hit=e.target.closest('img[src*="qr"],img[src*="QR"]');
+  if(!hit){
+    var p=e.target;
+    for(var i=0;i<3&&p;i++,p=p.parentElement){
+      if(!p||!p.querySelector)break;
+      if(p.querySelector('img[src*="qr"],img[src*="QR"]')&&p.offsetWidth<160&&p.offsetHeight<160){hit=p;break}
+    }
   }
+  if(!hit)return;
+  var q=hit,j;for(j=0;j<6&&q;j++,q=q.parentElement){if(q.querySelector&&q.querySelector('input'))return}
+  e.preventDefault();e.stopPropagation();openQr();
 },true);
 
-/* B) 删除“直接下载”字样（小程序无法直接下载，文案误导） */
-function killText(){
-  document.querySelectorAll('body *').forEach(function(el){
-    if(el.children.length)return;
-    var t=(el.textContent||'').replace(/\s+/g,'');
-    if(t==='直接下载'){el.remove();return}
-    if(t.indexOf('直接下载')>-1&&t.length<=12){
-      el.textContent=el.textContent.replace(/ ?[·•・] ?直接下载|直接下载/g,'');
-    }
-  });
-}
-killText();setTimeout(killText,600);setTimeout(killText,1500);
-
-/* C) 仅手机端：纠正“含二维码图且确实出屏”的弹窗，每个只纠正一次。
-   桌面端直接跳过 —— 搜索框等任何弹窗在电脑上绝不会被移动。 */
-function fixQrFloat(){
-  if(window.innerWidth>=760)return;            /* 桌面端：彻底不启动 */
+/* D) 手机端：原生二维码弹窗一露头就藏掉，换成自家弹层。
+   不再限定 fixed —— fixed 和 absolute 都算；并加文字特征兜底。 */
+function sweep(){
+  if(!isMobile())return;
+  if(document.getElementById(MID))return;
   document.querySelectorAll('div,section,aside').forEach(function(el){
-    if(el.dataset.kwC)return;
-    var cs;try{cs=getComputedStyle(el)}catch(e){return}
-    if(cs.position!=='fixed')return;
-    var qr=el.querySelector&&el.querySelector('img[src*="qr"],img[src*="QR"]');
-    if(!qr)return;                              /* 不含二维码的弹窗一律不碰 */
-    if(el.offsetWidth>=window.innerWidth*0.95)return; /* 全屏遮罩不碰 */
+    if(el.id===MID||(el.closest&&el.closest('#'+MID)))return;
+    if(el.dataset.kwSw)return;
+    var cs;try{cs=getComputedStyle(el)}catch(err){return}
+    if(cs.position!=='fixed'&&cs.position!=='absolute')return;
+    if(el.offsetWidth<80||el.offsetWidth>=window.innerWidth*0.95)return;
+    var txt=el.textContent||'';
+    var isPop=el.querySelector('img[src*="qr"],img[src*="QR"]')
+      ||(txt.length<200&&(txt.indexOf('下载全部资源')>-1||txt.indexOf('公众号')>-1));
+    if(!isPop)return;
     var r=el.getBoundingClientRect();
-    if(r.left>=0&&r.right<=window.innerWidth&&r.top>=0&&r.bottom<=window.innerHeight)return; /* 未出屏不碰 */
-    el.dataset.kwC='1';
-    el.style.left='50%';el.style.right='auto';el.style.marginLeft='0';
-    el.style.top='50%';el.style.transform='translate(-50%,-50%)';
-    el.style.maxWidth='92vw';el.style.maxHeight='86vh';el.style.overflow='auto';
+    if(r.width<40||r.height<40)return;
+    el.dataset.kwSw='1';
+    el.style.display='none';
+    openQr();
   });
 }
-document.addEventListener('click',function(){setTimeout(fixQrFloat,300)},true);
-window.addEventListener('resize',function(){setTimeout(fixQrFloat,200)});
-});
-})();
+document.addEventListener('click',function(){setTimeout(sweep,150);setTimeout(sweep,500)},true);
+window.addEventListener('resize',function(){setTimeout(sweep,200)});
 
+ready(function(){
+  reword();setTimeout(reword,600);setTimeout(reword,1500);
+  setTimeout(sweep,800);
+});
+window.addEventListener('hashchange',function(){setTimeout(function(){reword();sweep()},300)});
+})();
