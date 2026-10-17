@@ -1470,5 +1470,57 @@ document.addEventListener('click',function(){
 window.addEventListener('resize',function(){setTimeout(centerFloat,150)});
 });
 })();
+/* ---------- 追加补丁 v18(修正)：二维码直开大图 / 删除“直接下载” / 仅纠正出屏的二维码弹窗 ---------- */
+(function(){
+function ready(fn){document.readyState!=='loading'?fn():document.addEventListener('DOMContentLoaded',fn)}
+ready(function(){
+
+/* A) 首页/关于页二维码：点击不再弹下载码，改为新标签打开大图 */
+document.addEventListener('click',function(e){
+  if(!e.target||!e.target.closest)return;
+  var im=e.target.closest('.ab-qrcard img');
+  if(!im){var s=e.target.getAttribute&&e.target.getAttribute('src');
+    if(!(s&&/qr/i.test(s)))return; im=e.target;}
+  var p=im;
+  for(var i=0;i<6&&p;i++,p=p.parentElement){if(p.querySelector&&p.querySelector('input'))return}
+  e.preventDefault();e.stopPropagation();
+  window.open(im.getAttribute('src'),'_blank');
+},true);
+
+/* B) 删除“直接下载”字样（小程序无法直接下载，文案误导） */
+function killText(){
+  document.querySelectorAll('body *').forEach(function(el){
+    if(el.children.length)return;
+    var t=(el.textContent||'').replace(/\s+/g,'');
+    if(t==='直接下载'){el.remove();return}
+    if(t.indexOf('直接下载')>-1&&t.length<=12){
+      el.textContent=el.textContent.replace(/ ?[·•・] ?直接下载|直接下载/g,'');
+    }
+  });
+}
+killText();setTimeout(killText,600);setTimeout(killText,1500);
+
+/* C) 修正版：只纠正“包含二维码图片且确实出屏”的弹窗，每个只纠正一次 */
+function fixQrFloat(){
+  var wv=window.innerWidth;
+  document.querySelectorAll('div,section,aside').forEach(function(el){
+    if(el.dataset.kwC)return;
+    var cs;try{cs=getComputedStyle(el)}catch(e){return}
+    if(cs.position!=='fixed')return;
+    var qr=el.querySelector&&el.querySelector('img[src*="qr"],img[src*="QR"]');
+    if(!qr)return;                       /* 没有二维码的弹窗（如搜索框）一律不碰 */
+    if(el.offsetWidth>=wv*0.95)return;   /* 全屏遮罩不碰 */
+    var r=el.getBoundingClientRect();
+    if(r.left>=0&&r.right<=wv&&r.top>=0&&r.bottom<=window.innerHeight)return; /* 没出屏就不碰 */
+    el.dataset.kwC='1';                  /* 打标记：此生只纠正这一次 */
+    el.style.left='50%';el.style.right='auto';el.style.marginLeft='0';
+    el.style.top='50%';el.style.transform='translate(-50%,-50%)';
+    el.style.maxWidth='92vw';el.style.maxHeight='86vh';el.style.overflow='auto';
+  });
+}
+document.addEventListener('click',function(){setTimeout(fixQrFloat,300)},true);
+window.addEventListener('resize',function(){setTimeout(fixQrFloat,200)});
+});
+})();
 
 
