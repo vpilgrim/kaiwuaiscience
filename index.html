@@ -438,7 +438,7 @@ footer{border-top:1px solid var(--ink)}
   <section class="about reveal" id="about">
     <div>
       <span class="sec-no">02 — ABOUT</span>
-      <h2>好工具，<u>不该锁在抽屉里</u>。</h2>
+      <h2>好东西，<u>应该拿出来分享</u>。</h2>
       <p class="bio">我是这里唯一的站长——一名小学科学老师。站内所有东西都是我备课时的真实产出：踩过的坑、调好的提示词、课堂上真的能跑起来的演示页。愿它们替你省下那些熬过的夜。</p>
     </div>
     <div class="oa" id="oa" role="button" tabindex="0" aria-label="扫码关注公众号开物AI科学">
@@ -471,7 +471,7 @@ footer{border-top:1px solid var(--ink)}
 
 <!-- ================= 左侧小程序入口 ================= -->
 <aside class="dock" id="dock">
-  <button class="dock-tab" id="dockTab" type="button" aria-expanded="false">小程序 · 直接下载</button>
+  <button class="dock-tab" id="dockTab" type="button" aria-expanded="false">小程序</button>
   <div class="dock-panel" role="dialog" aria-label="小程序入口">
     <svg class="qr" data-seed="8801" role="img" aria-label="小程序码占位"></svg>
     <p><b>「开物AI科学」小程序</b></p>
@@ -830,7 +830,7 @@ var PAGES={
         '<button class="kbtn" data-dl="'+esc(d.lk)+'" data-name="'+esc(d.t)+'">⬇ 下载</button></div></div>';
     }).join('')+'</div></section>'},
   about:function(){return '<section class="reveal">'+
-    '<div class="sec-head" style="margin-top:2.6rem"><span class="sec-no">04 — ABOUT</span><h2>关于站长</h2><p>好工具，不该锁在抽屉里。</p></div>'+
+    '<div class="sec-head" style="margin-top:2.6rem"><span class="sec-no">04 — ABOUT</span><h2>关于站长</h2><p>好东西，应该拿出来分享。</p></div>'+
     '<div class="kgrid" style="grid-template-columns:1.4fr .9fr;align-items:start">'+
     '<div class="kcard" style="cursor:default">'+(typeof ABOUT!=='undefined'?ABOUT.split('\n').map(function(x){return '<p style="font-size:13.5px;color:var(--ink-soft);line-height:2;margin:.35em 0">'+esc(x)+'</p>'}).join(''):'')+
     '<div class="knote">🔑 <b>每日下载码</b>：关注公众号「开物AI科学」，回复关键词「下载码」获取当日 5 位下载码。每天 0 点更换，昨日码当晚 24 点前仍可用。</div></div>'+
